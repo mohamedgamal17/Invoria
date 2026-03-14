@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.Infrastructure.Common;
+using Invoria.BuildingBlocks.Infrastructure.Results;
 
 namespace Invoria.BuildingBlocks.Infrastructure.Endpoints;
 

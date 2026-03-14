@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 
-namespace Invoria.BuildingBlocks.Infrastructure;
+namespace Invoria.BuildingBlocks.Infrastructure.Results;
 
 public class DefaultResultToHttpMapper : IResultToHttpMapper
 {
@@ -19,7 +19,7 @@ public class DefaultResultToHttpMapper : IResultToHttpMapper
 
         var (statusCode, title, code) = exception is ApplicationExceptionBase appEx
             ? MapDomainException(appEx)
-            : (500, "An unexpected error occurred.", (string?)null);
+            : (500, "An unexpected error occurred.", null);
 
         var problem = new ApiProblemDetails
         {
@@ -50,7 +50,7 @@ public class DefaultResultToHttpMapper : IResultToHttpMapper
 
         var (statusCode, title, code) = exception is ApplicationExceptionBase appEx
             ? MapDomainException(appEx)
-            : (500, "An unexpected error occurred.", (string?)null);
+            : (500, "An unexpected error occurred.", null);
 
         var problem = new ApiProblemDetails
         {

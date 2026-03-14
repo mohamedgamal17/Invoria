@@ -2,7 +2,7 @@ using FastEndpoints;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.BuildingBlocks.Infrastructure;
+namespace Invoria.BuildingBlocks.Infrastructure.Extensions;
 
 public static class FastEndpointsExtensions
 {

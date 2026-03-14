@@ -1,6 +1,7 @@
 using FastEndpoints;
 using FastEndpoints.Swagger;
-using Invoria.BuildingBlocks.Infrastructure;
+using Invoria.BuildingBlocks.Infrastructure.Extensions;
+using Invoria.BuildingBlocks.Infrastructure.Results;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 

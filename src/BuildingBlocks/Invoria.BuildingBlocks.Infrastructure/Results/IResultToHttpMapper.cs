@@ -1,7 +1,7 @@
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 
-namespace Invoria.BuildingBlocks.Infrastructure;
+namespace Invoria.BuildingBlocks.Infrastructure.Results;
 
 public interface IResultToHttpMapper
 {
