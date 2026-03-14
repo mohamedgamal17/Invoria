@@ -13,7 +13,7 @@ builder.Services.SwaggerDocument(opt =>
     opt.FlattenSchema = true;
 });
 
-builder.Services.AddFastEndpoints();
+builder.Services.AddModuleFastEndpoints();
 
 builder.Services.AddSingleton<IResultToHttpMapper, DefaultResultToHttpMapper>();
 
