@@ -7,7 +7,7 @@ namespace Invoria.BuildingBlocks.EntityFramework.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddInvertoDbContext<TContext>(
+    public static IServiceCollection AddInvoriaDbContext<TContext>(
         this IServiceCollection services,
         Action<DbContextOptionsBuilder> configure)
         where TContext : InvoriaDbContext

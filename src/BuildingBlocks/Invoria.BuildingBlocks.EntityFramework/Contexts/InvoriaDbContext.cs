@@ -14,6 +14,7 @@ public abstract class InvoriaDbContext : DbContext
         _dbHookEngine = dbHookEngine;
     }
 
+
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         _dbHookEngine.RunBeforeSaveAsync(this).GetAwaiter().GetResult();
