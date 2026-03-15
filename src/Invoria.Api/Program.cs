@@ -1,32 +1,55 @@
+using Autofac.Extensions.DependencyInjection;
 using FastEndpoints;
 using FastEndpoints.Swagger;
+using Invoria.Api;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
-using Invoria.BuildingBlocks.Infrastructure.Results;
-using Microsoft.AspNetCore.Mvc;
-using System.Text.Json.Serialization;
+using Serilog;
+using Serilog.Events;
+
+
+Log.Logger = new LoggerConfiguration()
+#if DEBUG
+    .MinimumLevel.Debug()
+#else
+    .MinimumLevel.Information()
+#endif
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Async(c => c.Console())
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.SwaggerDocument(opt =>
-{
-    opt.AutoTagPathSegmentIndex = 0;
-
-    opt.FlattenSchema = true;
-});
-
-builder.Services.AddModuleFastEndpoints();
-
-builder.Services.AddSingleton<IResultToHttpMapper, DefaultResultToHttpMapper>();
+builder.InstallModule<ApiModuleInstaller>();
 
 
-builder.Services.Configure<JsonOptions>(options =>
-{
-    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-});
+
+builder.Host
+    .UseSerilog()
+    .UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
+
 
 var app = builder.Build();
 
-app.UseFastEndpoints();
-app.UseOpenApi();
 
+if (builder.Environment.IsDevelopment())
+{
+    app.UseSwaggerGen();
+}
+
+app.UseHttpsRedirection()
+    .UseExceptionHandler()
+    .UseRouting()
+
+    .UseEndpoints(endpoint =>
+    {
+        endpoint.MapFastEndpoints(e =>
+        e.Endpoints.ShortNames = true);
+    });
+
+await app.RunModulesBootstrapperAsync();
+
+app.Run();
 app.Run();
