@@ -19,7 +19,7 @@ public abstract class EndpointBase<TRequest, TResponse> : Endpoint<TRequest, Env
     {
         var (statusCode, body) = _resultMapper.Map(result, HttpContext?.Request.Path.Value);
 
-        await Send.ResponseAsync(body, statusCode);
+        await SendAsync(body, statusCode);
     }
 }
 
@@ -37,6 +37,6 @@ public abstract class EndpointBase<TRequest> : Endpoint<TRequest, Envelope>
     {
         var (statusCode, body) = _resultMapper.Map(result, HttpContext?.Request.Path.Value);
 
-        await Send.ResponseAsync(body, statusCode);
+        await SendAsync(body, statusCode);
     }
 }

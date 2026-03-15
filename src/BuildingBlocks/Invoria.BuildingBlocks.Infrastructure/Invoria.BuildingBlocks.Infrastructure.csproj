@@ -7,11 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
     <ProjectReference Include="..\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FastEndpoints" Version="8.0.1" />
+    <PackageReference Include="FastEndpoints" Version="6.2.0" />
   </ItemGroup>
 
 </Project>

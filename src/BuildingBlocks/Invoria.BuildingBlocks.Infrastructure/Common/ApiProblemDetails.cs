@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 
 namespace Invoria.BuildingBlocks.Infrastructure.Common
 {
@@ -9,6 +9,10 @@ namespace Invoria.BuildingBlocks.Infrastructure.Common
         public int Status { get; init; }
         public string? Detail { get; init; }
         public string? Instance { get; init; }
+        public string? CorrelationId { get; init; }
+
+        public string? ErrorCode { get; init; }
+        public string? ErrorKey { get; init; }
 
         public Dictionary<string, string[]> Errors { get; init; } = new();
 
