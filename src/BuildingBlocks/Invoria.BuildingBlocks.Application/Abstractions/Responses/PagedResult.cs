@@ -2,7 +2,6 @@ namespace Invoria.BuildingBlocks.Application.Abstractions.Responses;
 
 public class PagedResult<T>
 {
- 
     public IReadOnlyCollection<T> Items { get; }
     public PagedResultInfo Info { get; set; }
     public PagedResult(IReadOnlyCollection<T> items, PagedResultInfo info)
