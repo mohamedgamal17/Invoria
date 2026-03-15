@@ -1,4 +1,4 @@
-using Invoria.BuildingBlocks.Domain.Entities;
+﻿using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.EntityFramework.Primitives;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -13,7 +13,6 @@ public class AuditAndIdBeforeSaveHook : IBeforeDbHookSave
         {
             if (entry.State == EntityState.Added)
             {
-                HandleIdGeneration(entry);
                 HandleCreatedAudit(entry);
             }
             else if (entry.State == EntityState.Modified)
@@ -23,29 +22,6 @@ public class AuditAndIdBeforeSaveHook : IBeforeDbHookSave
         }
 
         return Task.CompletedTask;
-    }
-
-    private static void HandleIdGeneration(EntityEntry entry)
-    {
-        var ulid = UlidGenerator.NewUlid();
-
-        var guidIdProperty = entry.Properties.FirstOrDefault(p =>
-            string.Equals(p.Metadata.Name, "Id", StringComparison.OrdinalIgnoreCase) &&
-            p.Metadata.ClrType == typeof(Guid));
-
-        if (guidIdProperty is { CurrentValue: Guid guid } && guid == Guid.Empty)
-        {
-            guidIdProperty.CurrentValue = ulid.ToGuid();
-        }
-
-        var stringIdProperty = entry.Properties.FirstOrDefault(p =>
-            string.Equals(p.Metadata.Name, "Id", StringComparison.OrdinalIgnoreCase) &&
-            p.Metadata.ClrType == typeof(string));
-
-        if (stringIdProperty is { CurrentValue: null or "" })
-        {
-            stringIdProperty.CurrentValue = ulid.ToString();
-        }
     }
 
     private static void HandleCreatedAudit(EntityEntry entry)
