@@ -13,7 +13,6 @@ namespace Invoria.Application.Tests;
 /// Uses Autofac DI with Microsoft.Extensions.DependencyInjection.
 /// </summary>
 
-[SetUpFixture] 
 public abstract class TestFixture
 {
     private IContainer _container = null!;
@@ -59,9 +58,6 @@ public abstract class TestFixture
     public async Task GlobalSetupAsync()
     {
         
-
-
-
         await BeforeAllTestRunAsync();
     }
 
