@@ -8,3 +8,8 @@ public abstract class AuditedAggregateRoot<TId> : AggregateRoot<TId>, IAuditedEn
     public string? LastModifiedBy { get; protected set; }
 }
 
+
+public class AuditedAggregateRoot : AuditedAggregateRoot<string> , IAggregateRoot
+{
+}
+

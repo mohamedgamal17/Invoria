@@ -19,3 +19,5 @@ public abstract class AggregateRoot<TId> : Entity<TId>, IAggregateRoot<TId>
     }
 }
 
+public abstract class AggregateRoot : AggregateRoot<string> , IAggregateRoot{ }
+

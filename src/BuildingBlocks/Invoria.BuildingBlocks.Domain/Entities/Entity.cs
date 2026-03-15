@@ -4,7 +4,7 @@ namespace Invoria.BuildingBlocks.Domain.Entities;
 
 public abstract class Entity<TId> : IEntity<TId>, IEquatable<Entity<TId>>
 {
-    public TId Id { get; protected init; } = default!;
+    public TId Id { get; protected set; } = default!;
 
     public static bool operator ==(Entity<TId>? left, Entity<TId>? right)
     {
@@ -64,4 +64,7 @@ public abstract class Entity<TId> : IEntity<TId>, IEquatable<Entity<TId>>
         return HashCode.Combine(GetType(), Id);
     }
 }
+
+public class Entity : Entity<string> , IEntity { }
+
 

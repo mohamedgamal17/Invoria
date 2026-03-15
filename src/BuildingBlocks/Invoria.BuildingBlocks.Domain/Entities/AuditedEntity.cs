@@ -8,3 +8,5 @@ public abstract class AuditedEntity<TId> : Entity<TId>, IAuditedEntity<TId>
     public string? LastModifiedBy { get; protected set; }
 }
 
+public abstract class AuditedEntity : AuditedEntity<string> , IEntity { }
+
