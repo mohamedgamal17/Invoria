@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Entities;
 
-namespace Invoria.Modules.Catalog.Domain.Products
+namespace Invoria.Catalog.Domain.Products
 {
     public class Product : AuditedAggregateRoot
     {

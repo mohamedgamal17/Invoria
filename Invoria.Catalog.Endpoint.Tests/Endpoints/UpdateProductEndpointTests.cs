@@ -1,7 +1,7 @@
-﻿using FluentAssertions;
-using Invoria.Modules.Catalog.Domain;
-using Invoria.Modules.Catalog.Domain.Products;
-using Invoria.Modules.Catalog.Endpoints.Products.Requests;
+using FluentAssertions;
+using Invoria.Catalog.Domain;
+using Invoria.Catalog.Domain.Products;
+using Invoria.Catalog.Endpoints.Products.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 

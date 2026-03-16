@@ -1,8 +1,8 @@
-﻿using Invoria.BuildingBlocks.Application.Extensions;
+using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-namespace Invoria.Modules.Catalog.Infrastructure.Installers
+namespace Invoria.Catalog.Infrastructure.Installers
 {
     public class ApplicationServceInstaller : IServiceInstaller
     {

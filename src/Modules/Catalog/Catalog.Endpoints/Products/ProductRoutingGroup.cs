@@ -1,7 +1,7 @@
-﻿using FastEndpoints;
+using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 
-namespace Invoria.Modules.Catalog.Endpoints.Products
+namespace Invoria.Catalog.Endpoints.Products
 {
     public class ProductRoutingGroup : Group
     {

@@ -1,7 +1,7 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.Modules.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Contracts.Dtos;
 
-namespace Invoria.Modules.Catalog.Application.Products.Commands.UpdateProduct
+namespace Invoria.Catalog.Application.Products.Commands.UpdateProduct
 {
     public class UpdateProductCommand : ICommand<ProductDto>
     {

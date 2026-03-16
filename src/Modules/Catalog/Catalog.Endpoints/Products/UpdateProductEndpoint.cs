@@ -1,12 +1,12 @@
 using FluentValidation;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Invoria.BuildingBlocks.Infrastructure.Results;
-using Invoria.Modules.Catalog.Application.Products.Commands.UpdateProduct;
-using Invoria.Modules.Catalog.Contracts.Dtos;
-using Invoria.Modules.Catalog.Endpoints.Products.Requests;
+using Invoria.Catalog.Application.Products.Commands.UpdateProduct;
+using Invoria.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Endpoints.Products.Requests;
 using MediatR;
 
-namespace Invoria.Modules.Catalog.Endpoints.Products
+namespace Invoria.Catalog.Endpoints.Products
 {
     public class UpdateProductEndpoint : EndpointBase<UpdateProductRequest, ProductDto>
     {

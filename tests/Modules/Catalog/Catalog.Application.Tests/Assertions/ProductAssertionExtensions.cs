@@ -1,9 +1,9 @@
-﻿using FluentAssertions;
-using Invoria.Modules.Catalog.Application.Products.Commands.CreateProduct;
-using Invoria.Modules.Catalog.Contracts.Dtos;
-using Invoria.Modules.Catalog.Domain.Products;
+using FluentAssertions;
+using Invoria.Catalog.Application.Products.Commands.CreateProduct;
+using Invoria.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Domain.Products;
 
-namespace Invoria.Modules.Catalog.Application.Tests.Assertions
+namespace Invoria.Catalog.Application.Tests.Assertions
 {
     public static class ProductAssertionExtensions
     {

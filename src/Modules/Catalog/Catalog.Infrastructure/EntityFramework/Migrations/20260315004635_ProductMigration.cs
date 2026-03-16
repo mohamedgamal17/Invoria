@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Invoria.Modules.Catalog.Infrastructure.EntityFramework.Migrations
+namespace Invoria.Catalog.Infrastructure.EntityFramework.Migrations
 {
     /// <inheritdoc />
     public partial class ProductMigration : Migration

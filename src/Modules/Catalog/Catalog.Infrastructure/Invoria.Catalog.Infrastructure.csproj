@@ -1,12 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
-    <ProjectReference Include="..\Catalog.Domain\Invoria.Modules.Catalog.Domain.csproj" />
-    <ProjectReference Include="..\Catalog.Application\Invoria.Modules.Catalog.Application.csproj" />
+    <ProjectReference Include="..\Catalog.Domain\Invoria.Catalog.Domain.csproj" />
+    <ProjectReference Include="..\Catalog.Application\Invoria.Catalog.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
-    <ProjectReference Include="..\Catalog.Endpoints\Invoria.Modules.Catalog.Endpoints.csproj" />
+    <ProjectReference Include="..\Catalog.Endpoints\Invoria.Catalog.Endpoints.csproj" />
   </ItemGroup>
 
   <ItemGroup>

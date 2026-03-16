@@ -1,7 +1,5 @@
-﻿
-
 using FluentAssertions;
-using Invoria.Modules.Catalog.Endpoints.Products.Requests;
+using Invoria.Catalog.Endpoints.Products.Requests;
 using System.Net.Http.Json;
 
 namespace Invoria.Catalog.Endpoint.Tests.Endpoints

@@ -1,9 +1,9 @@
-﻿using Invoria.BuildingBlocks.EntityFramework.Contexts;
+using Invoria.BuildingBlocks.EntityFramework.Contexts;
 using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
-namespace Invoria.Modules.Catalog.Infrastructure.EntityFramework
+namespace Invoria.Catalog.Infrastructure.EntityFramework
 {
     public class CatalogDbContext : InvoriaDbContext
     {

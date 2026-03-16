@@ -5,7 +5,7 @@ using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
-using Invoria.Modules.Catalog.Infrastructure;
+using Invoria.Catalog.Infrastructure;
 
 namespace Invoria.Api
 {

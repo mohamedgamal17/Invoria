@@ -1,7 +1,7 @@
-﻿using Invoria.BuildingBlocks.Domain.Dtos;
+using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Entities;
 
-namespace Invoria.Modules.Catalog.Contracts.Dtos
+namespace Invoria.Catalog.Contracts.Dtos
 {
     public class ProductDto : AuditedEntityDto
     {

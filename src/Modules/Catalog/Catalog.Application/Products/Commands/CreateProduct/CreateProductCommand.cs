@@ -1,7 +1,7 @@
-﻿using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.Modules.Catalog.Contracts.Dtos;
+using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
+using Invoria.Catalog.Contracts.Dtos;
 
-namespace Invoria.Modules.Catalog.Application.Products.Commands.CreateProduct
+namespace Invoria.Catalog.Application.Products.Commands.CreateProduct
 {
     public class CreateProductCommand : ICommand<ProductDto>
     {

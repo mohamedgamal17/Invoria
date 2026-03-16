@@ -1,11 +1,11 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
-using Invoria.Modules.Catalog.Application.Products.Commands.CreateProduct;
-using Invoria.Modules.Catalog.Application.Tests.Assertions;
-using Invoria.Modules.Catalog.Domain;
-using Invoria.Modules.Catalog.Domain.Products;
+using Invoria.Catalog.Application.Products.Commands.CreateProduct;
+using Invoria.Catalog.Application.Tests.Assertions;
+using Invoria.Catalog.Domain;
+using Invoria.Catalog.Domain.Products;
 using Microsoft.Extensions.DependencyInjection;
-namespace Invoria.Modules.Catalog.Application.Tests.Products
+namespace Invoria.Catalog.Application.Tests.Products
 {
     [TestFixture]
     public  class CreateProductCommandHandlerTests : ProductTestFixture

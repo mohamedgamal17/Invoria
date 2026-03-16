@@ -1,9 +1,9 @@
-﻿using Invoria.BuildingBlocks.EntityFramework.Extensions;
-using Invoria.Modules.Catalog.Domain.Products;
+using Invoria.BuildingBlocks.EntityFramework.Extensions;
+using Invoria.Catalog.Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Invoria.Modules.Catalog.Infrastructure.EntityFramework.Configuration
+namespace Invoria.Catalog.Infrastructure.EntityFramework.Configuration
 {
     public class ProductEntityTypeConfiguration : IEntityTypeConfiguration<Product>
     {

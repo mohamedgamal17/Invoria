@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
-    <ProjectReference Include="..\Catalog.Application\Invoria.Modules.Catalog.Application.csproj" />
+    <ProjectReference Include="..\Catalog.Application\Invoria.Catalog.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

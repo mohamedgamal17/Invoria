@@ -2,12 +2,12 @@ using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.Domain.Repositories;
-using Invoria.Modules.Catalog.Application.Products.Factories;
-using Invoria.Modules.Catalog.Contracts.Dtos;
-using Invoria.Modules.Catalog.Domain;
-using Invoria.Modules.Catalog.Domain.Products;
+using Invoria.Catalog.Application.Products.Factories;
+using Invoria.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Domain;
+using Invoria.Catalog.Domain.Products;
 
-namespace Invoria.Modules.Catalog.Application.Products.Commands.UpdateProduct
+namespace Invoria.Catalog.Application.Products.Commands.UpdateProduct
 {
     public class UpdateProductCommandHandler : IApplicatonRequestHandler<UpdateProductCommand, ProductDto>
     {

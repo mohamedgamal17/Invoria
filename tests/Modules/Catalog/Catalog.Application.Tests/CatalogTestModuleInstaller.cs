@@ -1,15 +1,15 @@
-﻿using Invoria.Application.Tests;
+using Invoria.Application.Tests;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Modules.Catalog.Application.Products.Commands.CreateProduct;
-using Invoria.Modules.Catalog.Contracts.Dtos;
-using Invoria.Modules.Catalog.Infrastructure;
+using Invoria.Catalog.Application.Products.Commands.CreateProduct;
+using Invoria.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Infrastructure;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Application.Tests
+namespace Invoria.Catalog.Application.Tests
 {
     public class CatalogTestModuleInstaller : IModuleInstaller
     {

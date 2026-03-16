@@ -1,6 +1,6 @@
-﻿using System.Reflection;
+using System.Reflection;
 
-namespace Invoria.Modules.Catalog.Infrastructure
+namespace Invoria.Catalog.Infrastructure
 {
     public static class AssemblyReference
     {

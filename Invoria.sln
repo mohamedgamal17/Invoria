@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
@@ -27,21 +27,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{8F8D
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Catalog", "Catalog", "{AB9694BC-F419-46DD-8B96-5D3086153E7B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Domain", "src\Modules\Catalog\Catalog.Domain\Invoria.Modules.Catalog.Domain.csproj", "{08750553-B1D9-443F-8E4B-2EE5916594BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Domain", "src\Modules\Catalog\Catalog.Domain\Invoria.Catalog.Domain.csproj", "{08750553-B1D9-443F-8E4B-2EE5916594BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Application", "src\Modules\Catalog\Catalog.Application\Invoria.Modules.Catalog.Application.csproj", "{7DD0935F-CB4B-4711-81A2-C26C861A08E8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Application", "src\Modules\Catalog\Catalog.Application\Invoria.Catalog.Application.csproj", "{7DD0935F-CB4B-4711-81A2-C26C861A08E8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Endpoints", "src\Modules\Catalog\Catalog.Endpoints\Invoria.Modules.Catalog.Endpoints.csproj", "{EB2234B0-0018-456F-B7DF-E2A53B193702}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Endpoints", "src\Modules\Catalog\Catalog.Endpoints\Invoria.Catalog.Endpoints.csproj", "{EB2234B0-0018-456F-B7DF-E2A53B193702}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Contracts", "src\Modules\Catalog\Catalog.Contracts\Invoria.Modules.Catalog.Contracts.csproj", "{3EEABAC2-3740-4904-93DC-75E981673E03}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Contracts", "src\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj", "{3EEABAC2-3740-4904-93DC-75E981673E03}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{3216E1E0-7019-4319-B813-369DAD98A347}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Catalog", "Catalog", "{0C7F70FC-4694-4221-9FB1-67588E50EB0E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Application.Tests", "tests\Modules\Catalog\Catalog.Application.Tests\Invoria.Modules.Catalog.Application.Tests.csproj", "{EFB7B193-DFC6-4920-AAA3-988D53A71495}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Application.Tests", "tests\Modules\Catalog\Catalog.Application.Tests\Invoria.Catalog.Application.Tests.csproj", "{EFB7B193-DFC6-4920-AAA3-988D53A71495}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Modules.Catalog.Infrastructure", "src\Modules\Catalog\Catalog.Infrastructure\Invoria.Modules.Catalog.Infrastructure.csproj", "{21CE9445-75F1-4DFC-8D1A-8B1871376889}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Catalog.Infrastructure", "src\Modules\Catalog\Catalog.Infrastructure\Invoria.Catalog.Infrastructure.csproj", "{21CE9445-75F1-4DFC-8D1A-8B1871376889}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Endpoints.Tests", "tests\Invoria.Endpoints.Tests\Invoria.Endpoints.Tests.csproj", "{199F22A3-098F-425C-9E9F-D680FC8B5EFB}"
 EndProject

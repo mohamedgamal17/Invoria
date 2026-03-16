@@ -1,8 +1,8 @@
-﻿using Invoria.BuildingBlocks.Application.Factories;
-using Invoria.Modules.Catalog.Contracts.Dtos;
-using Invoria.Modules.Catalog.Domain.Products;
+using Invoria.BuildingBlocks.Application.Factories;
+using Invoria.Catalog.Contracts.Dtos;
+using Invoria.Catalog.Domain.Products;
 
-namespace Invoria.Modules.Catalog.Application.Products.Factories
+namespace Invoria.Catalog.Application.Products.Factories
 {
     public class ProductResposneFactory : ResponseFactory<Product, ProductDto>, IProductResponseFactory
     {

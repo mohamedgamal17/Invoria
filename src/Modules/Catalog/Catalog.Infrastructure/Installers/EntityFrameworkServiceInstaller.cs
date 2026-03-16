@@ -1,13 +1,13 @@
-﻿using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
-using Invoria.Modules.Catalog.Domain;
-using Invoria.Modules.Catalog.Infrastructure.EntityFramework;
-using Invoria.Modules.Catalog.Infrastructure.EntityFramework.Repositories;
+using Invoria.Catalog.Domain;
+using Invoria.Catalog.Infrastructure.EntityFramework;
+using Invoria.Catalog.Infrastructure.EntityFramework.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Infrastructure.Installers
+namespace Invoria.Catalog.Infrastructure.Installers
 {
     public class EntityFrameworkServiceInstaller : IServiceInstaller
     {

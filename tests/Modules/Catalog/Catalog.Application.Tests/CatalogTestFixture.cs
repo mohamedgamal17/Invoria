@@ -1,9 +1,9 @@
-﻿using Invoria.Application.Tests;
+using Invoria.Application.Tests;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Application.Tests
+namespace Invoria.Catalog.Application.Tests
 {
     public class CatalogTestFixture : TestFixture
     {

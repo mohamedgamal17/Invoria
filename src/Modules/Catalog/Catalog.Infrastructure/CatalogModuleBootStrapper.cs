@@ -1,9 +1,9 @@
-﻿using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Modules.Catalog.Infrastructure.EntityFramework;
+using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Catalog.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Infrastructure
+namespace Invoria.Catalog.Infrastructure
 {
     public class CatalogModuleBootStrapper : IModuleBootstrapper
     {

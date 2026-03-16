@@ -1,6 +1,6 @@
-﻿using FluentValidation;
+using FluentValidation;
 
-namespace Invoria.Modules.Catalog.Endpoints.Products.Requests
+namespace Invoria.Catalog.Endpoints.Products.Requests
 {
     public class CreateProductRequest : ProductRequest
     {

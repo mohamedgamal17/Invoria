@@ -3,9 +3,9 @@
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
     <ProjectReference Include="..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
-    <ProjectReference Include="..\Modules\Catalog\Catalog.Endpoints\Invoria.Modules.Catalog.Endpoints.csproj" />
-    <ProjectReference Include="..\Modules\Catalog\Catalog.Contracts\Invoria.Modules.Catalog.Contracts.csproj" />
-    <ProjectReference Include="..\Modules\Catalog\Catalog.Infrastructure\Invoria.Modules.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Catalog\Catalog.Endpoints\Invoria.Catalog.Endpoints.csproj" />
+    <ProjectReference Include="..\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\Catalog\Catalog.Infrastructure\Invoria.Catalog.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

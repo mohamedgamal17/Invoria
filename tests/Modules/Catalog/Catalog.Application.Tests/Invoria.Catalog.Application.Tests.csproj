@@ -40,8 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Application\Invoria.Modules.Catalog.Application.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Infrastructure\Invoria.Modules.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Application\Invoria.Catalog.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Infrastructure\Invoria.Catalog.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Application.Tests\Invoria.Application.Tests.csproj" />
   </ItemGroup>
 

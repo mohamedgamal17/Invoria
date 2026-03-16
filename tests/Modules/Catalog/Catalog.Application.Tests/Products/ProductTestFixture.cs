@@ -1,7 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Application.Tests.Products
+namespace Invoria.Catalog.Application.Tests.Products
 {
     public class ProductTestFixture : CatalogTestFixture
     {

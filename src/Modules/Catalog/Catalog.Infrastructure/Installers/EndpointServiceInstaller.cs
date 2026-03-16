@@ -1,10 +1,10 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Modules.Catalog.Infrastructure.Installers
+namespace Invoria.Catalog.Infrastructure.Installers
 {
     public class EndpointServiceInstaller : IServiceInstaller
     {

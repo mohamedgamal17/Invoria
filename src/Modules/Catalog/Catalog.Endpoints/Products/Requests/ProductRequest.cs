@@ -1,7 +1,7 @@
-﻿using FluentValidation;
-using Invoria.Modules.Catalog.Domain.Products;
+using FluentValidation;
+using Invoria.Catalog.Domain.Products;
 
-namespace Invoria.Modules.Catalog.Endpoints.Products.Requests
+namespace Invoria.Catalog.Endpoints.Products.Requests
 {
     public class ProductRequest 
     {

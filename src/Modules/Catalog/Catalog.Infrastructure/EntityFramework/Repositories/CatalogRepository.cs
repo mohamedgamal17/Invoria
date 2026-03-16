@@ -1,9 +1,9 @@
-﻿
+
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.EntityFramework.Repositories;
-using Invoria.Modules.Catalog.Domain;
+using Invoria.Catalog.Domain;
 
-namespace Invoria.Modules.Catalog.Infrastructure.EntityFramework.Repositories
+namespace Invoria.Catalog.Infrastructure.EntityFramework.Repositories
 {
     public class CatalogRepository<TEntity> : EFCoreRepository<TEntity, CatalogDbContext>, ICatalogRepository<TEntity>
           where TEntity : class, IBaseEntity
