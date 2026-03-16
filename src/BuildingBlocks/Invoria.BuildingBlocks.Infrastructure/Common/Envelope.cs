@@ -4,10 +4,14 @@ namespace Invoria.BuildingBlocks.Infrastructure.Common;
 
 public class Envelope
 {
-    public bool IsSuccess { get; }
-    public ApiProblemDetails? Error { get; }
+    public bool IsSuccess { get; set; }
+    public ApiProblemDetails? Error { get; set; }
 
-    protected Envelope(bool isSuccess, ApiProblemDetails? error)
+    public Envelope()
+    {
+        
+    }
+    public Envelope(bool isSuccess, ApiProblemDetails? error)
     {
         IsSuccess = isSuccess;
         Error = error;
@@ -19,9 +23,13 @@ public class Envelope
 
 public class Envelope<T> : Envelope
 {
-    public T? Result { get; }
+    public T? Result { get; set; }
 
-    private Envelope(bool isSuccess, T? result, ApiProblemDetails? error)
+    public Envelope()
+    {
+        
+    }
+    public Envelope(bool isSuccess, T? result, ApiProblemDetails? error)
         : base(isSuccess, error)
     {
         Result = result;
