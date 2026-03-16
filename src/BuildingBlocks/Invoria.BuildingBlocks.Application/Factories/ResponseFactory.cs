@@ -7,12 +7,16 @@ namespace Invoria.BuildingBlocks.Application.Factories
         where TView : class
         where TDto : class
     {
-        public virtual async Task<PagedResult<TDto>> PreparePagingDto(PagedResult<TView> paging)
+        public virtual async Task<PagingDto<TDto>> PreparePagingDto(PagingDto<TView> paging)
         {
-            var data = await PrepareListDto(paging.Items.ToList());
+            var data = await PrepareListDto(paging.Data.ToList());
 
 
-            var pagedDto = new PagedResult<TDto>(data, paging.Info);
+            var pagedDto = new PagingDto<TDto>
+            {
+                Data = data,
+                Info = paging.Info
+            };
         
 
             return pagedDto;
