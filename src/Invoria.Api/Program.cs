@@ -52,6 +52,5 @@ app.UseHttpsRedirection()
 await app.RunModulesBootstrapperAsync();
 
 app.Run();
-app.Run();
 
 public partial class Program { }
