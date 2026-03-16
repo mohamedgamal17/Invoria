@@ -2,10 +2,10 @@
 using Invoria.Endpoints.Tests;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-namespace Invoria.Catalog.Endpoint.Tests
+namespace Invoria.Catalog.Endpoints.Tests
 {
     [SetUpFixture]
-    public class CatalogTestFixture 
+    public class CatalogTestFixture
     {
         protected HttpClient Client { get; private set; }
         protected IServiceScope Scope { get; private set; }
@@ -24,14 +24,14 @@ namespace Invoria.Catalog.Endpoint.Tests
         [OneTimeSetUp]
         public void Initialize()
         {
-           
+
         }
 
 
         [OneTimeTearDown]
         public async Task OneTimeTearDownAsync()
         {
-            await _factory.DisposeAsync(); 
+            await _factory.DisposeAsync();
 
             Client.Dispose();
 

@@ -2,7 +2,7 @@ using FluentAssertions;
 using Invoria.Catalog.Endpoints.Products.Requests;
 using System.Net.Http.Json;
 
-namespace Invoria.Catalog.Endpoint.Tests.Endpoints
+namespace Invoria.Catalog.Endpoints.Tests.Products
 {
     [TestFixture]
     public class CreateProductEndpointTests : CatalogTestFixture

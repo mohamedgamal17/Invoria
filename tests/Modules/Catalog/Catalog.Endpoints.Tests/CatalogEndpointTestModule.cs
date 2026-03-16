@@ -1,14 +1,14 @@
 ﻿using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Endpoints.Tests;
-using Invoria.Endpoints.Tests.Utilites;
+using Invoria.Endpoints.Tests.Logger;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace Invoria.Catalog.Endpoint.Tests
+namespace Invoria.Catalog.Endpoints.Tests
 {
     public class CatalogEndpointTestModule : IModuleInstaller
     {

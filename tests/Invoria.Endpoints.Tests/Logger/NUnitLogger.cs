@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-namespace Invoria.Endpoints.Tests.Utilites
+namespace Invoria.Endpoints.Tests.Logger
 {
     public class NUnitLogger<T> : ILogger<T>
     {

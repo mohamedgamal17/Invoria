@@ -5,10 +5,10 @@ using Invoria.Catalog.Endpoints.Products.Requests;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Http.Json;
 
-namespace Invoria.Catalog.Endpoint.Tests.Endpoints
+namespace Invoria.Catalog.Endpoints.Tests.Products
 {
     [TestFixture]
-    public class UpdateProductEndpointTests : CatalogTestFixture
+    public class UpdateProductEndpointTests : ProductEndpointTestFixture
     {
         public ICatalogRepository<Product> Product { get; set; }
 
@@ -31,7 +31,7 @@ namespace Invoria.Catalog.Endpoint.Tests.Endpoints
                 Price = 65
             };
 
-            var response = await Client.PutAsJsonAsync("/products/"+ fakeProduct.Id, request);
+            var response = await Client.PutAsJsonAsync("/products/" + fakeProduct.Id, request);
 
             response.IsSuccessStatusCode.Should().BeTrue();
 
@@ -60,7 +60,7 @@ namespace Invoria.Catalog.Endpoint.Tests.Endpoints
         {
             var product = new Product(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 440);
 
-            return await  Product.Add(product);
+            return await Product.Add(product);
         }
     }
 }
