@@ -29,7 +29,7 @@ namespace Invoria.Modules.Catalog.Endpoints.Products
 
         public override async Task HandleAsync(CreateProductRequest req, CancellationToken ct)
         {
-            var validator = Resolve<IValidator<ProductRequest>>();
+            var validator = Resolve<IValidator<CreateProductRequest>>();
 
             var validationResult = validator.Validate(req);
 
