@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.BuildingBlocks.EntityFramework.Contexts;
 
-public abstract class InvoriaDbContext : DbContext
+public abstract class InvoriaDbContext<TContext> : DbContext where TContext : DbContext
 {
     private readonly IDbHookEngine _dbHookEngine;
 
     protected InvoriaDbContext(
-        DbContextOptions options,
+        DbContextOptions<TContext> options,
         IDbHookEngine dbHookEngine) : base(options)
     {
         _dbHookEngine = dbHookEngine;

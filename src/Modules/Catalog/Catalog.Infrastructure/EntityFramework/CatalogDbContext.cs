@@ -5,9 +5,9 @@ using System.Reflection;
 
 namespace Invoria.Catalog.Infrastructure.EntityFramework
 {
-    public class CatalogDbContext : InvoriaDbContext
+    public class CatalogDbContext : InvoriaDbContext<CatalogDbContext>
     {
-        public CatalogDbContext(DbContextOptions options, IDbHookEngine dbHookEngine) : base(options, dbHookEngine)
+        public CatalogDbContext(DbContextOptions<CatalogDbContext> options, IDbHookEngine dbHookEngine) : base(options, dbHookEngine)
         {
 
         }

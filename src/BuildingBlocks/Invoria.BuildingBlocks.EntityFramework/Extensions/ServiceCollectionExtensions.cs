@@ -10,12 +10,23 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInvoriaDbContext<TContext>(
         this IServiceCollection services,
         Action<DbContextOptionsBuilder> configure)
-        where TContext : InvoriaDbContext
+        where TContext : InvoriaDbContext<TContext>
     {
         ArgumentNullException.ThrowIfNull(configure);
 
-        services.AddScoped<IDbHookEngine, DbHookEngine>();
-        services.AddScoped<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
+
+        if(services.SingleOrDefault(x=> x.ServiceType == typeof(IDbHookEngine) ) == null)
+        {
+            services.AddScoped<IDbHookEngine, DbHookEngine>();
+
+        }
+
+
+        if (services.SingleOrDefault(x => x.ServiceType == typeof(IBeforeDbHookSave)) == null)
+        {
+            services.AddScoped<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
+
+        }   
 
         services.AddDbContext<TContext>((sp, options) =>
         {
