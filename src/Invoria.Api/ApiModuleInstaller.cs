@@ -6,6 +6,7 @@ using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Invoria.Catalog.Infrastructure;
+using Invoria.CustomerManagement.Infrastructure;
 
 namespace Invoria.Api
 {
@@ -15,6 +16,8 @@ namespace Invoria.Api
         {
             services.InstallModule<CatalogModuleInstaller>(configuration)
                 .AddApplicationInfrastructure();
+
+            services.InstallModule<CustomerManagementModuleInstaller>(configuration);
 
             services.AddExceptionHandler<GlobalExceptionHandler>();
             services.AddProblemDetails();

@@ -6,6 +6,9 @@
     <ProjectReference Include="..\Modules\Catalog\Catalog.Endpoints\Invoria.Catalog.Endpoints.csproj" />
     <ProjectReference Include="..\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\Modules\Catalog\Catalog.Infrastructure\Invoria.Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Endpoints\Invoria.CustomerManagement.Endpoints.csproj" />
+    <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

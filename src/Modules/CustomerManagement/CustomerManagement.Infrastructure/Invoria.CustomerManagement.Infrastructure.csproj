@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
+    <ProjectReference Include="..\CustomerManagement.Domain\Invoria.CustomerManagement.Domain.csproj" />
+    <ProjectReference Include="..\CustomerManagement.Application\Invoria.CustomerManagement.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\CustomerManagement.Endpoints\Invoria.CustomerManagement.Endpoints.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="EntityFramework\Migrations\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
