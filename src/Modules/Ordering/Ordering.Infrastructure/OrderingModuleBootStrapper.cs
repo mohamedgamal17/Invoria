@@ -1,12 +1,17 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Ordering.Infrastructure.EntityFramework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Ordering.Infrastructure
 {
     public class OrderingModuleBootStrapper : IModuleBootstrapper
     {
-        public Task Bootstrap(IServiceProvider serviceProvider)
+        public async Task Bootstrap(IServiceProvider serviceProvider)
         {
-            return Task.CompletedTask;
+            var dbcontext = serviceProvider.GetRequiredService<OrderingDbContext>();
+
+            await dbcontext.Database.MigrateAsync();
         }
     }
 }

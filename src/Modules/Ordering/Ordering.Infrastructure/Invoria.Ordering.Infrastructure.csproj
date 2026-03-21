@@ -9,10 +9,6 @@
     <ProjectReference Include="..\Ordering.Endpoints\Invoria.Ordering.Endpoints.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="EntityFramework\Migrations\" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

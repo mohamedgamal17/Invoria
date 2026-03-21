@@ -1,5 +1,7 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Ordering.Application.Orders.Services;
+using Invoria.Ordering.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ namespace Invoria.Ordering.Infrastructure.Installers
             services
                 .AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Application.AssemblyReference.Assembly))
                 .RegisterFactoriesFromAssembly(Application.AssemblyReference.Assembly);
+
+            services.AddTransient<IOrderNumberGenerator, OrderNumberGenerator>();
         }
     }
 }
