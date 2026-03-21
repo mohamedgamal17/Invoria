@@ -2,7 +2,7 @@
 
 namespace Invoria.Ordering.Domain.Orders
 {
-    public class OrderItem : AuditedEntity
+    public class OrderItem : Entity
     {   
         public string ProductId { get; private set; }
         public int Quantity { get;private set; }
