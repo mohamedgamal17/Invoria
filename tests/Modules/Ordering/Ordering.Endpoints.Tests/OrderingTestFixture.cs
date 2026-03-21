@@ -1,0 +1,29 @@
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Invoria.Ordering.Endpoints.Tests;
+
+[SetUpFixture]
+public class OrderingTestFixture
+{
+    protected HttpClient Client { get; private set; } = null!;
+    protected IServiceScope Scope { get; private set; } = null!;
+
+    private OrderingModuleWebApplicationFactory _factory = null!;
+
+    public OrderingTestFixture()
+    {
+        _factory = new OrderingModuleWebApplicationFactory();
+
+        Client = _factory.CreateClient();
+        Scope = _factory.Services.CreateScope();
+    }
+
+    [OneTimeTearDown]
+    public async Task OneTimeTearDownAsync()
+    {
+        await _factory.DisposeAsync();
+
+        Client.Dispose();
+        Scope.Dispose();
+    }
+}
