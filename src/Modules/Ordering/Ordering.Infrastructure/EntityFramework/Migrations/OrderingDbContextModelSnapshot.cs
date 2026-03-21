@@ -92,6 +92,19 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.ToTable("OrderItem");
                 });
 
+            modelBuilder.Entity("Invoria.Ordering.Infrastructure.EntityFramework.DailyCounter", b =>
+                {
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LastValue")
+                        .HasColumnType("int");
+
+                    b.HasKey("Date");
+
+                    b.ToTable("DailyCounters", (string)null);
+                });
+
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderItem", b =>
                 {
                     b.HasOne("Invoria.Ordering.Domain.Orders.Order", null)

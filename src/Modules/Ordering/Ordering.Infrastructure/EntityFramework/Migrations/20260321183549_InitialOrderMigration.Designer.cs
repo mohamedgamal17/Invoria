@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(OrderingDbContext))]
-    [Migration("20260321155349_OrderMigration")]
-    partial class OrderMigration
+    [Migration("20260321183549_InitialOrderMigration")]
+    partial class InitialOrderMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,6 +93,19 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("OrderItem");
+                });
+
+            modelBuilder.Entity("Invoria.Ordering.Infrastructure.EntityFramework.DailyCounter", b =>
+                {
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LastValue")
+                        .HasColumnType("int");
+
+                    b.HasKey("Date");
+
+                    b.ToTable("DailyCounters", (string)null);
                 });
 
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderItem", b =>

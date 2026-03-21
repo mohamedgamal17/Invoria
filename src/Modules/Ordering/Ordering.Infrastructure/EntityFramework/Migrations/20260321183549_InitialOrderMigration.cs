@@ -6,11 +6,23 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
 {
     /// <inheritdoc />
-    public partial class OrderMigration : Migration
+    public partial class InitialOrderMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "DailyCounters",
+                columns: table => new
+                {
+                    Date = table.Column<DateOnly>(type: "date", nullable: false),
+                    LastValue = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DailyCounters", x => x.Date);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Order",
                 columns: table => new
@@ -69,6 +81,9 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "DailyCounters");
+
             migrationBuilder.DropTable(
                 name: "OrderItem");
 
