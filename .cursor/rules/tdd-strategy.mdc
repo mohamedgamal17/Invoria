@@ -1,0 +1,29 @@
+---
+description: Enforce project TDD workflow for implementation tasks
+alwaysApply: true
+---
+
+# TDD Strategy
+
+Follow Red-Green-Refactor for feature and bug-fix work unless I explicitly ask otherwise.
+
+## Red
+- Start by writing or updating tests to define expected behavior first.
+- Prefer module test conventions already used in the repo (NUnit, fixture pattern, assertion extensions).
+- If dependencies/handlers are missing, keep tests as explicit red-phase failures (do not skip silently).
+
+## Green
+- Implement the minimum production code needed to satisfy failing tests.
+- Keep changes scoped to what tests require; avoid unrelated refactors in this step.
+
+## Refactor
+- Improve naming/structure only after tests pass.
+- Preserve behavior and keep tests green.
+
+## Execution and Validation
+- Run targeted tests for changed scope first, then broader build/test only if needed.
+- In status updates, state which phase we are in: Red, Green, or Refactor.
+
+## Assertion Style
+- Prefer assertion extension helpers for DTO/domain comparisons where module patterns exist.
+- For DTO assertions, validate top-level properties and nested collections/items explicitly.
