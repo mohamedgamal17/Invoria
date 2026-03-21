@@ -7,6 +7,7 @@ using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Invoria.Catalog.Infrastructure;
 using Invoria.CustomerManagement.Infrastructure;
+using Invoria.Ordering.Infrastructure;
 
 namespace Invoria.Api
 {
@@ -18,6 +19,7 @@ namespace Invoria.Api
                 .AddApplicationInfrastructure();
 
             services.InstallModule<CustomerManagementModuleInstaller>(configuration);
+            services.InstallModule<OrderingModuleInstaller>(configuration);
 
             services.AddExceptionHandler<GlobalExceptionHandler>();
             services.AddProblemDetails();

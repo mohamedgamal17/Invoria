@@ -9,6 +9,7 @@
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Endpoints\Invoria.CustomerManagement.Endpoints.csproj" />
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Ordering\Ordering.Infrastructure\Invoria.Ordering.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
