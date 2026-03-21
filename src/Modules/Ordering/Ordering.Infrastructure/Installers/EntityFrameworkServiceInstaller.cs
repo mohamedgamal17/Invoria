@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
+using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Infrastructure.EntityFramework.Repositories;
@@ -21,6 +22,7 @@ namespace Invoria.Ordering.Infrastructure.Installers
             });
 
             services.AddTransient<ICounterRepository, CounterRepository>();
+            services.AddTransient(typeof(IOrderingRepository<>), typeof(OrderingRepository<>));
         }
     }
 }
