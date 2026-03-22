@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Contracts.Dtos;
@@ -34,6 +35,39 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             {
                 var expected = resolveExpectedProduct(command.Items[i].ProductId);
                 dto.Items[i].AssertOrderItemDto(command.Items[i], expected);
+            }
+        }
+
+        public static void AssertPagingMetadata(
+            this PagingDto<OrderDto> page,
+            int expectedSkip,
+            int expectedLength,
+            long expectedTotalCount)
+        {
+            page.Info.Skip.Should().Be(expectedSkip);
+            page.Info.Length.Should().Be(expectedLength);
+            page.Info.TotalCount.Should().Be(expectedTotalCount);
+        }
+
+        public static void AssertPageDataCount(this PagingDto<OrderDto> page, int expectedCount)
+        {
+            page.Data.Count().Should().Be(expectedCount);
+        }
+
+        /// <summary>
+        /// Asserts paging info and optionally the number of items in <see cref="PagingDto{T}.Data"/>.
+        /// </summary>
+        public static void AssertPagingDto(
+            this PagingDto<OrderDto> page,
+            int expectedSkip,
+            int expectedLength,
+            long expectedTotalCount,
+            int? expectedDataCount = null)
+        {
+            page.AssertPagingMetadata(expectedSkip, expectedLength, expectedTotalCount);
+            if (expectedDataCount.HasValue)
+            {
+                page.AssertPageDataCount(expectedDataCount.Value);
             }
         }
 
