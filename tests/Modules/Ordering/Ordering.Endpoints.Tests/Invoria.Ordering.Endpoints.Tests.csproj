@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
@@ -39,6 +40,7 @@
     <ProjectReference Include="..\..\..\..\src\Invoria.Api\Invoria.Api.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Endpoints\Invoria.Ordering.Endpoints.csproj" />
+    <ProjectReference Include="..\Invoria.Ordering.Tests.Fakes\Invoria.Ordering.Tests.Fakes.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Endpoints.Tests\Invoria.Endpoints.Tests.csproj" />
   </ItemGroup>
 

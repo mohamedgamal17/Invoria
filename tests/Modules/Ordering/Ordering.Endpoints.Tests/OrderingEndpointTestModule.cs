@@ -1,6 +1,9 @@
+using Invoria.Catalog.Contracts.Services;
 using Invoria.Endpoints.Tests;
 using Invoria.Endpoints.Tests.Logger;
+using Invoria.Ordering.Tests.Fakes;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -12,20 +15,17 @@ public class OrderingModuleWebApplicationFactory : TestWebApplicationFactory
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var dbName = $"Invoria_OrderingEndpointsTests_{Guid.NewGuid():N}";
-        var connectionString =
-            $"Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog={dbName};Integrated Security=True;Trust Server Certificate=True;MultipleActiveResultSets=true";
-
-        builder.ConfigureAppConfiguration((_, config) =>
-        {
-            config.AddInMemoryCollection(
-                new Dictionary<string, string?> { ["ConnectionStrings:Default"] = connectionString });
-        });
-
+    
         builder.ConfigureServices(services =>
         {
             services.RemoveAll(typeof(ILogger<>));
             services.AddSingleton(typeof(ILogger<>), typeof(NUnitLogger<>));
+        });
+
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll(typeof(IProductService));
+            services.AddSingleton<IProductService, EmptyListProductService>();
         });
     }
 }
