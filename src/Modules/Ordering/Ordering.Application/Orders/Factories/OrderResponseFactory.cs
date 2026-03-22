@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.Application.Factories;
+using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.Ordering.Contracts.Dtos;
@@ -13,6 +14,39 @@ namespace Invoria.Ordering.Application.Orders.Factories
         public OrderResponseFactory(IProductService productService)
         {
             _productService = productService;
+        }
+
+        public async Task<PagingDto<OrderDto>> PreparePagingDto(
+            PagingDto<Order> paging,
+            bool includeOrderItems,
+            CancellationToken cancellationToken = default)
+        {
+            if (includeOrderItems)
+            {
+                return await base.PreparePagingDto(paging);
+            }
+
+            var data = paging.Data.Select(MapToSummaryDto).ToList();
+            return new PagingDto<OrderDto>
+            {
+                Data = data,
+                Info = paging.Info
+            };
+        }
+
+        private OrderDto MapToSummaryDto(Order view)
+        {
+            var dto = new OrderDto
+            {
+                Id = view.Id,
+                OrderNumber = view.OrderNumber,
+                CustomerId = view.CustomerId,
+                Items = new List<OrderItemDto>()
+            };
+
+            MapAudited(view, dto);
+
+            return dto;
         }
 
         public override async Task<OrderDto> PrepareDto(Order view)

@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.Application.Factories;
+using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Domain.Orders;
 
@@ -6,5 +7,9 @@ namespace Invoria.Ordering.Application.Orders.Factories
 {
     public interface IOrderResponseFactory : IResponseFactory<Order, OrderDto>
     {
+        Task<PagingDto<OrderDto>> PreparePagingDto(
+            PagingDto<Order> paging,
+            bool includeOrderItems,
+            CancellationToken cancellationToken = default);
     }
 }
