@@ -45,6 +45,7 @@ public class GetOrderByIdEndpointTests : OrderingTestFixture
         envelope.Result!.Id.Should().Be(createdOrder.Id);
         envelope.Result.OrderNumber.Should().Be(createdOrder.OrderNumber);
         envelope.Result.CustomerId.Should().Be(customerId);
+        envelope.Result.Customer.Should().BeNull();
         envelope.Result.Items.Should().HaveCount(1);
         envelope.Result.Items[0].ProductId.Should().Be(productId);
         envelope.Result.Items[0].Quantity.Should().Be(2);

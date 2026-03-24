@@ -61,6 +61,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         {
             var dto = page.Data.Single(d => d.Id == order.Id);
             dto.CustomerId.Should().Be(order.CustomerId);
+            dto.AssertOrderCustomer(expectedCustomer: null);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.Items.Should().BeEmpty();
         }
@@ -84,6 +85,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         {
             var dto = page.Data.Single(d => d.Id == order.Id);
             dto.CustomerId.Should().Be(order.CustomerId);
+            dto.AssertOrderCustomer(expectedCustomer: null);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.Items.Should().HaveCount(order.Items.Count);
             foreach (var item in order.Items)
@@ -163,6 +165,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         {
             var dto = page.Data.Single(d => d.Id == order.Id);
             dto.OrderNumber.Should().Be(order.OrderNumber);
+            dto.AssertOrderCustomer(expectedCustomer: null);
             dto.Items.Should().BeEmpty();
         }
     }
@@ -222,6 +225,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         page.AssertPagingDto(0, 10, 1, 1);
         var dto = page.Data.Single();
         dto.Id.Should().Be(orderAlpha.Id);
+        dto.AssertOrderCustomer(expectedCustomer: null);
         dto.Items.Should().HaveCount(1);
         dto.Items[0].ProductId.Should().Be(pidAlpha);
         dto.Items[0].Quantity.Should().Be(3);

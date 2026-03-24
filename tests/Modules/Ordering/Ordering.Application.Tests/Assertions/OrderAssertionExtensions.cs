@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Dtos;
+using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Domain.Orders;
@@ -9,11 +10,12 @@ namespace Invoria.Ordering.Application.Tests.Assertions
 {
     public static class OrderAssertionExtensions
     {
-        public static void AssertOrderDto(this OrderDto dto, Order order)
+        public static void AssertOrderDto(this OrderDto dto, Order order, CustomerDto? expectedCustomer = null)
         {
             dto.Id.Should().Be(order.Id);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.CustomerId.Should().Be(order.CustomerId);
+            dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(order.Items.Count);
             foreach (var item in order.Items)
             {
@@ -29,11 +31,12 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.Price.Should().Be(item.Price);
         }
 
-        public static void AssertOrderDto(this OrderDto dto, CreateOrderCommand command)
+        public static void AssertOrderDto(this OrderDto dto, CreateOrderCommand command, CustomerDto? expectedCustomer = null)
         {
             dto.Id.Should().NotBeNullOrWhiteSpace();
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
+            dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
 
             for (int i = 0; i < command.Items.Count; i++)
@@ -45,17 +48,33 @@ namespace Invoria.Ordering.Application.Tests.Assertions
         public static void AssertOrderDto(
             this OrderDto dto,
             CreateOrderCommand command,
-            Func<string, ProductDto?> resolveExpectedProduct)
+            Func<string, ProductDto?> resolveExpectedProduct,
+            CustomerDto? expectedCustomer = null)
         {
             dto.Id.Should().NotBeNullOrWhiteSpace();
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
+            dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
 
             for (int i = 0; i < command.Items.Count; i++)
             {
                 var expected = resolveExpectedProduct(command.Items[i].ProductId);
                 dto.Items[i].AssertOrderItemDto(command.Items[i], expected);
+            }
+        }
+
+        public static void AssertOrderCustomer(this OrderDto dto, CustomerDto? expectedCustomer)
+        {
+            if (expectedCustomer is null)
+            {
+                dto.Customer.Should().BeNull();
+            }
+            else
+            {
+                dto.Customer.Should().NotBeNull();
+                dto.Customer!.Id.Should().Be(expectedCustomer.Id);
+                dto.Customer.Name.Should().Be(expectedCustomer.Name);
             }
         }
 

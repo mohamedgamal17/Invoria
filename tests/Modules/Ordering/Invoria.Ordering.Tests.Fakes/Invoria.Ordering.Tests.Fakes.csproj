@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Domain\Invoria.Ordering.Domain.csproj" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 using Invoria.Catalog.Contracts.Services;
+using Invoria.CustomerManagement.Contracts.Services;
 using Invoria.Endpoints.Tests;
 using Invoria.Endpoints.Tests.Logger;
 using Invoria.Ordering.Tests.Fakes;
@@ -26,6 +27,9 @@ public class OrderingModuleWebApplicationFactory : TestWebApplicationFactory
         {
             services.RemoveAll(typeof(IProductService));
             services.AddSingleton<IProductService, EmptyListProductService>();
+
+            services.RemoveAll(typeof(ICustomerService));
+            services.AddSingleton<ICustomerService, EmptyListCustomerService>();
         });
     }
 }

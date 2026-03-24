@@ -40,6 +40,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Application\Invoria.Ordering.Application.csproj" />
     <ProjectReference Include="..\Invoria.Ordering.Tests.Fakes\Invoria.Ordering.Tests.Fakes.csproj" />

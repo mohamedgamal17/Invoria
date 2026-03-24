@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Services;
+using Invoria.CustomerManagement.Contracts.Services;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;
@@ -14,7 +15,8 @@ public class OrderResponseFactoryTests : OrderingTestFixture
     [SetUp]
     public void ResetProductServiceCounters()
     {
-        Counter.ResetCounters();
+        ProductCounter.ResetCounters();
+        CustomerCounter.ResetCounters();
     }
 
     protected override void RegisterProductService(IServiceCollection services)
@@ -23,8 +25,17 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         services.AddSingleton<IProductService>(sp => sp.GetRequiredService<CountingListProductsProductService>());
     }
 
-    private CountingListProductsProductService Counter =>
+    protected override void RegisterCustomerService(IServiceCollection services)
+    {
+        services.AddSingleton<CountingListCustomersCustomerService>();
+        services.AddSingleton<ICustomerService>(sp => sp.GetRequiredService<CountingListCustomersCustomerService>());
+    }
+
+    private CountingListProductsProductService ProductCounter =>
         ServiceProvider.GetRequiredService<CountingListProductsProductService>();
+
+    private CountingListCustomersCustomerService CustomerCounter =>
+        ServiceProvider.GetRequiredService<CountingListCustomersCustomerService>();
 
     private IOrderResponseFactory Factory =>
         ServiceProvider.GetRequiredService<IOrderResponseFactory>();
@@ -49,7 +60,8 @@ public class OrderResponseFactoryTests : OrderingTestFixture
 
         var dtos = await Factory.PrepareListDto(orders);
 
-        Counter.ListProductsByIdsCallCount.Should().Be(1);
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(1);
+        CustomerCounter.ListCustomersByIdsCallCount.Should().Be(1);
         dtos.Should().HaveCount(3);
 
         dtos[0].Items.Should().HaveCount(2);
@@ -69,7 +81,8 @@ public class OrderResponseFactoryTests : OrderingTestFixture
     {
         await Factory.PrepareListDto(new List<Order>());
 
-        Counter.ListProductsByIdsCallCount.Should().Be(0);
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(0);
+        CustomerCounter.ListCustomersByIdsCallCount.Should().Be(0);
     }
 
     [Test]
@@ -92,8 +105,31 @@ public class OrderResponseFactoryTests : OrderingTestFixture
 
         var pagedDto = await Factory.PreparePagingDto(paging);
 
-        Counter.ListProductsByIdsCallCount.Should().Be(1);
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(1);
+        CustomerCounter.ListCustomersByIdsCallCount.Should().Be(1);
         pagedDto.Data.Should().HaveCount(2);
         pagedDto.Data.Should().OnlyContain(d => d.Items.All(i => i.Product!.Id == pid));
+    }
+
+    [Test]
+    public async Task PreparePagingDto_summary_without_line_items_should_call_ListCustomersByIdsAsync_once()
+    {
+        var customerId = Guid.NewGuid().ToString();
+        var order1 = new Order("A", customerId);
+        var order2 = new Order("B", customerId);
+
+        var paging = new PagingDto<Order>
+        {
+            Data = new List<Order> { order1, order2 },
+            Info = new PagingInfoDto { Length = 2, Skip = 0, TotalCount = 2 }
+        };
+
+        var pagedDto = await Factory.PreparePagingDto(paging, includeOrderItems: false);
+
+        CustomerCounter.ListCustomersByIdsCallCount.Should().Be(1);
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(0);
+        pagedDto.Data.Should().HaveCount(2);
+        pagedDto.Data.Should().OnlyContain(d => d.Customer!.Id == customerId);
+        pagedDto.Data.Should().OnlyContain(d => d.Items.Count == 0);
     }
 }
