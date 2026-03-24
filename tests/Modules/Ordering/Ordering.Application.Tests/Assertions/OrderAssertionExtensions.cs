@@ -3,6 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
+using Invoria.Ordering.Application.Orders.Commands.UpdateOrder;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Domain.Orders;
 
@@ -37,6 +38,17 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
             dto.AssertOrderCustomer(expectedCustomer);
+            dto.Items.Should().HaveCount(command.Items.Count);
+
+            for (int i = 0; i < command.Items.Count; i++)
+            {
+                dto.Items[i].AssertOrderItemDto(command.Items[i], expectedProduct: null);
+            }
+        }
+
+        public static void AssertOrderDto(this OrderDto dto, UpdateOrderCommand command)
+        {
+            dto.Id.Should().Be(command.Id);
             dto.Items.Should().HaveCount(command.Items.Count);
 
             for (int i = 0; i < command.Items.Count; i++)
