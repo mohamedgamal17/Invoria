@@ -4,10 +4,12 @@
     {
         Pending = 5 ,
 
-        Finalized = 10,
+        Accepted = 10,
 
         Completed = 15,
 
-        Cancelled = 20
+        Cancelled = 20,
+
+        Reopened = 25
     }
 }
