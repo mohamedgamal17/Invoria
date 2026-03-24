@@ -1,4 +1,4 @@
-﻿using Ardalis.GuardClauses;
+using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
 
 namespace Invoria.Ordering.Domain.Orders
@@ -34,10 +34,13 @@ namespace Invoria.Ordering.Domain.Orders
                 throw new InvalidOperationException("Order items must have one or more item.");
             }
 
-            if(Status == OrderStatus.Pending)
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
             {
-                Items = items;
+                throw new InvalidOperationException(
+                    "Order items can only be updated when the order is Pending or Reopened.");
             }
+
+            Items = items;
         }
     }
 }
