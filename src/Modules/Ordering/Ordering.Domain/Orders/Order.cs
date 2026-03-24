@@ -42,5 +42,16 @@ namespace Invoria.Ordering.Domain.Orders
 
             Items = items;
         }
+
+        public void Accept()
+        {
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be accepted when it is Pending or Reopened.");
+            }
+
+            Status = OrderStatus.Accepted;
+        }
     }
 }
