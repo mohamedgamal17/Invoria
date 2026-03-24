@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="..\..\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
+    <ProjectReference Include="..\..\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
