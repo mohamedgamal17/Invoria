@@ -64,5 +64,16 @@ namespace Invoria.Ordering.Domain.Orders
 
             Status = OrderStatus.Reopened;
         }
+
+        public void Complete()
+        {
+            if (Status != OrderStatus.Accepted)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be completed when it is Accepted.");
+            }
+
+            Status = OrderStatus.Completed;
+        }
     }
 }
