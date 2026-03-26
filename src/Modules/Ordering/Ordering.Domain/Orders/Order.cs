@@ -65,6 +65,17 @@ namespace Invoria.Ordering.Domain.Orders
             Status = OrderStatus.Reopened;
         }
 
+        public void Cancel()
+        {
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be cancelled when the order is Pending or Reopened.");
+            }
+
+            Status = OrderStatus.Cancelled;
+        }
+
         public void Complete()
         {
             if (Status != OrderStatus.Accepted)
