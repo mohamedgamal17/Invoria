@@ -10,6 +10,8 @@
 
         Cancelled = 20,
 
-        Reopened = 25
+        Reopened = 25,
+
+        Refused = 30
     }
 }

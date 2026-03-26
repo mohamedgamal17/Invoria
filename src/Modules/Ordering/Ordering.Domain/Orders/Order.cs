@@ -76,6 +76,17 @@ namespace Invoria.Ordering.Domain.Orders
             Status = OrderStatus.Cancelled;
         }
 
+        public void Refuse()
+        {
+            if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be refused when it is Accepted or Completed.");
+            }
+
+            Status = OrderStatus.Refused;
+        }
+
         public void Complete()
         {
             if (Status != OrderStatus.Accepted)
