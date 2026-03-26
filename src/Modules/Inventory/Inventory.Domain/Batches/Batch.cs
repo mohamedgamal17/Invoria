@@ -15,17 +15,15 @@ public class Batch : AuditedAggregateRoot
     {
     }
 
-    public Batch(string productId, int quantity, int reservedQuantity, decimal purchasePrice)
+    public Batch(string productId, int quantity,  decimal purchasePrice)
     {
         Guard.Against.NullOrWhiteSpace(productId);
         Guard.Against.OutOfRange(productId.Length, nameof(productId), 1, BatchTableConsts.ProductIdMaxLength);
         Guard.Against.Negative(quantity);
-        Guard.Against.Negative(reservedQuantity);
         Guard.Against.NegativeOrZero(purchasePrice);
 
         ProductId = productId;
         Quantity = quantity;
-        ReservedQuantity = reservedQuantity;
         PurchasePrice = purchasePrice;
     }
 }

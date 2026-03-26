@@ -10,14 +10,12 @@ public class BatchTests
     {
         var productId = Guid.NewGuid().ToString();
         const int quantity = 10;
-        const int reservedQuantity = 2;
         const decimal purchasePrice = 25.5m;
 
-        var batch = new Batch(productId, quantity, reservedQuantity, purchasePrice);
+        var batch = new Batch(productId, quantity,  purchasePrice);
 
         Assert.That(batch.ProductId, Is.EqualTo(productId));
         Assert.That(batch.Quantity, Is.EqualTo(quantity));
-        Assert.That(batch.ReservedQuantity, Is.EqualTo(reservedQuantity));
         Assert.That(batch.PurchasePrice, Is.EqualTo(purchasePrice));
     }
 
@@ -27,7 +25,7 @@ public class BatchTests
     [TestCase(" ")]
     public void Should_throw_when_product_id_is_invalid(string? productId)
     {
-        var exception = Assert.Catch<ArgumentException>(() => new Batch(productId!, 1, 0, 10m));
+        var exception = Assert.Catch<ArgumentException>(() => new Batch(productId!, 1,  10m));
 
         Assert.That(exception, Is.Not.Null);
     }
@@ -37,7 +35,7 @@ public class BatchTests
     {
         var productId = new string('a', BatchTableConsts.ProductIdMaxLength + 1);
 
-        var exception = Assert.Catch<ArgumentException>(() => new Batch(productId, 1, 0, 10m));
+        var exception = Assert.Catch<ArgumentException>(() => new Batch(productId, 1,  10m));
 
         Assert.That(exception, Is.Not.Null);
     }
@@ -45,25 +43,18 @@ public class BatchTests
     [Test]
     public void Should_throw_when_quantity_is_negative()
     {
-        var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", -1, 0, 10m));
+        var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", -1,  10m));
 
         Assert.That(exception, Is.Not.Null);
     }
 
-    [Test]
-    public void Should_throw_when_reserved_quantity_is_negative()
-    {
-        var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", 1, -1, 10m));
-
-        Assert.That(exception, Is.Not.Null);
-    }
 
     [Test]
     [TestCase(0)]
     [TestCase(-1)]
     public void Should_throw_when_purchase_price_is_less_than_or_equal_to_zero(decimal purchasePrice)
     {
-        var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", 1, 0, purchasePrice));
+        var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", 1, purchasePrice));
 
         Assert.That(exception, Is.Not.Null);
     }
