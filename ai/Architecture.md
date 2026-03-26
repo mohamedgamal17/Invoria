@@ -5,6 +5,7 @@ This document describes the current architecture of the Invoria solution based o
 - **Host/API**: `Invoria.Api`
 - **Shared building blocks**: `Invoria.BuildingBlocks.*`
 - **Business module**: Catalog (`Invoria.Catalog.*`)
+- **Business module**: Inventory (`Invoria.Inventory.*`) - skeleton wired (no domain entities/endpoints yet)
 - **Tests**: `Invoria.*.Tests`, including Catalog-specific application and endpoint tests
 
 The sections below list only modules, layers, classes, and relationships that exist in the repository.
@@ -38,6 +39,14 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Infrastructure: `Invoria.Catalog.Infrastructure`
   - Presentation / Endpoints: `Invoria.Catalog.Endpoints`
   - Contracts: `Invoria.Catalog.Contracts`
+
+- **Inventory Module**
+  - Domain: `Invoria.Inventory.Domain`
+  - Application: `Invoria.Inventory.Application`
+  - Infrastructure: `Invoria.Inventory.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Inventory.Endpoints`
+  - Contracts: `Invoria.Inventory.Contracts`
+  - Current scope: module wiring and bootstrap only (no inventory aggregate/endpoints yet)
 
 - **Tests**
   - `Invoria.Application.Tests`
@@ -95,7 +104,7 @@ flowchart LR
 ### Responsibilities
 
 - Bootstrap the application and configure shared infrastructure.
-- Install functional modules (currently, Catalog).
+- Install functional modules (currently, Catalog, CustomerManagement, Ordering, and Inventory skeleton).
 - Configure FastEndpoints discovery and Swagger.
 - Register global exception handling and problem details.
 
@@ -104,7 +113,7 @@ flowchart LR
 - **`ApiModuleInstaller`**
   - Location: `src/Invoria.Api/ApiModuleInstaller.cs`
   - Implements `IModuleInstaller` from building blocks.
-  - Installs the Catalog module via `services.InstallModule<CatalogModuleInstaller>(configuration)`.
+  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog and Inventory.
   - Adds shared application infrastructure via `AddApplicationInfrastructure()`.
   - Registers global exception handler `GlobalExceptionHandler` and `ProblemDetails`.
   - Configures Swagger using `SwaggerDocument`.
