@@ -1,4 +1,5 @@
 using Invoria.Inventory.Domain.Batches;
+using Invoria.Inventory.Application.Tests.Assertions;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Batches;
 
@@ -14,9 +15,7 @@ public class BatchTests
 
         var batch = new Batch(productId, quantity,  purchasePrice);
 
-        Assert.That(batch.ProductId, Is.EqualTo(productId));
-        Assert.That(batch.Quantity, Is.EqualTo(quantity));
-        Assert.That(batch.PurchasePrice, Is.EqualTo(purchasePrice));
+        batch.AssertBatch(productId, quantity, purchasePrice);
     }
 
     [Test]
