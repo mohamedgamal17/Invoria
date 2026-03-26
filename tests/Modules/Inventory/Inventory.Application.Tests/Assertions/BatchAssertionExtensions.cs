@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
+using Invoria.Inventory.Application.Batches.Commands.UpdateBatch;
 using Invoria.Inventory.Contracts.Dtos;
 using Invoria.Inventory.Domain.Batches;
 
@@ -38,6 +39,28 @@ public static class BatchAssertionExtensions
     {
         dto.Id.Should().NotBeNullOrWhiteSpace();
         dto.ProductId.Should().Be(command.ProductId);
+        dto.Quantity.Should().Be(command.Quantity);
+        dto.PurchasePrice.Should().Be(command.PurchasePrice);
+        dto.ReservedQuantity.Should().Be(reservedQuantity);
+    }
+
+    public static void AssertUpdateBatchCommand(
+        this Batch batch,
+        UpdateBatchCommand command,
+        string productId,
+        int reservedQuantity = 0)
+    {
+        batch.AssertBatch(productId, command.Quantity, command.PurchasePrice, reservedQuantity);
+    }
+
+    public static void AssertBatchDto(
+        this BatchDto dto,
+        UpdateBatchCommand command,
+        string productId,
+        int reservedQuantity = 0)
+    {
+        dto.Id.Should().NotBeNullOrWhiteSpace();
+        dto.ProductId.Should().Be(productId);
         dto.Quantity.Should().Be(command.Quantity);
         dto.PurchasePrice.Should().Be(command.PurchasePrice);
         dto.ReservedQuantity.Should().Be(reservedQuantity);
