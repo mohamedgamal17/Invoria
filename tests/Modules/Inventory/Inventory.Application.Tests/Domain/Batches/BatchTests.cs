@@ -49,14 +49,14 @@ public class BatchTests
     }
 
     [Test]
-    public void Should_update_batch_with_valid_values()
+    public void Should_update_quantity_with_valid_value()
     {
         var batch = new Batch("product-1", 10, 10m);
 
-        batch.Update(0, 20m);
+        batch.UpdateQuantity(0);
 
         batch.Quantity.Should().Be(0);
-        batch.PurchasePrice.Should().Be(20m);
+        batch.PurchasePrice.Should().Be(10m);
     }
 
     [Test]
@@ -64,9 +64,20 @@ public class BatchTests
     {
         var batch = new Batch("product-1", 10, 10m);
 
-        var exception = Assert.Throws<ArgumentException>(() => batch.Update(-1, 20m));
+        var exception = Assert.Throws<ArgumentException>(() => batch.UpdateQuantity(-1));
 
         Assert.That(exception, Is.Not.Null);
+    }
+
+    [Test]
+    public void Should_update_purchase_price_with_valid_value()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+
+        batch.UpdatePurchasePrice(20m);
+
+        batch.Quantity.Should().Be(10);
+        batch.PurchasePrice.Should().Be(20m);
     }
 
     [Test]
@@ -76,7 +87,7 @@ public class BatchTests
     {
         var batch = new Batch("product-1", 10, 10m);
 
-        var exception = Assert.Throws<ArgumentException>(() => batch.Update(0, purchasePrice));
+        var exception = Assert.Throws<ArgumentException>(() => batch.UpdatePurchasePrice(purchasePrice));
 
         Assert.That(exception, Is.Not.Null);
     }
