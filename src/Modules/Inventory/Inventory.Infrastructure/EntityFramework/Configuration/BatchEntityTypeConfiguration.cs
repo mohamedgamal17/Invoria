@@ -23,6 +23,7 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Configuration
             builder.Property(x => x.ReservedQuantity);
             builder.Property(x => x.PurchasePrice)
                 .HasPrecision(18, 2);
+            builder.Property(x => x.State);
 
             builder.MapAudited();
         }
