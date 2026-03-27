@@ -29,7 +29,8 @@ public class UpdateBatchCommandHandler : IApplicatonRequestHandler<UpdateBatchCo
             return Result.Failure<BatchDto>(new NotFoundException($"Batch with ID {request.Id} not found"));
         }
 
-        batch.Update(request.Quantity, request.PurchasePrice);
+        batch.UpdateQuantity(request.Quantity);
+        batch.UpdatePurchasePrice(request.PurchasePrice);
         await _batchRepository.Update(batch, cancellationToken);
 
         var dto = await _batchResponseFactory.PrepareDto(batch);

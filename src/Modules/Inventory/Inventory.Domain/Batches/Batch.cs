@@ -27,12 +27,17 @@ public class Batch : AuditedAggregateRoot
         PurchasePrice = purchasePrice;
     }
 
-    public void Update(int quantity, decimal purchasePrice)
+    public void UpdateQuantity(int quantity)
     {
         Guard.Against.Negative(quantity);
-        Guard.Against.NegativeOrZero(purchasePrice);
 
         Quantity = quantity;
+    }
+
+    public void UpdatePurchasePrice(decimal purchasePrice)
+    {
+        Guard.Against.NegativeOrZero(purchasePrice);
+
         PurchasePrice = purchasePrice;
     }
 }
