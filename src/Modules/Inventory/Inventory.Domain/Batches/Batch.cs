@@ -26,6 +26,7 @@ public class Batch : AuditedAggregateRoot
         ProductId = productId;
         Quantity = quantity;
         PurchasePrice = purchasePrice;
+        State = quantity > 0 ? BatchState.Active : BatchState.Depleted;
     }
 
     public void UpdateQuantity(int quantity)
@@ -33,6 +34,13 @@ public class Batch : AuditedAggregateRoot
         Guard.Against.Negative(quantity);
 
         Quantity = quantity;
+
+        if (State == BatchState.Disabled)
+        {
+            return;
+        }
+
+        State = quantity > 0 ? BatchState.Active : BatchState.Depleted;
     }
 
     public void UpdatePurchasePrice(decimal purchasePrice)
@@ -40,5 +48,30 @@ public class Batch : AuditedAggregateRoot
         Guard.Against.NegativeOrZero(purchasePrice);
 
         PurchasePrice = purchasePrice;
+    }
+
+    public void Disable()
+    {
+        if (State != BatchState.Active)
+        {
+            throw new InvalidOperationException("Batch can only be disabled when it is Active.");
+        }
+
+        State = BatchState.Disabled;
+    }
+
+    public void Enable()
+    {
+        if (State != BatchState.Disabled)
+        {
+            throw new InvalidOperationException("Batch can only be enabled when it is Disabled.");
+        }
+
+        if (Quantity <= 0)
+        {
+            throw new InvalidOperationException("Batch cannot be enabled when it has zero quantity.");
+        }
+
+        State = BatchState.Active;
     }
 }
