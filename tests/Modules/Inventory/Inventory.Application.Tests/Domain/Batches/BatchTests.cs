@@ -17,6 +17,16 @@ public class BatchTests
         var batch = new Batch(productId, quantity,  purchasePrice);
 
         batch.AssertBatch(productId, quantity, purchasePrice);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void Should_create_batch_as_depleted_when_quantity_is_zero()
+    {
+        var batch = new Batch(Guid.NewGuid().ToString(), 0, 10m);
+
+        batch.Quantity.Should().Be(0);
+        batch.State.Should().Be(BatchState.Depleted);
     }
 
     [Test]
@@ -57,6 +67,73 @@ public class BatchTests
 
         batch.Quantity.Should().Be(0);
         batch.PurchasePrice.Should().Be(10m);
+        batch.State.Should().Be(BatchState.Depleted);
+    }
+
+    [Test]
+    public void Should_transition_from_depleted_to_active_when_quantity_becomes_positive()
+    {
+        var batch = new Batch("product-1", 0, 10m);
+
+        batch.UpdateQuantity(5);
+
+        batch.Quantity.Should().Be(5);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void Should_disable_batch_when_active()
+    {
+        var batch = new Batch("product-1", 1, 10m);
+
+        batch.Disable();
+
+        batch.State.Should().Be(BatchState.Disabled);
+    }
+
+    [Test]
+    public void Should_throw_when_disabling_batch_that_is_not_active()
+    {
+        var batch = new Batch("product-1", 0, 10m);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => batch.Disable());
+
+        Assert.That(exception, Is.Not.Null);
+    }
+
+    [Test]
+    public void Should_enable_batch_when_disabled_and_has_positive_quantity()
+    {
+        var batch = new Batch("product-1", 1, 10m);
+        batch.Disable();
+
+        batch.Enable();
+
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void Should_throw_when_enabling_batch_with_zero_quantity()
+    {
+        var batch = new Batch("product-1", 1, 10m);
+        batch.Disable();
+        batch.UpdateQuantity(0);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => batch.Enable());
+
+        Assert.That(exception, Is.Not.Null);
+    }
+
+    [Test]
+    public void Should_not_change_state_when_updating_quantity_while_disabled()
+    {
+        var batch = new Batch("product-1", 1, 10m);
+        batch.Disable();
+
+        batch.UpdateQuantity(0);
+
+        batch.State.Should().Be(BatchState.Disabled);
+        batch.Quantity.Should().Be(0);
     }
 
     [Test]

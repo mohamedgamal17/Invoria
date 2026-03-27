@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Application.Tests.Assertions;
 using Invoria.Inventory.Domain.Batches;
@@ -30,5 +31,6 @@ public class CreateBatchCommandHandlerTests : BatchTestFixture
 
         Assert.That(batch, Is.Not.Null);
         batch!.AssertCreateBatchCommand(command);
+        batch.State.Should().Be(BatchState.Active);
     }
 }

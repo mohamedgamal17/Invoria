@@ -13,12 +13,17 @@ public static class BatchAssertionExtensions
         string productId,
         int quantity,
         decimal purchasePrice,
-        int reservedQuantity = 0)
+        int reservedQuantity = 0,
+        BatchState? state = null)
     {
         batch.ProductId.Should().Be(productId);
         batch.Quantity.Should().Be(quantity);
         batch.PurchasePrice.Should().Be(purchasePrice);
         batch.ReservedQuantity.Should().Be(reservedQuantity);
+        if (state.HasValue)
+        {
+            batch.State.Should().Be(state.Value);
+        }
     }
 
     public static void AssertCreateBatchCommand(this Batch batch, CreateBatchCommand command)

@@ -44,6 +44,10 @@ public class UpdateBatchCommandHandlerTests : BatchTestFixture
 
         Assert.That(result.IsSuccess, Is.True);
         result.Value!.Quantity.Should().Be(0);
+
+        var updated = await _batchRepository.SingleOrDefault(x => x.Id == batch.Id);
+        updated.Should().NotBeNull();
+        updated!.State.Should().Be(BatchState.Depleted);
     }
 
     [Test]
