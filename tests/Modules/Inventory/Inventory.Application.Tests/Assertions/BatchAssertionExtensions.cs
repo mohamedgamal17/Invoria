@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Application.Batches.Commands.UpdateBatch;
 using Invoria.Inventory.Contracts.Dtos;
@@ -69,5 +70,22 @@ public static class BatchAssertionExtensions
         dto.Quantity.Should().Be(command.Quantity);
         dto.PurchasePrice.Should().Be(command.PurchasePrice);
         dto.ReservedQuantity.Should().Be(reservedQuantity);
+    }
+
+    public static void AssertPagingDto(
+        this PagingDto<BatchDto> page,
+        int expectedSkip,
+        int expectedLength,
+        long expectedTotalCount,
+        int? expectedDataCount = null)
+    {
+        page.Info.Skip.Should().Be(expectedSkip);
+        page.Info.Length.Should().Be(expectedLength);
+        page.Info.TotalCount.Should().Be(expectedTotalCount);
+
+        if (expectedDataCount.HasValue)
+        {
+            page.Data.Count().Should().Be(expectedDataCount.Value);
+        }
     }
 }
