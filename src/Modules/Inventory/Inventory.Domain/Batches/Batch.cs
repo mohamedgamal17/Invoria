@@ -9,6 +9,7 @@ public class Batch : AuditedAggregateRoot
     public int Quantity { get; private set; }
     public int ReservedQuantity { get; private set; }
     public decimal PurchasePrice { get; private set; }
+    public BatchState State { get; private set; }
 
     // for ef core
     private Batch()
