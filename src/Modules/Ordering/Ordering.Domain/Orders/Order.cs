@@ -9,8 +9,7 @@ namespace Invoria.Ordering.Domain.Orders
         public string CustomerId { get; private set; }
         public List<OrderItem> Items { get; private set; } 
         public OrderStatus Status { get; private set; }
-
-
+        public FullfillmentStatus FullfillmentStatus { get; set; }
         private Order()
         {
             
