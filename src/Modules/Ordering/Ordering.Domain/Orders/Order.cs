@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Domain.Orders.Events;
 
 namespace Invoria.Ordering.Domain.Orders
 {
@@ -21,6 +22,7 @@ namespace Invoria.Ordering.Domain.Orders
             CustomerId = customerId;
             Items = new List<OrderItem>();
             Status = OrderStatus.Pending;
+            FullfillmentStatus = FullfillmentStatus.Pending;
         }
 
 
@@ -42,6 +44,7 @@ namespace Invoria.Ordering.Domain.Orders
             Items = items;
         }
 
+
         public void Accept()
         {
             if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
@@ -50,7 +53,15 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be accepted when it is Pending or Reopened.");
             }
 
+            if (FullfillmentStatus != FullfillmentStatus.Pending)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be accepted when fulfillment is Pending.");
+            }
+
             Status = OrderStatus.Accepted;
+            FullfillmentStatus = FullfillmentStatus.Allocating;
+            AddDomainEvent(new OrderAcceptedDomainEvent(Id, OrderNumber, CustomerId));
         }
 
         public void Reopen()
