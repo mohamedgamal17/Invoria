@@ -1,9 +1,11 @@
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
+using Invoria.Ordering.Domain.Orders.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +63,37 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
             .SingleAsync();
     }
 
+    private static async Task SetFullfillmentStatusAsync(
+        IServiceProvider serviceProvider,
+        string orderId,
+        FullfillmentStatus fullfillmentStatus)
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var rows = await db.Set<Order>()
+            .Where(o => o.Id == orderId)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.FullfillmentStatus, fullfillmentStatus));
+
+        rows.Should().Be(1, $"order id {orderId} should exist for fulfillment update");
+    }
+
+    private static async Task<FullfillmentStatus> GetFullfillmentStatusFromDbAsync(
+        IServiceProvider serviceProvider,
+        string orderId)
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        return await db.Set<Order>()
+            .Where(o => o.Id == orderId)
+            .Select(o => o.FullfillmentStatus)
+            .SingleAsync();
+    }
+
+    private static void SetOrderIdForTest(Order order, string id)
+    {
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, id);
+    }
+
     [Test]
     public async Task Should_accept_order_when_pending()
     {
@@ -76,6 +109,9 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
         status.Should().Be(OrderStatus.Accepted);
+
+        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
+        fulfillment.Should().Be(FullfillmentStatus.Allocating);
     }
 
     [Test]
@@ -93,6 +129,40 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
         status.Should().Be(OrderStatus.Accepted);
+
+        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
+        fulfillment.Should().Be(FullfillmentStatus.Allocating);
+    }
+
+    [Test]
+    public async Task Should_fail_when_fullfillment_is_not_pending()
+    {
+        var order = await PersistOneRandomOrderInNewScopeAsync();
+        await SetFullfillmentStatusAsync(ServiceProvider, order.Id, FullfillmentStatus.Allocating);
+
+        var command = new AcceptOrderCommand(order.Id);
+
+        var result = await Mediator.Send(command);
+
+        result.ShouldBeFailure(typeof(BusinessLogicException));
+    }
+
+    [Test]
+    public void Accept_raises_OrderAcceptedDomainEvent_and_sets_allocating()
+    {
+        var order = new Order("TEST-1", Guid.NewGuid().ToString());
+        order.UpdateItems(
+        [
+            new OrderItem(Guid.NewGuid().ToString(), 1, 10m)
+        ]);
+        SetOrderIdForTest(order, Guid.NewGuid().ToString());
+
+        order.Accept();
+
+        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
+        order.Status.Should().Be(OrderStatus.Accepted);
+        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderAcceptedDomainEvent>()
+            .Which.OrderId.Should().Be(order.Id);
     }
 
     [Test]
