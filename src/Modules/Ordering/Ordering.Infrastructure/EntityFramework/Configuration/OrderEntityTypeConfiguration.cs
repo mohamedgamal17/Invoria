@@ -22,6 +22,9 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
 
             builder.Property(x => x.Status);
 
+            builder.Property(x => x.FullfillmentStatus)
+                .HasDefaultValue(FullfillmentStatus.Pending);
+
             builder.HasMany(x => x.Items)
                 .WithOne()
                 .HasForeignKey("OrderId")
