@@ -18,15 +18,11 @@ public static class ServiceCollectionExtensions
         if(services.SingleOrDefault(x=> x.ServiceType == typeof(IDbHookEngine) ) == null)
         {
             services.AddScoped<IDbHookEngine, DbHookEngine>();
-
         }
 
+        services.AddTransient<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
 
-        if (services.SingleOrDefault(x => x.ServiceType == typeof(IBeforeDbHookSave)) == null)
-        {
-            services.AddScoped<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
-
-        }   
+        services.AddScoped<IAfterDbHookSave, DispatchDomainEventsAfterSaveHook>();
 
         services.AddDbContext<TContext>((sp, options) =>
         {
