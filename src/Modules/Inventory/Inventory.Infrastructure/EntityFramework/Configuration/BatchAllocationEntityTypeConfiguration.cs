@@ -28,6 +28,11 @@ public class BatchAllocationEntityTypeConfiguration : IEntityTypeConfiguration<B
 
         builder.MapAudited();
 
+        builder.HasOne(x => x.Batch)
+            .WithMany()
+            .HasForeignKey(x => x.BatchId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(x => x.OrderItemId);
     }
 }
