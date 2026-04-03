@@ -162,10 +162,10 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Complete()
         {
-            if (Status != OrderStatus.Accepted)
+            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Dispatched)
             {
                 throw new InvalidOperationException(
-                    "Order can only be completed when it is Accepted.");
+                    "Order can only be completed when it is Accepted and fulfillment is Dispatched.");
             }
 
             Status = OrderStatus.Completed;
