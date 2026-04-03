@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
@@ -8,7 +8,6 @@
     <ProjectReference Include="..\Ordering.Domain\Invoria.Ordering.Domain.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Application\Invoria.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Invoria.Shared\Invoria.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
