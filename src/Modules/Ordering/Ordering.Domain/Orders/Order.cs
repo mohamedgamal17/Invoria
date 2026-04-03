@@ -103,6 +103,26 @@ namespace Invoria.Ordering.Domain.Orders
             FullfillmentStatus = FullfillmentStatus.Pending;
         }
 
+        /// <summary>
+        /// Confirms inventory allocation succeeded after the order was accepted.
+        /// Idempotent when fulfillment is already <see cref="FullfillmentStatus.Allocated"/>.
+        /// </summary>
+        public void MarkInventoryAllocated()
+        {
+            if (FullfillmentStatus == FullfillmentStatus.Allocated)
+            {
+                return;
+            }
+
+            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocating)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be marked inventory allocated when it is Accepted and allocating inventory.");
+            }
+
+            FullfillmentStatus = FullfillmentStatus.Allocated;
+        }
+
         public void Refuse()
         {
             if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
