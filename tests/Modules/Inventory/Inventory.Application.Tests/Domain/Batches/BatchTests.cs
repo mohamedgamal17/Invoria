@@ -234,6 +234,58 @@ public class BatchTests
         act.Should().Throw<ArgumentException>();
     }
 
+    [Test]
+    public void ReleaseReservedForDispatch_reduces_ReservedQuantity_only()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-r1");
+        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
+
+        batch.ReleaseReservedForDispatch(4);
+
+        batch.Quantity.Should().Be(6);
+        batch.ReservedQuantity.Should().Be(0);
+    }
+
+    [Test]
+    public void ReleaseReservedForDispatch_supports_partial_release()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-r2");
+        batch.AllocateForOrder("oi-1", 5, DateTimeOffset.UtcNow);
+
+        batch.ReleaseReservedForDispatch(2);
+
+        batch.Quantity.Should().Be(5);
+        batch.ReservedQuantity.Should().Be(3);
+    }
+
+    [Test]
+    public void ReleaseReservedForDispatch_throws_when_amount_exceeds_reserved()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-r3");
+        batch.AllocateForOrder("oi-1", 3, DateTimeOffset.UtcNow);
+
+        var act = () => batch.ReleaseReservedForDispatch(4);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    [TestCase(0)]
+    [TestCase(-1)]
+    public void ReleaseReservedForDispatch_throws_when_amount_not_positive(int amount)
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-r4");
+        batch.AllocateForOrder("oi-1", 1, DateTimeOffset.UtcNow);
+
+        var act = () => batch.ReleaseReservedForDispatch(amount);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
     private static void SetEntityId(Batch batch, string id)
     {
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, id);
