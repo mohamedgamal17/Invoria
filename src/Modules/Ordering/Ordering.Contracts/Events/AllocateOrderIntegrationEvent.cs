@@ -1,12 +1,18 @@
-﻿using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Models;
 
-namespace Invoria.Ordering.Contracts.Events
+namespace Invoria.Ordering.Contracts.Events;
+
+/// <summary>
+/// Published when an order should be allocated against inventory batches.
+/// <see cref="Id"/> is the order aggregate id.
+/// </summary>
+public class AllocateOrderIntegrationEvent
 {
-    public class AllocateOrderIntegrationEvent
-    {
-        public string Id { get; set; }
-        public string OrderNumber { get; private set; }
-        public string CustomerId { get; private set; }
-        public List<OrderItemModel> Items { get; set; }
-    }
+    public required string Id { get; set; }
+
+    public required string OrderNumber { get; set; }
+
+    public required string CustomerId { get; set; }
+
+    public required List<OrderItemModel> Items { get; set; }
 }
