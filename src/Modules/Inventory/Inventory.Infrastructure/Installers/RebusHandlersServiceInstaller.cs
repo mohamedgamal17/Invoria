@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Inventory.Infrastructure.Events;
+using Invoria.Inventory.Application.Batches.Consumers;
 using Invoria.Ordering.Contracts.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +11,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
 {
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddTransient<AllocateOrderIntegrationEventHandler>();
-        services.AddTransient<IHandleMessages<AllocateOrderIntegrationEvent>, AllocateOrderIntegrationEventHandler>();
+        services.AddTransient<IHandleMessages<AllocateOrderIntegrationEvent>, AllocateOrderIntegrationEventConsumer>();
     }
 }
