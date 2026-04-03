@@ -103,11 +103,10 @@ public class ListOrdersEndpointTests : OrderingTestFixture
 
         var createEnvelope = await createResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
         var createdOrder = createEnvelope!.Result!;
-        var prefix = createdOrder.OrderNumber.Length >= 2
-            ? createdOrder.OrderNumber[..2]
-            : createdOrder.OrderNumber;
+        // Full order number as StartsWith term — short prefixes can match many rows and omit the new order from the first page.
+        var orderNumberPrefix = createdOrder.OrderNumber;
 
-        var listQuery = new { Skip = 0, Length = 100, OrderNumber = prefix };
+        var listQuery = new { Skip = 0, Length = 100, OrderNumber = orderNumberPrefix };
         var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
 
         var response = await Client.GetAsync(uri);

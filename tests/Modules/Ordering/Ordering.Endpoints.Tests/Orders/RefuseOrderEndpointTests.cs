@@ -3,8 +3,11 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
+using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Ordering.Endpoints.Tests.Orders;
 
@@ -75,6 +78,16 @@ public class RefuseOrderEndpointTests : OrderingTestFixture
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
+
+        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new RecordOrderAllocationSucceededCommand
+        {
+            OrderId = created.Id,
+            CustomerId = created.CustomerId
+        });
+
+        var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
+        dispatchResponse.EnsureSuccessStatusCode();
 
         var completeResponse = await Client.PostAsync(
             $"/orders/{created.Id}/complete",

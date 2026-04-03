@@ -38,6 +38,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\..\src\Invoria.Api\Invoria.Api.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Application\Invoria.Ordering.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Endpoints\Invoria.Ordering.Endpoints.csproj" />
     <ProjectReference Include="..\Invoria.Ordering.Tests.Fakes\Invoria.Ordering.Tests.Fakes.csproj" />
