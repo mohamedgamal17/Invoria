@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Infrastructure\Invoria.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Ordering\Ordering.Infrastructure\Invoria.Ordering.Infrastructure.csproj" />
+    <ProjectReference Include="..\Shared\Invoria.Shared\Invoria.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +26,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="5.2.0" />
+    <PackageReference Include="Rebus.ServiceProvider" Version="10.7.2" />
+    <PackageReference Include="Rebus.SqlServer" Version="8.4.1" />
     <PackageReference Include="Serilog" Version="4.3.1" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
