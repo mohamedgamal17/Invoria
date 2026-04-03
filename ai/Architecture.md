@@ -140,6 +140,31 @@ flowchart LR
 - **Relationships**
   - `Ordering.Contracts` may reference other modules’ contract projects for shared DTO shapes (as configured in `Invoria.Ordering.Contracts.csproj`).
 
+### Tests (`Invoria.Ordering.Application.Tests`)
+
+- **Location**
+  - `tests/Modules/Ordering/Ordering.Application.Tests`
+
+- **Layout**
+  - **Root**: shared test harness — `OrderingTestFixture.cs`, `OrderingTestModuleInstaller.cs`, `GlobalUsings.cs`.
+  - **`Domain/Orders/`**: pure domain tests (e.g. `OrderAllocationSuccessDomainTests`, `OrderAllocationFailureDomainTests`).
+  - **`Integration/`**: handler and integration tests — `Commands/`, `Queries/`, `Factories/`, `Consumers/` (e.g. allocation consumer), plus `OrderTestFixture.cs`.
+  - **`Infrastructure/Services/`**: infrastructure-focused tests (e.g. `OrderNumberGeneratorTests`, `OrderNumberGeneratorIntegrationTests`).
+  - **`Assertions/`**: shared assertion helpers (e.g. `OrderAssertionExtensions.cs`).
+
+```mermaid
+flowchart TB
+  root[Ordering.Application.Tests root]
+  root --> Domain[Domain/Orders]
+  root --> Integration[Integration]
+  root --> Infra[Infrastructure/Services]
+  root --> Assertions[Assertions]
+  Integration --> Cmd[Commands]
+  Integration --> Qry[Queries]
+  Integration --> Fact[Factories]
+  Integration --> Cons[Consumers]
+```
+
 ---
 
 ## Inventory Module
