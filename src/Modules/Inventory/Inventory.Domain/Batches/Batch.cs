@@ -10,6 +10,7 @@ public class Batch : AuditedAggregateRoot
     public int ReservedQuantity { get; private set; }
     public decimal PurchasePrice { get; private set; }
     public BatchState State { get; private set; }
+    public int AvailableQuantity => Quantity;
 
     // for ef core
     private Batch()
@@ -57,6 +58,43 @@ public class Batch : AuditedAggregateRoot
         }
 
         State = BatchState.Disabled;
+    }
+
+    /// <summary>
+    /// Reserves stock for an order line and records which batch fulfilled it.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">When the batch is not active or stock is insufficient.</exception>
+    public BatchAllocation AllocateForOrder(string orderItemId, int amount, DateTimeOffset allocatedAt)
+    {
+        Guard.Against.NullOrWhiteSpace(orderItemId);
+        Guard.Against.OutOfRange(orderItemId.Length, nameof(orderItemId), 1, BatchAllocationTableConsts.OrderItemIdMaxLength);
+        Guard.Against.NegativeOrZero(amount);
+
+        if (State != BatchState.Active)
+        {
+            throw new InvalidOperationException("Stock can only be allocated from an active batch.");
+        }
+
+        if (Quantity < amount)
+        {
+            throw new InvalidOperationException("Insufficient available quantity in this batch.");
+        }
+
+        if (string.IsNullOrEmpty(Id))
+        {
+            throw new InvalidOperationException("Batch must have an identifier before allocations can be recorded.");
+        }
+
+        Quantity -= amount;
+        ReservedQuantity += amount;
+
+        if (Quantity == 0)
+        {
+            State = BatchState.Depleted;
+        }
+
+        var allocation = new BatchAllocation(Id, orderItemId, amount, allocatedAt);
+        return allocation;
     }
 
     public void Enable()
