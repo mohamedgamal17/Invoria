@@ -1,4 +1,4 @@
-﻿namespace Invoria.Ordering.Domain.Orders
+namespace Invoria.Ordering.Domain.Orders
 {
     public enum FullfillmentStatus
     {
@@ -7,5 +7,6 @@
         Allocated = 15 ,
         OnHold = 20,
         Releasing = 25,
+        Dispatched = 30,
     }
 }
