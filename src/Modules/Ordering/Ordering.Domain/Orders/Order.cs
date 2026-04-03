@@ -123,6 +123,32 @@ namespace Invoria.Ordering.Domain.Orders
             FullfillmentStatus = FullfillmentStatus.Allocated;
         }
 
+        /// <summary>
+        /// Marks the order as dispatched after inventory is allocated.
+        /// Idempotent when fulfillment is already <see cref="FullfillmentStatus.Dispatched"/>.
+        /// </summary>
+        public void MarkDispatched()
+        {
+            if (FullfillmentStatus == FullfillmentStatus.Dispatched)
+            {
+                return;
+            }
+
+            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocated)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be marked dispatched when it is Accepted and inventory is allocated.");
+            }
+
+            FullfillmentStatus = FullfillmentStatus.Dispatched;
+
+            var lines = Items
+                .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
+                .ToList();
+
+            AddDomainEvent(new OrderDispatchedDomainEvent(Id, OrderNumber, CustomerId, lines));
+        }
+
         public void Refuse()
         {
             if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
