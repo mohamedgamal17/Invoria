@@ -7,12 +7,12 @@ using Rebus.Handlers;
 
 namespace Invoria.Inventory.Application.Batches.Consumers;
 
-public sealed class AllocateOrderIntegrationConsumer : IHandleMessages<AllocateOrderIntegrationEvent>
+public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<AllocateOrderIntegrationEvent>
 {
     private readonly IMediator _mediator;
     private readonly IBus _bus;
 
-    public AllocateOrderIntegrationConsumer(IMediator mediator, IBus bus)
+    public AllocateOrderIntegrationEventConsumer(IMediator mediator, IBus bus)
     {
         _mediator = mediator;
         _bus = bus;
