@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Domain.Batches;
 using Invoria.Inventory.Application.Tests.Assertions;
 
@@ -178,5 +179,63 @@ public class BatchTests
         var exception = Assert.Throws<ArgumentException>(() => new Batch("product-1", 1, purchasePrice));
 
         Assert.That(exception, Is.Not.Null);
+    }
+
+    [Test]
+    public void AllocateForOrder_reserves_quantity_and_adds_allocation_when_active()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-alloc-1");
+        var at = new DateTimeOffset(2026, 4, 3, 12, 0, 0, TimeSpan.Zero);
+
+        var allocation = batch.AllocateForOrder("order-item-1", 4, at);
+
+        batch.Quantity.Should().Be(6);
+        batch.ReservedQuantity.Should().Be(4);
+        allocation.BatchId.Should().Be("batch-alloc-1");
+        allocation.OrderItemId.Should().Be("order-item-1");
+        allocation.QuantityAllocated.Should().Be(4);
+        allocation.AllocatedAt.Should().Be(at);
+    }
+
+    [Test]
+    public void AllocateForOrder_throws_when_batch_is_not_active()
+    {
+        var batch = new Batch("product-1", 0, 10m);
+        SetEntityId(batch, "batch-depl");
+
+        var act = () => batch.AllocateForOrder("oi-1", 1, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void AllocateForOrder_throws_when_amount_exceeds_available()
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-1");
+        batch.AllocateForOrder("oi-1", 3, DateTimeOffset.UtcNow);
+
+        var act = () => batch.AllocateForOrder("oi-2", 3, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    [TestCase(0)]
+    [TestCase(-1)]
+    public void AllocateForOrder_throws_when_amount_not_positive(int amount)
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-1");
+
+        var act = () => batch.AllocateForOrder("oi-1", amount, DateTimeOffset.UtcNow);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    private static void SetEntityId(Batch batch, string id)
+    {
+        typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, id);
     }
 }
