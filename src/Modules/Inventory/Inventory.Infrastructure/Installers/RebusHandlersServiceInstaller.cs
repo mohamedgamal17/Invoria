@@ -12,5 +12,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
         services.AddTransient<IHandleMessages<AllocateOrderIntegrationEvent>, AllocateOrderIntegrationEventConsumer>();
+        services.AddTransient<IHandleMessages<OrderDispatchedIntegrationEvent>, OrderDispatchedIntegrationEventConsumer>();
     }
 }
