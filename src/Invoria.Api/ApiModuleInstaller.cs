@@ -9,7 +9,6 @@ using Invoria.Catalog.Infrastructure;
 using Invoria.CustomerManagement.Infrastructure;
 using Invoria.Inventory.Infrastructure;
 using Invoria.Ordering.Infrastructure;
-using Invoria.Shared.Events;
 using Microsoft.Extensions.Logging;
 using Rebus.Config;
 using Rebus.Microsoft.Extensions.Logging;
@@ -61,7 +60,7 @@ namespace Invoria.Api
                     .Serialization(s => s.UseSystemTextJson())
                     .Subscriptions(s => s.StoreInSqlServer(connectionString, "RebusSubscriptions", true, true, false))
                     .Transport(t => t.UseSqlServer(transportOptions, inputQueueName))
-                    .Routing(r => r.TypeBased().MapAssemblyOf<IntegrationEventsAssemblyMarker>(inputQueueName)));
+                    .Routing(r => r.TypeBased().MapAssemblyOf<Ordering.Contracts.AssemblyReference>(inputQueueName)));
         }
 
         private void ConfigureSwagger(IServiceCollection services)
