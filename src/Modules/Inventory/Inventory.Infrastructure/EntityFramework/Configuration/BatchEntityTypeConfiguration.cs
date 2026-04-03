@@ -25,6 +25,8 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Configuration
                 .HasPrecision(18, 2);
             builder.Property(x => x.State);
 
+            builder.HasMany<BatchAllocation>().WithOne()
+                .HasForeignKey(x => x.BatchId);
             builder.MapAudited();
         }
     }

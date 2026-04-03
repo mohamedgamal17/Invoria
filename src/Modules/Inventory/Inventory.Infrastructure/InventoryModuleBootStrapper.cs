@@ -2,8 +2,6 @@ using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
-
 namespace Invoria.Inventory.Infrastructure
 {
     public class InventoryModuleBootStrapper : IModuleBootstrapper
