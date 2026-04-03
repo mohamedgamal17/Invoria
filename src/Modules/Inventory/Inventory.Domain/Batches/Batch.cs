@@ -28,7 +28,6 @@ public class Batch : AuditedAggregateRoot
         PurchasePrice = purchasePrice;
         State = quantity > 0 ? BatchState.Active : BatchState.Depleted;
     }
-
     public void UpdateQuantity(int quantity)
     {
         Guard.Against.Negative(quantity);
