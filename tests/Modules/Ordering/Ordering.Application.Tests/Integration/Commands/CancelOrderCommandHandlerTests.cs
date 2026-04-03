@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
-using Invoria.Ordering.Application.Orders.Commands.ReopenOrder;
+using Invoria.Ordering.Application.Orders.Commands.CancelOrder;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -9,10 +9,10 @@ using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 
 [TestFixture]
-public class ReopenOrderCommandHandlerTests : OrderTestFixture
+public class CancelOrderCommandHandlerTests : OrderTestFixture
 {
     private async Task<Order> PersistOneRandomOrderInNewScopeAsync()
     {
@@ -62,12 +62,11 @@ public class ReopenOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_reopen_order_when_accepted()
+    public async Task Should_cancel_order_when_pending()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Accepted);
 
-        var command = new ReopenOrderCommand(order.Id);
+        var command = new CancelOrderCommand(order.Id);
 
         var result = await Mediator.Send(command);
 
@@ -76,20 +75,36 @@ public class ReopenOrderCommandHandlerTests : OrderTestFixture
         result.Value!.Id.Should().Be(order.Id);
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Reopened);
+        status.Should().Be(OrderStatus.Cancelled);
     }
 
     [Test]
-    [TestCase(OrderStatus.Pending)]
-    [TestCase(OrderStatus.Reopened)]
+    public async Task Should_cancel_order_when_reopened()
+    {
+        var order = await PersistOneRandomOrderInNewScopeAsync();
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+
+        var command = new CancelOrderCommand(order.Id);
+
+        var result = await Mediator.Send(command);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+
+        var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
+        status.Should().Be(OrderStatus.Cancelled);
+    }
+
+    [Test]
+    [TestCase(OrderStatus.Accepted)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_accepted(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_pending_or_reopened(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, status);
 
-        var command = new ReopenOrderCommand(order.Id);
+        var command = new CancelOrderCommand(order.Id);
 
         var result = await Mediator.Send(command);
 
@@ -99,10 +114,11 @@ public class ReopenOrderCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_order_not_found()
     {
-        var command = new ReopenOrderCommand(Guid.NewGuid().ToString());
+        var command = new CancelOrderCommand(Guid.NewGuid().ToString());
 
         var result = await Mediator.Send(command);
 
         result.ShouldBeFailure(typeof(NotFoundException));
     }
 }
+

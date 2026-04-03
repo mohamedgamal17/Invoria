@@ -1,6 +1,6 @@
+using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
-using Invoria.CustomerManagement.Contracts.Dtos;
-using Invoria.CustomerManagement.Contracts.Services;
+using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Queries.GetOrderById;
 using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Domain;
@@ -10,20 +10,20 @@ using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Queries;
 
 [TestFixture]
-public class GetOrderByIdQueryHandlerCustomerTests : OrderTestFixture
+public class GetOrderByIdQueryHandlerTests : OrderTestFixture
 {
     private IOrderingRepository<Order> OrderRepository =>
         ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
 
-    protected override void RegisterCustomerService(IServiceCollection services)
+    protected override async Task BeforeAnyTestRunAsync()
     {
-        services.AddSingleton<ICustomerService, SyntheticListCustomerService>();
+        await ClearOrdersAsync();
     }
 
-    protected override async Task BeforeAnyTestRunAsync()
+    private async Task ClearOrdersAsync()
     {
         await using var scope = ServiceProvider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
@@ -33,7 +33,7 @@ public class GetOrderByIdQueryHandlerCustomerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_include_customer_when_customer_service_returns_match()
+    public async Task Should_return_order_with_line_items_when_found()
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
 
@@ -42,11 +42,20 @@ public class GetOrderByIdQueryHandlerCustomerTests : OrderTestFixture
         var result = await Mediator.Send(query);
 
         result.ShouldBeSuccess();
-        var expected = new CustomerDto
-        {
-            Id = order.CustomerId,
-            Name = SyntheticListCustomerService.NameForId(order.CustomerId)
-        };
-        result.Value!.AssertOrderDto(order, expected);
+        result.Value.Should().NotBeNull();
+        result.Value!.AssertOrderDto(order);
+    }
+
+    [Test]
+    public async Task Should_return_failure_when_order_not_found()
+    {
+        var nonExistentId = Guid.NewGuid().ToString();
+        var query = new GetOrderByIdQuery { Id = nonExistentId };
+
+        var result = await Mediator.Send(query);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Exception.Should().NotBeNull();
+        result.Exception.Should().BeOfType<NotFoundException>();
     }
 }

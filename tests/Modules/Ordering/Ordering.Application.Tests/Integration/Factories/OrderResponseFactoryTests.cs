@@ -7,7 +7,7 @@ using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Factories;
 
 [TestFixture]
 public class OrderResponseFactoryTests : OrderingTestFixture

@@ -3,7 +3,7 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Tests.Assertions;
 
-namespace Invoria.Ordering.Application.Tests.Orders
+namespace Invoria.Ordering.Application.Tests.Integration.Commands
 {
     [TestFixture]
     public class CreateOrderCommandHandlerTests : OrderTestFixture

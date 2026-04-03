@@ -2,7 +2,7 @@ using FluentAssertions;
 using Invoria.Ordering.Application.Orders.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Services
+namespace Invoria.Ordering.Application.Tests.Infrastructure.Services
 {
     [TestFixture]
     public class OrderNumberGeneratorIntegrationTests : OrderingTestFixture

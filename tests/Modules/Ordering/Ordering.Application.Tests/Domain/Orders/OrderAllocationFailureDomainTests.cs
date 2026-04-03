@@ -2,7 +2,7 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Domain.Orders;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Domain.Orders;
 
 [TestFixture]
 public class OrderAllocationFailureDomainTests

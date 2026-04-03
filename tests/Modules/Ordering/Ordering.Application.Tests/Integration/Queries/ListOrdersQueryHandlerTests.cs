@@ -9,7 +9,7 @@ using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Queries;
 
 [TestFixture]
 public class ListOrdersQueryHandlerTests : OrderTestFixture

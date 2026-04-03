@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders
+namespace Invoria.Ordering.Application.Tests.Integration
 {
     public class OrderTestFixture : OrderingTestFixture
     {

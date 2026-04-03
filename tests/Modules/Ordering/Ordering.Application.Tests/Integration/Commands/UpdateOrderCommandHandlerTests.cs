@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
-using Invoria.Ordering.Application.Orders.Commands.CancelOrder;
+using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
+using Invoria.Ordering.Application.Orders.Commands.UpdateOrder;
+using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -9,11 +11,15 @@ using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 
 [TestFixture]
-public class CancelOrderCommandHandlerTests : OrderTestFixture
+public class UpdateOrderCommandHandlerTests : OrderTestFixture
 {
+    /// <summary>
+    /// Persists inside a dedicated scope so the DbContext is disposed before Mediator runs,
+    /// avoiding a tracked <see cref="Order"/> with stale state when the handler loads the entity.
+    /// </summary>
     private async Task<Order> PersistOneRandomOrderInNewScopeAsync()
     {
         await using var scope = ServiceProvider.CreateAsyncScope();
@@ -49,62 +55,55 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
         rows.Should().Be(1, $"order id {orderId} should exist for status update");
     }
 
-    private static async Task<OrderStatus> GetOrderStatusFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        return await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .Select(o => o.Status)
-            .SingleAsync();
-    }
-
     [Test]
-    public async Task Should_cancel_order_when_pending()
+    public async Task Should_update_items_when_order_is_pending()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
 
-        var command = new CancelOrderCommand(order.Id);
+        var newItems = new List<CreateOrderItemCommand>
+        {
+            new(Guid.NewGuid().ToString(), 3, 15.5m),
+            new(Guid.NewGuid().ToString(), 1, 99m)
+        };
+
+        var command = new UpdateOrderCommand(order.Id, newItems);
 
         var result = await Mediator.Send(command);
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.Id.Should().Be(order.Id);
-
-        var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Cancelled);
+        result.Value!.AssertOrderDto(command);
     }
 
     [Test]
-    public async Task Should_cancel_order_when_reopened()
+    public async Task Should_update_items_when_order_is_reopened()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
 
-        var command = new CancelOrderCommand(order.Id);
+        var newItems = new List<CreateOrderItemCommand>
+        {
+            new(Guid.NewGuid().ToString(), 2, 20m)
+        };
+
+        var command = new UpdateOrderCommand(order.Id, newItems);
 
         var result = await Mediator.Send(command);
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-
-        var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Cancelled);
+        result.Value!.AssertOrderDto(command);
     }
 
     [Test]
-    [TestCase(OrderStatus.Accepted)]
-    [TestCase(OrderStatus.Completed)]
-    [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_pending_or_reopened(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_pending_or_reopened()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, status);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Accepted);
 
-        var command = new CancelOrderCommand(order.Id);
+        var command = new UpdateOrderCommand(
+            order.Id,
+            new List<CreateOrderItemCommand> { new(Guid.NewGuid().ToString(), 1, 10m) });
 
         var result = await Mediator.Send(command);
 
@@ -114,11 +113,24 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_order_not_found()
     {
-        var command = new CancelOrderCommand(Guid.NewGuid().ToString());
+        var command = new UpdateOrderCommand(
+            Guid.NewGuid().ToString(),
+            new List<CreateOrderItemCommand> { new(Guid.NewGuid().ToString(), 1, 10m) });
 
         var result = await Mediator.Send(command);
 
         result.ShouldBeFailure(typeof(NotFoundException));
     }
-}
 
+    [Test]
+    public async Task Should_fail_when_items_is_empty()
+    {
+        var order = await PersistOneRandomOrderInNewScopeAsync();
+
+        var command = new UpdateOrderCommand(order.Id, new List<CreateOrderItemCommand>());
+
+        var result = await Mediator.Send(command);
+
+        result.ShouldBeFailure(typeof(InvalidOperationException));
+    }
+}

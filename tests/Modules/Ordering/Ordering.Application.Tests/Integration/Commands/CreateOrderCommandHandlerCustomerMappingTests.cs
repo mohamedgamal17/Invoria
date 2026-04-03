@@ -7,7 +7,7 @@ using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Invoria.Ordering.Application.Tests.Orders;
+namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 
 [TestFixture]
 public class CreateOrderCommandHandlerCustomerMappingTests : OrderTestFixture
