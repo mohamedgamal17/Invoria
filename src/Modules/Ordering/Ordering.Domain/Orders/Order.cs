@@ -86,6 +86,23 @@ namespace Invoria.Ordering.Domain.Orders
             Status = OrderStatus.Cancelled;
         }
 
+        /// <summary>
+        /// Cancels the order when inventory allocation fails after the order was accepted.
+        /// </summary>
+        public void CancelDueToAllocationFailure(string reason)
+        {
+            Guard.Against.NullOrWhiteSpace(reason);
+
+            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocating)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be cancelled due to allocation failure when it is Accepted and allocating inventory.");
+            }
+
+            Status = OrderStatus.Cancelled;
+            FullfillmentStatus = FullfillmentStatus.Pending;
+        }
+
         public void Refuse()
         {
             if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
