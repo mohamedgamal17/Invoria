@@ -5,8 +5,10 @@ This document describes the current architecture of the Invoria solution based o
 - **Host/API**: `Invoria.Api`
 - **Shared building blocks**: `Invoria.BuildingBlocks.*`
 - **Business module**: Catalog (`Invoria.Catalog.*`)
-- **Business module**: Inventory (`Invoria.Inventory.*`) - skeleton wired (no domain entities/endpoints yet)
-- **Tests**: `Invoria.*.Tests`, including Catalog-specific application and endpoint tests
+- **Business module**: CustomerManagement (`Invoria.CustomerManagement.*`)
+- **Business module**: Ordering (`Invoria.Ordering.*`)
+- **Business module**: Inventory (`Invoria.Inventory.*`) — batches and CQRS; consumes Ordering integration events via Rebus
+- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, and Ordering-focused application and endpoint tests where present
 
 The sections below list only modules, layers, classes, and relationships that exist in the repository.
 
@@ -40,18 +42,34 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Presentation / Endpoints: `Invoria.Catalog.Endpoints`
   - Contracts: `Invoria.Catalog.Contracts`
 
+- **CustomerManagement Module**
+  - Domain: `Invoria.CustomerManagement.Domain`
+  - Application: `Invoria.CustomerManagement.Application`
+  - Infrastructure: `Invoria.CustomerManagement.Infrastructure`
+  - Presentation / Endpoints: `Invoria.CustomerManagement.Endpoints`
+  - Contracts: `Invoria.CustomerManagement.Contracts`
+
+- **Ordering Module**
+  - Domain: `Invoria.Ordering.Domain`
+  - Application: `Invoria.Ordering.Application`
+  - Infrastructure: `Invoria.Ordering.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Ordering.Endpoints`
+  - Contracts: `Invoria.Ordering.Contracts` (includes integration events such as `AllocateOrderIntegrationEvent`)
+
 - **Inventory Module**
   - Domain: `Invoria.Inventory.Domain`
   - Application: `Invoria.Inventory.Application`
   - Infrastructure: `Invoria.Inventory.Infrastructure`
   - Presentation / Endpoints: `Invoria.Inventory.Endpoints`
   - Contracts: `Invoria.Inventory.Contracts`
-  - Current scope: module wiring and bootstrap only (no inventory aggregate/endpoints yet)
+  - Current scope: batch aggregate and endpoints; Rebus handler registration and optional integration consumer types for cross-module events
 
 - **Tests**
   - `Invoria.Application.Tests`
   - `Invoria.Endpoints.Tests`
   - `Invoria.Catalog.Application.Tests`
+  - `Invoria.Inventory.Application.Tests`, `Invoria.Inventory.Endpoints.Tests` (where present)
+  - `Invoria.Ordering.Application.Tests`, `Invoria.Ordering.Endpoints.Tests` (where present)
 
 ### High-Level Module Dependencies
 
@@ -95,7 +113,125 @@ flowchart LR
   catEndpoints --> catContracts
   catEndpoints --> bbInfra
   catEndpoints --> bbDomain
+
+  ordContracts[Ordering.Contracts]
+  invApp[Inventory.Application]
+  invInfra[Inventory.Infrastructure]
+
+  ordContracts -.->|"integration event types (e.g. AllocateOrderIntegrationEvent)"| invApp
+  ordContracts -.->|"referenced for handler types"| invInfra
 ```
+
+---
+
+## Ordering Module (integration contracts)
+
+### Contracts (`Invoria.Ordering.Contracts`)
+
+- **Location**
+  - `src/Modules/Ordering/Ordering.Contracts`
+
+- **Integration events**
+  - **`AllocateOrderIntegrationEvent`**
+    - File: `Events/AllocateOrderIntegrationEvent.cs`
+    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Ordering.Contracts.Models`).
+    - Published by the Ordering bounded context when an order allocation is integrated; consumed by Inventory (and potentially other modules) via Rebus.
+
+- **Relationships**
+  - `Ordering.Contracts` may reference other modules’ contract projects for shared DTO shapes (as configured in `Invoria.Ordering.Contracts.csproj`).
+
+---
+
+## Inventory Module
+
+The Inventory module follows the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts.
+
+```mermaid
+flowchart LR
+  invEndpoints[Inventory.Endpoints]
+  invApp[Inventory.Application]
+  invDomain[Inventory.Domain]
+  invInfra[Inventory.Infrastructure]
+  invContracts[Inventory.Contracts]
+  ordContracts[Ordering.Contracts]
+
+  invEndpoints --> invApp
+  invEndpoints --> invContracts
+
+  invApp --> invDomain
+  invApp --> invContracts
+  invApp -.->|"integration event consumption"| ordContracts
+
+  invInfra --> invDomain
+  invInfra --> invApp
+  invInfra -.->|"handler registration / Rebus"| ordContracts
+
+  bbDomain[BuildingBlocks.Domain]
+  bbEf[BuildingBlocks.EntityFramework]
+
+  invDomain -->|"extends"| bbDomain
+  invInfra -->|"uses"| bbEf
+```
+
+### Domain (`Invoria.Inventory.Domain`)
+
+- **Location**
+  - `src/Modules/Inventory/Inventory.Domain`
+
+- **Representative types**
+  - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
+  - **`BatchAllocation`**: child entity under a batch; links an `OrderItemId` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`, and includes standard audited fields (`CreatedAt`, `CreatedBy`, `LastModifiedAt`, `LastModifiedBy`).
+
+### Application (`Invoria.Inventory.Application`)
+
+- **Location**
+  - `src/Modules/Inventory/Inventory.Application`
+
+- **Integration consumers (Rebus)**
+  - **`AllocateOrderIntegrationConsumer`**
+    - File: `Batches/Consumers/AllocateOrderIntegrationConsumer.cs`
+    - Implements `Rebus.Handlers.IHandleMessages<Invoria.Ordering.Contracts.Events.AllocateOrderIntegrationEvent>`.
+    - Placeholder handler for order-allocation integration messages (extend with domain/application logic when requirements are defined).
+
+- **CQRS**
+  - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
+
+### Infrastructure (`Invoria.Inventory.Infrastructure`)
+
+- **Location**
+  - `src/Modules/Inventory/Inventory.Infrastructure`
+
+- **Rebus**
+  - **`RebusHandlersServiceInstaller`**
+    - File: `Installers/RebusHandlersServiceInstaller.cs`
+    - Implements `IServiceInstaller`; registers Rebus handler types for integration events (e.g. `AllocateOrderIntegrationEventHandler` and `IHandleMessages<AllocateOrderIntegrationEvent>`).
+  - **`AllocateOrderIntegrationEventHandler`**
+    - File: `Events/AllocateOrderIntegrationEventHandler.cs`
+    - Infrastructure-side `IHandleMessages<AllocateOrderIntegrationEvent>` implementation (coordinate with `AllocateOrderIntegrationConsumer` so only one handler owns the use case in production).
+
+- **Persistence**
+  - **`InventoryDbContext`**, repositories, EF configurations, and migrations under `EntityFramework/`.
+
+- **Bootstrap**
+  - **`InventoryModuleBootStrapper`**
+    - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
+
+- **`InventoryModuleInstaller`**
+  - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
+
+### Presentation (`Invoria.Inventory.Endpoints`)
+
+- **Location**
+  - `src/Modules/Inventory/Inventory.Endpoints`
+
+- Batch-related FastEndpoints (e.g. create/update/list/get batch) expose HTTP APIs and delegate to the Application layer via MediatR.
+
+### Contracts (`Invoria.Inventory.Contracts`)
+
+- **Location**
+  - `src/Modules/Inventory/Inventory.Contracts`
+
+- DTOs such as `BatchDto` support API and application boundaries.
 
 ---
 
@@ -113,7 +249,8 @@ flowchart LR
 - **`ApiModuleInstaller`**
   - Location: `src/Invoria.Api/ApiModuleInstaller.cs`
   - Implements `IModuleInstaller` from building blocks.
-  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog and Inventory.
+  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Inventory, and Ordering.
+  - Configures **Rebus** once (`AddInvoriaRebus`): SQL Server transport, subscription storage in SQL Server, System.Text.Json serialization, and type-based routing (see `MapAssemblyOf<IntegrationEventsAssemblyMarker>` for the assembly used as the integration-events routing anchor).
   - Adds shared application infrastructure via `AddApplicationInfrastructure()`.
   - Registers global exception handler `GlobalExceptionHandler` and `ProblemDetails`.
   - Configures Swagger using `SwaggerDocument`.
@@ -509,6 +646,19 @@ flowchart LR
 - **Mediator**
   - Endpoints use `IMediator` to send commands (`_mediator.Send(command, ct)`), decoupling HTTP transport from application logic.
 
+### Messaging (Rebus)
+
+- **Configuration**
+  - Centralized in `ApiModuleInstaller.AddInvoriaRebus` (`src/Invoria.Api/ApiModuleInstaller.cs`).
+  - Uses connection strings (`ConnectionStrings:Rebus` or `ConnectionStrings:Default`) and `Rebus:InputQueue` from configuration (see `appsettings.json`).
+
+- **Handlers**
+  - Modules register `Rebus.Handlers.IHandleMessages<T>` implementations with the DI container.
+  - Inventory registers integration event handlers via `RebusHandlersServiceInstaller` in `Invoria.Inventory.Infrastructure`.
+
+- **Cross-module events**
+  - Integration event types (for example `AllocateOrderIntegrationEvent` in `Invoria.Ordering.Contracts`) are consumed by Inventory handlers when messages are published to the configured transport and routing/subscriptions match the host setup.
+
 ### Logging and Caching
 
 - No explicit logging or caching abstractions are used in the Catalog-focused files inspected.
@@ -521,10 +671,10 @@ flowchart LR
 ## Summary of Layered Dependencies
 
 - **Host (`Invoria.Api`)**
-  - Orchestrates module installation and shared infrastructure.
+  - Orchestrates module installation and shared infrastructure (including Rebus).
   - Depends on:
     - BuildingBlocks Core and Infrastructure for modularity and endpoint wiring.
-    - Catalog Infrastructure via `CatalogModuleInstaller`.
+    - Module installers for Catalog, CustomerManagement, Inventory, Ordering (each module’s Infrastructure project).
 
 - **Catalog.Endpoints (Presentation)**
   - Only interacts with the **Application** layer and shared infrastructure:
@@ -547,5 +697,13 @@ flowchart LR
     - BuildingBlocks EntityFramework (DbContext base, repositories, hooks).
     - BuildingBlocks Domain for `IBaseEntity`.
 
-This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence and integration details behind domain abstractions.
+- **Ordering.Contracts**
+  - Holds cross-boundary DTOs and **integration events** (for example `AllocateOrderIntegrationEvent`) referenced by the API host (Rebus routing) and by consumer modules such as Inventory.
+
+- **Inventory (Rebus integration)**
+  - Integration event **contracts** live in **`Invoria.Ordering.Contracts`** (for example `AllocateOrderIntegrationEvent`).
+  - **Application** includes `AllocateOrderIntegrationConsumer` (`Batches/Consumers/`), implementing `IHandleMessages<AllocateOrderIntegrationEvent>`.
+  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and may host `AllocateOrderIntegrationEventHandler` under `Events/`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` in that project file.
+
+This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using shared contract types in `Ordering.Contracts` and handlers registered in consuming modules (e.g. Inventory).
 
