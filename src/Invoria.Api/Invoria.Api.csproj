@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
@@ -11,7 +11,6 @@
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Infrastructure\Invoria.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Ordering\Ordering.Infrastructure\Invoria.Ordering.Infrastructure.csproj" />
-    <ProjectReference Include="..\Shared\Invoria.Shared\Invoria.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
