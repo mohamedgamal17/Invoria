@@ -1,7 +1,9 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Bus;
 
 namespace Invoria.Ordering.Infrastructure
 {
@@ -12,6 +14,14 @@ namespace Invoria.Ordering.Infrastructure
             var dbcontext = serviceProvider.GetRequiredService<OrderingDbContext>();
 
             await dbcontext.Database.MigrateAsync();
+
+
+            var bus = serviceProvider.GetService<IBus>();
+
+            if (bus is not null)
+            {
+                await bus.Subscribe<AllocateOrderIntegrationEvent>();
+            }
         }
     }
 }

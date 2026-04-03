@@ -1,11 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
     <ProjectReference Include="..\Ordering.Domain\Invoria.Ordering.Domain.csproj" />
     <ProjectReference Include="..\Ordering.Application\Invoria.Ordering.Application.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Invoria.Shared\Invoria.Shared.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Ordering.Endpoints\Invoria.Ordering.Endpoints.csproj" />
   </ItemGroup>
