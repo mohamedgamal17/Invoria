@@ -24,6 +24,8 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<OrderAllocationSucceededIntegrationEvent>();
                 await bus.Subscribe<OrderAllocationFailedIntegrationEvent>();
                 await bus.Subscribe<OrderDispatchedIntegrationEvent>();
+                await bus.Subscribe<ReleaseOrderAllocationsIntegrationEvent>();
+                await bus.Subscribe<OrderReopenInventoryReleasedIntegrationEvent>();
             }
         }
     }
