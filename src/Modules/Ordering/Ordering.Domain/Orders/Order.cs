@@ -67,10 +67,10 @@ namespace Invoria.Ordering.Domain.Orders
         /// <summary>
         /// Reopens an accepted order. When fulfillment is <see cref="FullfillmentStatus.Pending"/>, moves to
         /// <see cref="FullfillmentStatus.OnHold"/> and <see cref="OrderStatus.Reopened"/> immediately.
-        /// When fulfillment is <see cref="FullfillmentStatus.Allocated"/>, moves to <see cref="FullfillmentStatus.Releasing"/>
-        /// and raises <see cref="OrderReopenReleaseRequestedDomainEvent"/>; call <see cref="CompleteReopenAfterInventoryReleased"/>
-        /// after inventory has released allocations. Cannot reopen after <see cref="FullfillmentStatus.Dispatched"/> because
-        /// the order has left inventory and is shipping.
+        /// When fulfillment is <see cref="FullfillmentStatus.Allocated"/> or <see cref="FullfillmentStatus.Allocating"/>,
+        /// moves to <see cref="FullfillmentStatus.Releasing"/> and raises <see cref="OrderReopenReleaseRequestedDomainEvent"/>;
+        /// call <see cref="CompleteReopenAfterInventoryReleased"/> after inventory has released allocations (or none yet).
+        /// Cannot reopen after <see cref="FullfillmentStatus.Dispatched"/> because the order has left inventory and is shipping.
         /// </summary>
         public void Reopen()
         {
@@ -86,6 +86,7 @@ namespace Invoria.Ordering.Domain.Orders
                     FullfillmentStatus = FullfillmentStatus.OnHold;
                     Status = OrderStatus.Reopened;
                     return;
+                case FullfillmentStatus.Allocating:
                 case FullfillmentStatus.Allocated:
                     FullfillmentStatus = FullfillmentStatus.Releasing;
                     var lines = Items
@@ -98,7 +99,7 @@ namespace Invoria.Ordering.Domain.Orders
                         "Order cannot be reopened after dispatch; fulfillment has left inventory and is shipping to the customer.");
                 default:
                     throw new InvalidOperationException(
-                        "Order can only be reopened when fulfillment is Pending, or inventory is allocated for release.");
+                        "Order can only be reopened when fulfillment is Pending, allocating, or allocated for release.");
             }
         }
 
