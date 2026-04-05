@@ -93,16 +93,42 @@ public class OrderReopenDomainTests
     }
 
     [Test]
-    public void Reopen_throws_when_fulfillment_is_allocating()
+    public void Reopen_when_accepted_and_allocating_sets_releasing_and_raises_release_domain_event()
     {
         var order = new Order("N-R5", "cust");
-        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, "order-reopen-bad");
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, "order-reopen-allocating");
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
         order.Accept();
+        var item = order.Items[0];
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(item, "line-allocating");
+        order.ClearDomainEvents();
 
-        var act = () => order.Reopen();
+        order.Reopen();
 
-        act.Should().Throw<InvalidOperationException>();
+        order.Status.Should().Be(OrderStatus.Accepted);
+        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Releasing);
+        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderReopenReleaseRequestedDomainEvent>();
+        var ev = (OrderReopenReleaseRequestedDomainEvent)order.DomainEvents.Single();
+        ev.Lines.Should().ContainSingle();
+        ev.Lines[0].OrderItemId.Should().Be("line-allocating");
+        ev.Lines[0].ProductId.Should().Be("p1");
+        ev.Lines[0].Quantity.Should().Be(1);
+    }
+
+    [Test]
+    public void CompleteReopenAfterInventoryReleased_after_reopen_from_allocating_sets_on_hold_and_reopened()
+    {
+        var order = new Order("N-R5b", "cust");
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, "order-reopen-allocating-done");
+        order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
+        order.Accept();
+        order.Reopen();
+        order.ClearDomainEvents();
+
+        order.CompleteReopenAfterInventoryReleased();
+
+        order.Status.Should().Be(OrderStatus.Reopened);
+        order.FullfillmentStatus.Should().Be(FullfillmentStatus.OnHold);
     }
 
     [Test]
