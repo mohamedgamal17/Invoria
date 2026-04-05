@@ -286,6 +286,60 @@ public class BatchTests
         act.Should().Throw<ArgumentException>();
     }
 
+    [Test]
+    public void RestoreAllocatedQuantity_returns_stock_and_reduces_reserved()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-restore-1");
+        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
+
+        batch.RestoreAllocatedQuantity(4);
+
+        batch.Quantity.Should().Be(10);
+        batch.ReservedQuantity.Should().Be(0);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void RestoreAllocatedQuantity_reactivates_depleted_batch_when_quantity_positive()
+    {
+        var batch = new Batch("product-1", 4, 10m);
+        SetEntityId(batch, "batch-restore-depl");
+        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
+        batch.State.Should().Be(BatchState.Depleted);
+
+        batch.RestoreAllocatedQuantity(4);
+
+        batch.Quantity.Should().Be(4);
+        batch.ReservedQuantity.Should().Be(0);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void RestoreAllocatedQuantity_throws_when_amount_exceeds_reserved()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-restore-bad");
+        batch.AllocateForOrder("oi-1", 2, DateTimeOffset.UtcNow);
+
+        var act = () => batch.RestoreAllocatedQuantity(3);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void RestoreAllocatedQuantity_throws_on_disabled_batch()
+    {
+        var batch = new Batch("product-1", 10, 10m);
+        SetEntityId(batch, "batch-restore-dis");
+        batch.AllocateForOrder("oi-1", 2, DateTimeOffset.UtcNow);
+        batch.Disable();
+
+        var act = () => batch.RestoreAllocatedQuantity(2);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static void SetEntityId(Batch batch, string id)
     {
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, id);
