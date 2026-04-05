@@ -114,6 +114,33 @@ public class Batch : AuditedAggregateRoot
         ReservedQuantity -= amount;
     }
 
+    /// <summary>
+    /// Returns previously allocated stock to available quantity (inverse of <see cref="AllocateForOrder"/>).
+    /// </summary>
+    public void RestoreAllocatedQuantity(int amount)
+    {
+        Guard.Against.NegativeOrZero(amount);
+
+        if (ReservedQuantity < amount)
+        {
+            throw new InvalidOperationException(
+                "Cannot restore more quantity than is currently reserved on this batch.");
+        }
+
+        if (State == BatchState.Disabled)
+        {
+            throw new InvalidOperationException("Cannot restore allocation on a disabled batch.");
+        }
+
+        ReservedQuantity -= amount;
+        Quantity += amount;
+
+        if (State == BatchState.Depleted && Quantity > 0)
+        {
+            State = BatchState.Active;
+        }
+    }
+
     public void Enable()
     {
         if (State != BatchState.Disabled)
