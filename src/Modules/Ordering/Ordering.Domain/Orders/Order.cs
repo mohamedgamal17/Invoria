@@ -64,6 +64,14 @@ namespace Invoria.Ordering.Domain.Orders
             AddDomainEvent(new OrderAcceptedDomainEvent(Id, OrderNumber, CustomerId));
         }
 
+        /// <summary>
+        /// Reopens an accepted order. When fulfillment is <see cref="FullfillmentStatus.Pending"/>, moves to
+        /// <see cref="FullfillmentStatus.OnHold"/> and <see cref="OrderStatus.Reopened"/> immediately.
+        /// When fulfillment is <see cref="FullfillmentStatus.Allocated"/>, moves to <see cref="FullfillmentStatus.Releasing"/>
+        /// and raises <see cref="OrderReopenReleaseRequestedDomainEvent"/>; call <see cref="CompleteReopenAfterInventoryReleased"/>
+        /// after inventory has released allocations. Cannot reopen after <see cref="FullfillmentStatus.Dispatched"/> because
+        /// the order has left inventory and is shipping.
+        /// </summary>
         public void Reopen()
         {
             if (Status != OrderStatus.Accepted)
@@ -72,6 +80,41 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be reopened when it is Accepted.");
             }
 
+            switch (FullfillmentStatus)
+            {
+                case FullfillmentStatus.Pending:
+                    FullfillmentStatus = FullfillmentStatus.OnHold;
+                    Status = OrderStatus.Reopened;
+                    return;
+                case FullfillmentStatus.Allocated:
+                    FullfillmentStatus = FullfillmentStatus.Releasing;
+                    var lines = Items
+                        .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
+                        .ToList();
+                    AddDomainEvent(new OrderReopenReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, lines));
+                    return;
+                case FullfillmentStatus.Dispatched:
+                    throw new InvalidOperationException(
+                        "Order cannot be reopened after dispatch; fulfillment has left inventory and is shipping to the customer.");
+                default:
+                    throw new InvalidOperationException(
+                        "Order can only be reopened when fulfillment is Pending, or inventory is allocated for release.");
+            }
+        }
+
+        /// <summary>
+        /// Completes reopen after <see cref="FullfillmentStatus.Releasing"/> and inventory release; sets
+        /// <see cref="FullfillmentStatus.OnHold"/> and <see cref="OrderStatus.Reopened"/>.
+        /// </summary>
+        public void CompleteReopenAfterInventoryReleased()
+        {
+            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Releasing)
+            {
+                throw new InvalidOperationException(
+                    "Order can only complete reopen after inventory release when it is Accepted and releasing inventory.");
+            }
+
+            FullfillmentStatus = FullfillmentStatus.OnHold;
             Status = OrderStatus.Reopened;
         }
 
