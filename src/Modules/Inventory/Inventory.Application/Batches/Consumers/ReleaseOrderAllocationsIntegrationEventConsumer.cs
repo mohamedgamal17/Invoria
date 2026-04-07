@@ -30,12 +30,25 @@ public sealed class ReleaseOrderAllocationsIntegrationEventConsumer
                 result.Exception?.Message ?? "Release order allocations failed.");
         }
 
-        await _bus.Publish(new OrderReopenInventoryReleasedIntegrationEvent
+        if (message.ReleaseReason == AllocationReleaseReason.Refusal)
         {
-            OrderId = message.Id,
-            OrderNumber = message.OrderNumber,
-            CustomerId = message.CustomerId,
-            ReleasedAt = DateTimeOffset.UtcNow
-        });
+            await _bus.Publish(new OrderRefusalInventoryReleasedIntegrationEvent
+            {
+                OrderId = message.Id,
+                OrderNumber = message.OrderNumber,
+                CustomerId = message.CustomerId,
+                ReleasedAt = DateTimeOffset.UtcNow
+            });
+        }
+        else
+        {
+            await _bus.Publish(new OrderReopenInventoryReleasedIntegrationEvent
+            {
+                OrderId = message.Id,
+                OrderNumber = message.OrderNumber,
+                CustomerId = message.CustomerId,
+                ReleasedAt = DateTimeOffset.UtcNow
+            });
+        }
     }
 }
