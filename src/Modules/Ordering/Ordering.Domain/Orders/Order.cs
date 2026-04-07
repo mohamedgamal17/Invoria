@@ -121,10 +121,20 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Cancel()
         {
-            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
+            if (Status != OrderStatus.Pending
+                && Status != OrderStatus.Accepted
+                && Status != OrderStatus.Reopened)
             {
                 throw new InvalidOperationException(
-                    "Order can only be cancelled when the order is Pending or Reopened.");
+                    "Order can only be cancelled when the order is Pending, Accepted, or Reopened.");
+            }
+
+            if (FullfillmentStatus != FullfillmentStatus.Pending
+                && FullfillmentStatus != FullfillmentStatus.OnHold
+                && FullfillmentStatus != FullfillmentStatus.Allocated)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be cancelled when fulfillment is Pending, On Hold, or Allocated.");
             }
 
             Status = OrderStatus.Cancelled;
@@ -193,6 +203,13 @@ namespace Invoria.Ordering.Domain.Orders
             AddDomainEvent(new OrderDispatchedDomainEvent(Id, OrderNumber, CustomerId, lines));
         }
 
+        /// <summary>
+        /// Refuses the order. When fulfillment is <see cref="FullfillmentStatus.Allocated"/>, moves to
+        /// <see cref="FullfillmentStatus.Releasing"/> and raises <see cref="OrderRefusalReleaseRequestedDomainEvent"/>.
+        /// Otherwise when accepted (no allocated stock to release, or dispatched), sets terminal fulfillment or
+        /// leaves dispatch as-is and raises <see cref="OrderRefusedDomainEvent"/>. Completed orders only raise
+        /// <see cref="OrderRefusedDomainEvent"/>.
+        /// </summary>
         public void Refuse()
         {
             if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
@@ -201,7 +218,58 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be refused when it is Accepted or Completed.");
             }
 
-            Status = OrderStatus.Refused;
+            if (Status == OrderStatus.Completed)
+            {
+                Status = OrderStatus.Refused;
+                AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
+                return;
+            }
+
+            switch (FullfillmentStatus)
+            {
+                case FullfillmentStatus.Allocated:
+                    Status = OrderStatus.Refused;
+                    FullfillmentStatus = FullfillmentStatus.Releasing;
+                    var refusalLines = Items
+                        .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
+                        .ToList();
+                    AddDomainEvent(new OrderRefusalReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, refusalLines));
+                    return;
+                case FullfillmentStatus.Releasing:
+                    throw new InvalidOperationException(
+                        "Order cannot be refused while inventory allocations are being released; complete or cancel the reopen flow first.");
+                case FullfillmentStatus.Dispatched:
+                    Status = OrderStatus.Refused;
+                    AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
+                    return;
+                case FullfillmentStatus.Allocating:
+                case FullfillmentStatus.Pending:
+                case FullfillmentStatus.OnHold:
+                    Status = OrderStatus.Refused;
+                    FullfillmentStatus = FullfillmentStatus.Cancelled;
+                    AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
+                    return;
+                case FullfillmentStatus.Cancelled:
+                    throw new InvalidOperationException("Order fulfillment is already cancelled.");
+                default:
+                    throw new InvalidOperationException(
+                        "Order cannot be refused in the current fulfillment state.");
+            }
+        }
+
+        /// <summary>
+        /// Completes refusal after <see cref="FullfillmentStatus.Releasing"/> and inventory release; sets
+        /// <see cref="FullfillmentStatus.Cancelled"/>; <see cref="OrderStatus"/> remains <see cref="OrderStatus.Refused"/>.
+        /// </summary>
+        public void CompleteRefusalAfterInventoryReleased()
+        {
+            if (Status != OrderStatus.Refused || FullfillmentStatus != FullfillmentStatus.Releasing)
+            {
+                throw new InvalidOperationException(
+                    "Order can only complete refusal after inventory release when it is Refused and releasing inventory.");
+            }
+
+            FullfillmentStatus = FullfillmentStatus.Cancelled;
         }
 
         public void Complete()
