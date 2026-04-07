@@ -4,7 +4,11 @@ using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using Invoria.Ordering.Infrastructure.EntityFramework;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Ordering.Endpoints.Tests.Orders;
 
@@ -67,11 +71,16 @@ public class CancelOrderEndpointTests : OrderingTestFixture
         var created = createEnvelope!.Result!;
         created.Id.Should().NotBeNullOrEmpty();
 
-        var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
-        var acceptResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/accept",
-            emptyJson);
-        acceptResponse.EnsureSuccessStatusCode();
+        // Accept via HTTP leaves fulfillment Allocating; Reopen then moves to Releasing, which is not cancellable.
+        // Seed Accepted + Pending so Reopen transitions immediately to Reopened with OnHold (same as ReopenOrderCommandHandlerTests).
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+            var rows = await db.Set<Order>()
+                .Where(o => o.Id == created.Id)
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Accepted));
+            rows.Should().Be(1);
+        }
 
         var reopenResponse = await Client.PostAsync(
             $"/orders/{created.Id}/reopen",
@@ -80,7 +89,7 @@ public class CancelOrderEndpointTests : OrderingTestFixture
 
         var cancelResponse = await Client.PostAsync(
             $"/orders/{created.Id}/cancel",
-            emptyJson);
+            new StringContent("{}", Encoding.UTF8, "application/json"));
 
         cancelResponse.IsSuccessStatusCode.Should().BeTrue();
         cancelResponse.StatusCode.Should().Be(HttpStatusCode.OK);
