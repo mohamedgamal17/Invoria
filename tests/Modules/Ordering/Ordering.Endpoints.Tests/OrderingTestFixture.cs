@@ -10,6 +10,9 @@ public class OrderingTestFixture
 
     private OrderingModuleWebApplicationFactory _factory = null!;
 
+    /// <summary>Host service provider (use <see cref="IServiceScope"/> for scoped services such as <c>DbContext</c>).</summary>
+    protected OrderingModuleWebApplicationFactory Factory => _factory;
+
     public OrderingTestFixture()
     {
         _factory = new OrderingModuleWebApplicationFactory();
