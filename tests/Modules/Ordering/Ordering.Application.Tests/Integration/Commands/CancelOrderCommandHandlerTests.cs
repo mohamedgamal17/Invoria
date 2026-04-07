@@ -49,6 +49,20 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
         rows.Should().Be(1, $"order id {orderId} should exist for status update");
     }
 
+    private static async Task SetFullfillmentStatusAsync(
+        IServiceProvider serviceProvider,
+        string orderId,
+        FullfillmentStatus fullfillmentStatus)
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var rows = await db.Set<Order>()
+            .Where(o => o.Id == orderId)
+            .ExecuteUpdateAsync(s => s.SetProperty(o => o.FullfillmentStatus, fullfillmentStatus));
+
+        rows.Should().Be(1, $"order id {orderId} should exist for fulfillment update");
+    }
+
     private static async Task<OrderStatus> GetOrderStatusFromDbAsync(
         IServiceProvider serviceProvider,
         string orderId)
@@ -96,13 +110,31 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    [TestCase(OrderStatus.Accepted)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_pending_or_reopened(OrderStatus status)
+    [TestCase(OrderStatus.Refused)]
+    public async Task Should_fail_when_order_status_does_not_allow_cancellation(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, status);
+
+        var command = new CancelOrderCommand(order.Id);
+
+        var result = await Mediator.Send(command);
+
+        result.ShouldBeFailure(typeof(BusinessLogicException));
+    }
+
+    [Test]
+    [TestCase(FullfillmentStatus.Allocating)]
+    [TestCase(FullfillmentStatus.Releasing)]
+    [TestCase(FullfillmentStatus.Dispatched)]
+    public async Task Should_fail_when_accepted_and_fulfillment_does_not_allow_cancellation(
+        FullfillmentStatus fullfillmentStatus)
+    {
+        var order = await PersistOneRandomOrderInNewScopeAsync();
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Accepted);
+        await SetFullfillmentStatusAsync(ServiceProvider, order.Id, fullfillmentStatus);
 
         var command = new CancelOrderCommand(order.Id);
 
