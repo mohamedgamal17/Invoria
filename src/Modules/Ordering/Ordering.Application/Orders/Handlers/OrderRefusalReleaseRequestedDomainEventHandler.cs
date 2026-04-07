@@ -6,24 +6,24 @@ using Rebus.Bus;
 
 namespace Invoria.Ordering.Application.Orders.Handlers;
 
-public sealed class OrderReopenReleaseRequestedDomainEventHandler
-    : INotificationHandler<OrderReopenReleaseRequestedDomainEvent>
+public sealed class OrderRefusalReleaseRequestedDomainEventHandler
+    : INotificationHandler<OrderRefusalReleaseRequestedDomainEvent>
 {
     private readonly IBus _bus;
 
-    public OrderReopenReleaseRequestedDomainEventHandler(IBus bus)
+    public OrderRefusalReleaseRequestedDomainEventHandler(IBus bus)
     {
         _bus = bus;
     }
 
-    public async Task Handle(OrderReopenReleaseRequestedDomainEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(OrderRefusalReleaseRequestedDomainEvent notification, CancellationToken cancellationToken)
     {
         var integrationEvent = new ReleaseOrderAllocationsIntegrationEvent
         {
             Id = notification.OrderId,
             OrderNumber = notification.OrderNumber,
             CustomerId = notification.CustomerId,
-            ReleaseReason = AllocationReleaseReason.Reopen,
+            ReleaseReason = AllocationReleaseReason.Refusal,
             Items = notification.Lines
                 .Select(l => new OrderItemModel
                 {
