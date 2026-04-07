@@ -61,6 +61,18 @@ public class RefuseOrderCommandHandlerTests : OrderTestFixture
             .SingleAsync();
     }
 
+    private static async Task<FullfillmentStatus> GetFullfillmentStatusFromDbAsync(
+        IServiceProvider serviceProvider,
+        string orderId)
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        return await db.Set<Order>()
+            .Where(o => o.Id == orderId)
+            .Select(o => o.FullfillmentStatus)
+            .SingleAsync();
+    }
+
     [Test]
     public async Task Should_refuse_order_when_accepted()
     {
@@ -77,6 +89,9 @@ public class RefuseOrderCommandHandlerTests : OrderTestFixture
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
         status.Should().Be(OrderStatus.Refused);
+
+        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
+        fulfillment.Should().Be(FullfillmentStatus.Cancelled);
     }
 
     [Test]
