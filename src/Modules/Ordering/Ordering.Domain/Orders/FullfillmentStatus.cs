@@ -8,5 +8,6 @@ namespace Invoria.Ordering.Domain.Orders
         OnHold = 20,
         Releasing = 25,
         Dispatched = 30,
+        Cancelled = 35,
     }
 }
