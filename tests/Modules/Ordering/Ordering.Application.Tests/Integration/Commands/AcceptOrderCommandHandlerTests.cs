@@ -1,15 +1,16 @@
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
-using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
+using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
-using Invoria.Ordering.Domain.Orders.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Rebus.Bus;
 
 namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 
@@ -26,6 +27,8 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     protected override async Task BeforeAnyTestRunAsync()
     {
         await ClearOrdersAsync();
+        var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
+        busMock.Invocations.Clear();
     }
 
     private async Task ClearOrdersAsync()
@@ -89,15 +92,49 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
             .SingleAsync();
     }
 
-    private static void SetOrderIdForTest(Order order, string id)
+    private static async Task<Order> LoadOrderWithItemsAsync(IServiceProvider serviceProvider, string orderId)
     {
-        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, id);
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        return await db.Set<Order>()
+            .Include(o => o.Items)
+            .SingleAsync(o => o.Id == orderId);
+    }
+
+    private static bool MatchesAllocateEvent(AllocateOrderIntegrationEvent e, Order expected)
+    {
+        if (e.Id != expected.Id || e.OrderNumber != expected.OrderNumber || e.CustomerId != expected.CustomerId)
+        {
+            return false;
+        }
+
+        if (e.Items.Count != expected.Items.Count)
+        {
+            return false;
+        }
+
+        var byItemId = expected.Items.ToDictionary(i => i.Id);
+        foreach (var item in e.Items)
+        {
+            if (!byItemId.TryGetValue(item.Id, out var line))
+            {
+                return false;
+            }
+
+            if (line.ProductId != item.ProductId || line.Quantity != item.Quantity)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     [Test]
     public async Task Should_accept_order_when_pending()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
+        var expectedSnapshot = await LoadOrderWithItemsAsync(ServiceProvider, order.Id);
 
         var command = new AcceptOrderCommand(order.Id);
 
@@ -112,6 +149,13 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
         fulfillment.Should().Be(FullfillmentStatus.Allocating);
+
+        var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
+        busMock.Verify(
+            b => b.Publish(
+                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
     }
 
     [Test]
@@ -119,6 +163,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+        var expectedSnapshot = await LoadOrderWithItemsAsync(ServiceProvider, order.Id);
 
         var command = new AcceptOrderCommand(order.Id);
 
@@ -132,6 +177,13 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
         fulfillment.Should().Be(FullfillmentStatus.Allocating);
+
+        var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
+        busMock.Verify(
+            b => b.Publish(
+                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
     }
 
     [Test]
@@ -145,24 +197,6 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var result = await Mediator.Send(command);
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
-    }
-
-    [Test]
-    public void Accept_raises_OrderAcceptedDomainEvent_and_sets_allocating()
-    {
-        var order = new Order("TEST-1", Guid.NewGuid().ToString());
-        order.UpdateItems(
-        [
-            new OrderItem(Guid.NewGuid().ToString(), 1, 10m)
-        ]);
-        SetOrderIdForTest(order, Guid.NewGuid().ToString());
-
-        order.Accept();
-
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
-        order.Status.Should().Be(OrderStatus.Accepted);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderAcceptedDomainEvent>()
-            .Which.OrderId.Should().Be(order.Id);
     }
 
     [Test]

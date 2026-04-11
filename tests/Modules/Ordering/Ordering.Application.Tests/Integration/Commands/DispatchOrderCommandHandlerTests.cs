@@ -102,7 +102,7 @@ public class DispatchOrderCommandHandlerTests : OrderTestFixture
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
-            b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()),
+            b => b.Publish(It.IsAny<OrderDispatchedIntegrationEvent>(), It.IsAny<Dictionary<string, string>>()),
             Times.Never);
     }
 
