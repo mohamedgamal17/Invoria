@@ -32,11 +32,15 @@ namespace Invoria.Api
             services.InstallModule<OrderingModuleInstaller>(configuration);
 
             services.AddExceptionHandler<GlobalExceptionHandler>();
+
             services.AddProblemDetails();
 
             ConfigureSwagger(services);
 
             ConfigureFastEndpoint(services);
+
+            ConfigureControllers(services);
+
         }
 
         /// <summary>
@@ -82,6 +86,11 @@ namespace Invoria.Api
                 opt.Assemblies = assemblies;
 
             });
+        }
+
+        private void ConfigureControllers(IServiceCollection services)
+        {
+            services.AddControllers();
         }
 
     }

@@ -40,6 +40,12 @@ if (builder.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection()
+     .UseCors(bld =>
+        bld
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+    )
     .UseExceptionHandler()
     .UseRouting()
 
