@@ -5,6 +5,7 @@ using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Services;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Orders.Factories
@@ -53,6 +54,8 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 OrderNumber = view.OrderNumber,
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
+                Status = view.Status,
+                FullfillmentStatus = view.FullfillmentStatus,
                 Items = new List<OrderItemDto>()
             };
 
@@ -106,6 +109,8 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 OrderNumber = view.OrderNumber,
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
+                Status = view.Status,
+                FullfillmentStatus = view.FullfillmentStatus,
                 Items = view.Items
                     .Select(item => new OrderItemDto
                     {

@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders.Events;
 
 namespace Invoria.Ordering.Domain.Orders

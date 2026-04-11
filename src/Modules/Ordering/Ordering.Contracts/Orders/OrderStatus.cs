@@ -1,4 +1,4 @@
-﻿namespace Invoria.Ordering.Domain.Orders
+namespace Invoria.Ordering.Contracts.Orders
 {
     public enum OrderStatus
     {
