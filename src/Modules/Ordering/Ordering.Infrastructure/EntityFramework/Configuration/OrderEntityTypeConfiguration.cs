@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
