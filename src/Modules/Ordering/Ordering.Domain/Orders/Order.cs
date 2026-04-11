@@ -62,7 +62,10 @@ namespace Invoria.Ordering.Domain.Orders
 
             Status = OrderStatus.Accepted;
             FullfillmentStatus = FullfillmentStatus.Allocating;
-            AddDomainEvent(new OrderAcceptedDomainEvent(Id, OrderNumber, CustomerId));
+            var lines = Items
+                .Select(i => new OrderAcceptedLine(i.Id, i.ProductId, i.Quantity))
+                .ToList();
+            AddDomainEvent(new OrderAcceptedDomainEvent(Id, OrderNumber, CustomerId, lines));
         }
 
         /// <summary>
