@@ -24,6 +24,7 @@ public class AcceptOrderEndpoint : EndpointBase<AcceptOrderRequest, OrderDto>
         AllowAnonymous();
 
         Group<OrderRoutingGroup>();
+        
     }
 
     public override async Task HandleAsync(AcceptOrderRequest req, CancellationToken ct)

@@ -1,9 +1,11 @@
+using FastEndpoints;
 using FluentValidation;
 
 namespace Invoria.Ordering.Endpoints.Orders.Requests;
 
 public class AcceptOrderRequest
 {
+    [RouteParam]
     public string Id { get; set; } = string.Empty;
 }
 
