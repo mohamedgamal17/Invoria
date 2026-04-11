@@ -22,7 +22,10 @@ public class AllocateOrderIntegrationConsumerTests
             .ReturnsAsync(Result.Failure<Empty>(new InvalidOperationException("Insufficient stock for product x.")));
 
         var bus = new Mock<IBus>();
-        var consumer = new AllocateOrderIntegrationEventConsumer(mediator.Object, bus.Object);
+        var consumer = new AllocateOrderIntegrationEventConsumer(
+            mediator.Object,
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<AllocateOrderIntegrationEventConsumer>>());
 
         var message = new AllocateOrderIntegrationEvent
         {
@@ -59,7 +62,10 @@ public class AllocateOrderIntegrationConsumerTests
             ])));
 
         var bus = new Mock<IBus>();
-        var consumer = new AllocateOrderIntegrationEventConsumer(mediator.Object, bus.Object);
+        var consumer = new AllocateOrderIntegrationEventConsumer(
+            mediator.Object,
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<AllocateOrderIntegrationEventConsumer>>());
 
         var message = new AllocateOrderIntegrationEvent
         {
@@ -94,7 +100,10 @@ public class AllocateOrderIntegrationConsumerTests
             .ReturnsAsync(Result.Success(Empty.Value));
 
         var bus = new Mock<IBus>();
-        var consumer = new AllocateOrderIntegrationEventConsumer(mediator.Object, bus.Object);
+        var consumer = new AllocateOrderIntegrationEventConsumer(
+            mediator.Object,
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<AllocateOrderIntegrationEventConsumer>>());
 
         var message = new AllocateOrderIntegrationEvent
         {

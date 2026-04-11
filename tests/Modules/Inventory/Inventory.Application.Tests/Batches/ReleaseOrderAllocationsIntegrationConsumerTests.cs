@@ -24,7 +24,10 @@ public class ReleaseOrderAllocationsIntegrationConsumerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var consumer = new ReleaseOrderAllocationsIntegrationEventConsumer(mediator.Object, bus.Object);
+        var consumer = new ReleaseOrderAllocationsIntegrationEventConsumer(
+            mediator.Object,
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<ReleaseOrderAllocationsIntegrationEventConsumer>>());
         var message = new ReleaseOrderAllocationsIntegrationEvent
         {
             Id = "order-1",
@@ -58,7 +61,10 @@ public class ReleaseOrderAllocationsIntegrationConsumerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var consumer = new ReleaseOrderAllocationsIntegrationEventConsumer(mediator.Object, bus.Object);
+        var consumer = new ReleaseOrderAllocationsIntegrationEventConsumer(
+            mediator.Object,
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<ReleaseOrderAllocationsIntegrationEventConsumer>>());
         var message = new ReleaseOrderAllocationsIntegrationEvent
         {
             Id = "order-1",

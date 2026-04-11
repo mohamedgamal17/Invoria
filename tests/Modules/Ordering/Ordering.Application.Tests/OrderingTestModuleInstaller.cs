@@ -3,6 +3,7 @@ using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Ordering.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Rebus.Bus;
 
@@ -12,6 +13,8 @@ namespace Invoria.Ordering.Application.Tests
     {
         public void Install(IServiceCollection services, IConfiguration configuration)
         {
+            services.AddLogging(static b => b.SetMinimumLevel(LogLevel.Warning));
+
             services.InstallModule<OrderingModuleInstaller>(configuration);
 
             services.AddSingleton<Mock<IBus>>(_ =>

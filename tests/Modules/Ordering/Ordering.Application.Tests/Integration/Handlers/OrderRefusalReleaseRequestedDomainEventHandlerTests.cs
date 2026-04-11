@@ -1,4 +1,5 @@
 using Invoria.Ordering.Application.Orders.Handlers;
+using Microsoft.Extensions.Logging;
 using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Domain.Orders.Events;
 using Moq;
@@ -16,7 +17,9 @@ public class OrderRefusalReleaseRequestedDomainEventHandlerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new OrderRefusalReleaseRequestedDomainEventHandler(bus.Object);
+        var handler = new OrderRefusalReleaseRequestedDomainEventHandler(
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderRefusalReleaseRequestedDomainEventHandler>>());
         var ev = new OrderRefusalReleaseRequestedDomainEvent(
             "o1",
             "ON-1",

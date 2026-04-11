@@ -20,7 +20,9 @@ public class OrderDispatchedIntegrationEventConsumerTests
             .Setup(m => m.Send(It.IsAny<DispatchOrderCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success(Empty.Value));
 
-        var consumer = new OrderDispatchedIntegrationEventConsumer(mediator.Object);
+        var consumer = new OrderDispatchedIntegrationEventConsumer(
+            mediator.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderDispatchedIntegrationEventConsumer>>());
 
         var message = new OrderDispatchedIntegrationEvent
         {
@@ -55,7 +57,9 @@ public class OrderDispatchedIntegrationEventConsumerTests
             .Setup(m => m.Send(It.IsAny<DispatchOrderCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Failure<Empty>(new InvalidOperationException("No allocations.")));
 
-        var consumer = new OrderDispatchedIntegrationEventConsumer(mediator.Object);
+        var consumer = new OrderDispatchedIntegrationEventConsumer(
+            mediator.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderDispatchedIntegrationEventConsumer>>());
 
         var message = new OrderDispatchedIntegrationEvent
         {

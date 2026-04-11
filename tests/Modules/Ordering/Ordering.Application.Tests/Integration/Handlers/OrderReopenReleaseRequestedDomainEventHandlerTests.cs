@@ -16,7 +16,9 @@ public class OrderReopenReleaseRequestedDomainEventHandlerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new OrderReopenReleaseRequestedDomainEventHandler(bus.Object);
+        var handler = new OrderReopenReleaseRequestedDomainEventHandler(
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderReopenReleaseRequestedDomainEventHandler>>());
         var ev = new OrderReopenReleaseRequestedDomainEvent(
             "o1",
             "ON-1",

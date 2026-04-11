@@ -18,7 +18,9 @@ public class OrderAllocationSucceededIntegrationEventConsumerTests
             .Setup(m => m.Send(It.IsAny<RecordOrderAllocationSucceededCommand>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result.Success(Empty.Value));
 
-        var consumer = new OrderAllocationSucceededIntegrationEventConsumer(mediator.Object);
+        var consumer = new OrderAllocationSucceededIntegrationEventConsumer(
+            mediator.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderAllocationSucceededIntegrationEventConsumer>>());
 
         var message = new OrderAllocationSucceededIntegrationEvent
         {

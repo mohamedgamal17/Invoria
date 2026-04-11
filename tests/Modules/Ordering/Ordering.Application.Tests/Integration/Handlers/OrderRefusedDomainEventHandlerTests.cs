@@ -1,4 +1,5 @@
 using Invoria.Ordering.Application.Orders.Handlers;
+using Microsoft.Extensions.Logging;
 using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Domain.Orders.Events;
 using Moq;
@@ -16,7 +17,7 @@ public class OrderRefusedDomainEventHandlerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new OrderRefusedDomainEventHandler(bus.Object);
+        var handler = new OrderRefusedDomainEventHandler(bus.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderRefusedDomainEventHandler>>());
         var ev = new OrderRefusedDomainEvent("o1", "ON-1", "c1");
 
         await handler.Handle(ev, CancellationToken.None);

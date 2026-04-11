@@ -16,7 +16,7 @@ public class OrderAcceptedDomainEventHandlerTests
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
             .Returns(Task.CompletedTask);
 
-        var handler = new OrderAcceptedDomainEventHandler(bus.Object);
+        var handler = new OrderAcceptedDomainEventHandler(bus.Object, Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderAcceptedDomainEventHandler>>());
         var ev = new OrderAcceptedDomainEvent(
             "o1",
             "ON-1",
