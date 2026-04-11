@@ -46,6 +46,7 @@
     <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Application\Invoria.Ordering.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
     <ProjectReference Include="..\Invoria.Ordering.Tests.Fakes\Invoria.Ordering.Tests.Fakes.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Infrastructure\Invoria.Ordering.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Application.Tests\Invoria.Application.Tests.csproj" />

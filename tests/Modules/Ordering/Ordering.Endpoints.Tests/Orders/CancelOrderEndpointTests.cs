@@ -4,6 +4,7 @@ using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using Invoria.Ordering.Infrastructure.EntityFramework;

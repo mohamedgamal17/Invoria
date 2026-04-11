@@ -16,6 +16,8 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.Id.Should().Be(order.Id);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.CustomerId.Should().Be(order.CustomerId);
+            dto.Status.Should().Be(order.Status);
+            dto.FullfillmentStatus.Should().Be(order.FullfillmentStatus);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(order.Items.Count);
             foreach (var item in order.Items)
@@ -37,6 +39,8 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.Id.Should().NotBeNullOrWhiteSpace();
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
+            dto.Status.Should().Be(OrderStatus.Pending);
+            dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
 
@@ -66,6 +70,8 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.Id.Should().NotBeNullOrWhiteSpace();
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
+            dto.Status.Should().Be(OrderStatus.Pending);
+            dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
 
