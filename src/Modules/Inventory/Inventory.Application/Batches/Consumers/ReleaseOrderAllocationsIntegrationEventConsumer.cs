@@ -1,6 +1,7 @@
 using Invoria.Inventory.Application.Batches.Commands.ReleaseOrderAllocations;
 using Invoria.Ordering.Contracts.Events;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Rebus.Bus;
 using Rebus.Handlers;
 
@@ -11,15 +12,26 @@ public sealed class ReleaseOrderAllocationsIntegrationEventConsumer
 {
     private readonly IMediator _mediator;
     private readonly IBus _bus;
+    private readonly ILogger<ReleaseOrderAllocationsIntegrationEventConsumer> _logger;
 
-    public ReleaseOrderAllocationsIntegrationEventConsumer(IMediator mediator, IBus bus)
+    public ReleaseOrderAllocationsIntegrationEventConsumer(
+        IMediator mediator,
+        IBus bus,
+        ILogger<ReleaseOrderAllocationsIntegrationEventConsumer> logger)
     {
         _mediator = mediator;
         _bus = bus;
+        _logger = logger;
     }
 
     public async Task Handle(ReleaseOrderAllocationsIntegrationEvent message)
     {
+        _logger.LogDebug(
+            "Consuming integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+            nameof(ReleaseOrderAllocationsIntegrationEvent),
+            message.Id,
+            message.OrderNumber);
+
         var result = await _mediator.Send(
             ReleaseOrderAllocationsCommand.FromEvent(message),
             CancellationToken.None);
@@ -32,6 +44,11 @@ public sealed class ReleaseOrderAllocationsIntegrationEventConsumer
 
         if (message.ReleaseReason == AllocationReleaseReason.Refusal)
         {
+            _logger.LogDebug(
+                "Publishing integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+                nameof(OrderRefusalInventoryReleasedIntegrationEvent),
+                message.Id,
+                message.OrderNumber);
             await _bus.Publish(new OrderRefusalInventoryReleasedIntegrationEvent
             {
                 OrderId = message.Id,
@@ -42,6 +59,11 @@ public sealed class ReleaseOrderAllocationsIntegrationEventConsumer
         }
         else
         {
+            _logger.LogDebug(
+                "Publishing integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+                nameof(OrderReopenInventoryReleasedIntegrationEvent),
+                message.Id,
+                message.OrderNumber);
             await _bus.Publish(new OrderReopenInventoryReleasedIntegrationEvent
             {
                 OrderId = message.Id,

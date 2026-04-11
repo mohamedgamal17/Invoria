@@ -1,7 +1,8 @@
-using Invoria.Ordering.Contracts.Events;
 using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
+using Invoria.Ordering.Contracts.Events;
 using Invoria.Inventory.Domain.Batches;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Rebus.Bus;
 using Rebus.Handlers;
 
@@ -11,19 +12,35 @@ public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<Allo
 {
     private readonly IMediator _mediator;
     private readonly IBus _bus;
+    private readonly ILogger<AllocateOrderIntegrationEventConsumer> _logger;
 
-    public AllocateOrderIntegrationEventConsumer(IMediator mediator, IBus bus)
+    public AllocateOrderIntegrationEventConsumer(
+        IMediator mediator,
+        IBus bus,
+        ILogger<AllocateOrderIntegrationEventConsumer> logger)
     {
         _mediator = mediator;
         _bus = bus;
+        _logger = logger;
     }
 
     public async Task Handle(AllocateOrderIntegrationEvent message)
     {
+        _logger.LogDebug(
+            "Consuming integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+            nameof(AllocateOrderIntegrationEvent),
+            message.Id,
+            message.OrderNumber);
+
         var result = await _mediator.Send(AllocateOrderCommand.FromEvent(message), CancellationToken.None);
 
         if (result.IsSuccess)
         {
+            _logger.LogDebug(
+                "Publishing integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+                nameof(OrderAllocationSucceededIntegrationEvent),
+                message.Id,
+                message.OrderNumber);
             await _bus.Publish(new OrderAllocationSucceededIntegrationEvent
             {
                 OrderId = message.Id,
@@ -42,6 +59,11 @@ public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<Allo
             return;
         }
 
+        _logger.LogDebug(
+            "Publishing integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
+            nameof(OrderAllocationFailedIntegrationEvent),
+            message.Id,
+            message.OrderNumber);
         await _bus.Publish(new OrderAllocationFailedIntegrationEvent
         {
             OrderId = message.Id,
