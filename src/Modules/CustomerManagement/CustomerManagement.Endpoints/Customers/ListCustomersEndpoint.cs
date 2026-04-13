@@ -30,14 +30,7 @@ namespace Invoria.CustomerManagement.Endpoints.Customers
 
         public override async Task HandleAsync(ListCustomersRequest req, CancellationToken ct)
         {
-            var validator = Resolve<IValidator<ListCustomersRequest>>();
-
-            var validationResult = validator.Validate(req);
-
-            if (!validationResult.IsValid)
-            {
-                return;
-            }
+            ValidateRequest(req);
 
             var query = new ListCustomerQuery
             {

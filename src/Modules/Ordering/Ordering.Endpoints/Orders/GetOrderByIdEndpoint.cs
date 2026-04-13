@@ -28,14 +28,7 @@ public class GetOrderByIdEndpoint : EndpointBase<GetOrderByIdRequest, OrderDto>
 
     public override async Task HandleAsync(GetOrderByIdRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<GetOrderByIdRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            return;
-        }
+        ValidateRequest(req);
 
         var query = new GetOrderByIdQuery
         {

@@ -29,18 +29,7 @@ public class ListBatchesEndpoint : EndpointBase<ListBatchesRequest, PagingDto<Ba
 
     public override async Task HandleAsync(ListBatchesRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<ListBatchesRequest>>();
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var query = new ListBatchesQuery
         {

@@ -28,18 +28,7 @@ public class CreateBatchEndpoint : EndpointBase<CreateBatchRequest, BatchDto>
 
     public override async Task HandleAsync(CreateBatchRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<CreateBatchRequest>>();
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new CreateBatchCommand(req.ProductId, req.Quantity, req.PurchasePrice);
         var result = await _mediator.Send(command, ct);

@@ -29,19 +29,7 @@ public class UpdateOrderItemsEndpoint : EndpointBase<UpdateOrderItemsRequest, Or
 
     public override async Task HandleAsync(UpdateOrderItemsRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<UpdateOrderItemsRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var itemCommands = req.Items
             .Select(i => new CreateOrderItemCommand(i.ProductId, i.Quantity, i.Price))

@@ -28,14 +28,7 @@ namespace Invoria.Catalog.Endpoints.Products
 
         public override async Task HandleAsync(GetProductByIdRequest req, CancellationToken ct)
         {
-            var validator = Resolve<IValidator<GetProductByIdRequest>>();
-
-            var validationResult = validator.Validate(req);
-
-            if (!validationResult.IsValid)
-            {
-                return;
-            }
+            ValidateRequest(req);
 
             var query = new GetProductByIdQuery
             {

@@ -46,6 +46,10 @@ namespace Invoria.Ordering.Domain.Orders
         }
 
 
+        /// <summary>
+        /// Accepts the order for fulfillment allocation when fulfillment is <see cref="FullfillmentStatus.Pending"/>
+        /// or <see cref="FullfillmentStatus.OnHold"/> (for example after <see cref="Reopen"/>).
+        /// </summary>
         public void Accept()
         {
             if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
@@ -54,10 +58,11 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be accepted when it is Pending or Reopened.");
             }
 
-            if (FullfillmentStatus != FullfillmentStatus.Pending)
+            if (FullfillmentStatus != FullfillmentStatus.Pending
+                && FullfillmentStatus != FullfillmentStatus.OnHold)
             {
                 throw new InvalidOperationException(
-                    "Order can only be accepted when fulfillment is Pending.");
+                    "Order can only be accepted when fulfillment is Pending or On Hold.");
             }
 
             Status = OrderStatus.Accepted;

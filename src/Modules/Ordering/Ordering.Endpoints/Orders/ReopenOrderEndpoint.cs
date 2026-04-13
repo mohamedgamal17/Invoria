@@ -28,19 +28,7 @@ public class ReopenOrderEndpoint : EndpointBase<ReopenOrderRequest, OrderDto>
 
     public override async Task HandleAsync(ReopenOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<ReopenOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new ReopenOrderCommand(req.Id);
 

@@ -2,6 +2,7 @@ using Autofac.Extensions.DependencyInjection;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using Invoria.Api;
+using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Serilog;
 using Serilog.Events;
@@ -52,7 +53,31 @@ app.UseHttpsRedirection()
     .UseEndpoints(endpoint =>
     {
         endpoint.MapFastEndpoints(e =>
-        e.Endpoints.ShortNames = true);
+        {
+            e.Endpoints.ShortNames = true;
+
+            e.Errors.ResponseBuilder = (failures, ctx, statusCode) =>
+            {
+                var errors = failures
+                    .GroupBy(f => f.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(x => x.ErrorMessage).Distinct().ToArray());
+
+                var problem = new ApiProblemDetails
+                {
+                    Type = $"https://httpstatuses.io/{statusCode}",
+                    Title = "Validation failed.",
+                    Status = statusCode,
+                    Instance = ctx.Request.Path,
+                    CorrelationId = ctx.TraceIdentifier,
+                    ErrorCode = "validation_error",
+                    Errors = errors
+                };
+
+                return Envelope.Failure(problem);
+            };
+        });
     });
 
 await app.RunModulesBootstrapperAsync();

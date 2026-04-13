@@ -28,18 +28,7 @@ public class UpdateBatchEndpoint : EndpointBase<UpdateBatchRequest, BatchDto>
 
     public override async Task HandleAsync(UpdateBatchRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<UpdateBatchRequest>>();
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new UpdateBatchCommand(req.Id, req.Quantity, req.PurchasePrice);
         var result = await _mediator.Send(command, ct);

@@ -28,19 +28,7 @@ public class CompleteOrderEndpoint : EndpointBase<CompleteOrderRequest, OrderDto
 
     public override async Task HandleAsync(CompleteOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<CompleteOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new CompleteOrderCommand(req.Id);
 

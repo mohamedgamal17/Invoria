@@ -84,7 +84,6 @@ namespace Invoria.Api
             services.AddFastEndpoints(opt =>
             {
                 opt.Assemblies = assemblies;
-
             });
         }
 

@@ -29,14 +29,7 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
 
     public override async Task HandleAsync(ListOrdersRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<ListOrdersRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            return;
-        }
+        ValidateRequest(req);
 
         var query = new ListOrdersQuery
         {

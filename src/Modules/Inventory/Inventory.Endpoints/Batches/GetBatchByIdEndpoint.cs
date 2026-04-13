@@ -28,18 +28,7 @@ public class GetBatchByIdEndpoint : EndpointBase<GetBatchByIdRequest, BatchDto>
 
     public override async Task HandleAsync(GetBatchByIdRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<GetBatchByIdRequest>>();
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var query = new GetBatchByIdQuery
         {

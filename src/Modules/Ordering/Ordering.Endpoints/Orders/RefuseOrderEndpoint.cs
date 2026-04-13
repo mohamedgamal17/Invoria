@@ -28,19 +28,7 @@ public class RefuseOrderEndpoint : EndpointBase<RefuseOrderRequest, OrderDto>
 
     public override async Task HandleAsync(RefuseOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<RefuseOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new RefuseOrderCommand(req.Id);
 

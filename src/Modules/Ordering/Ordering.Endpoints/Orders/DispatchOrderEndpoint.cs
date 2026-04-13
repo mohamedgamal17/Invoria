@@ -28,19 +28,7 @@ public class DispatchOrderEndpoint : EndpointBase<DispatchOrderRequest, OrderDto
 
     public override async Task HandleAsync(DispatchOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<DispatchOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new DispatchOrderCommand(req.Id);
 

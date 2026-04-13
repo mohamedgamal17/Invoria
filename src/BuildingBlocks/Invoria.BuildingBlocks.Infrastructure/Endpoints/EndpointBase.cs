@@ -1,4 +1,5 @@
 using FastEndpoints;
+using FluentValidation;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.BuildingBlocks.Infrastructure.Results;
@@ -21,6 +22,24 @@ public abstract class EndpointBase<TRequest, TResponse> : Endpoint<TRequest, Env
 
         await SendAsync(body, statusCode);
     }
+
+    protected void ValidateRequest(TRequest req)
+    {
+        var validator = Resolve<IValidator<TRequest>>();
+        var validationResult = validator.Validate(req);
+
+        if (validationResult.IsValid)
+        {
+            return;
+        }
+
+        foreach (var failure in validationResult.Errors)
+        {
+            AddError(failure.PropertyName, failure.ErrorMessage);
+        }
+
+        ThrowIfAnyErrors();
+    }
 }
 
 public abstract class EndpointBase<TRequest> : Endpoint<TRequest, Envelope>
@@ -38,5 +57,23 @@ public abstract class EndpointBase<TRequest> : Endpoint<TRequest, Envelope>
         var (statusCode, body) = _resultMapper.Map(result, HttpContext?.Request.Path.Value);
 
         await SendAsync(body, statusCode);
+    }
+
+    protected void ValidateRequest(TRequest req)
+    {
+        var validator = Resolve<IValidator<TRequest>>();
+        var validationResult = validator.Validate(req);
+
+        if (validationResult.IsValid)
+        {
+            return;
+        }
+
+        foreach (var failure in validationResult.Errors)
+        {
+            AddError(failure.PropertyName, failure.ErrorMessage);
+        }
+
+        ThrowIfAnyErrors();
     }
 }

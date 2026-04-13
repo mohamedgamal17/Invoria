@@ -28,19 +28,7 @@ public class CreateOrderEndpoint : EndpointBase<CreateOrderRequest, OrderDto>
 
     public override async Task HandleAsync(CreateOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<CreateOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var itemCommands = req.Items
             .Select(i => new CreateOrderItemCommand(i.ProductId, i.Quantity, i.Price))

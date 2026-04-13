@@ -28,19 +28,7 @@ public class CancelOrderEndpoint : EndpointBase<CancelOrderRequest, OrderDto>
 
     public override async Task HandleAsync(CancelOrderRequest req, CancellationToken ct)
     {
-        var validator = Resolve<IValidator<CancelOrderRequest>>();
-
-        var validationResult = validator.Validate(req);
-
-        if (!validationResult.IsValid)
-        {
-            foreach (var failure in validationResult.Errors)
-            {
-                AddError(failure.PropertyName, failure.ErrorMessage);
-            }
-
-            ThrowIfAnyErrors();
-        }
+        ValidateRequest(req);
 
         var command = new CancelOrderCommand(req.Id);
 

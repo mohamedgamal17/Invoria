@@ -27,14 +27,7 @@ namespace Invoria.CustomerManagement.Endpoints.Customers
 
         public override async Task HandleAsync(UpdateCustomerRequest req, CancellationToken ct)
         {
-            var validator = Resolve<IValidator<UpdateCustomerRequest>>();
-
-            var validationResult = validator.Validate(req);
-
-            if (!validationResult.IsValid)
-            {
-                return;
-            }
+            ValidateRequest(req);
 
             var command = new UpdateCustomerCommand(req.Id, req.Name);
 
