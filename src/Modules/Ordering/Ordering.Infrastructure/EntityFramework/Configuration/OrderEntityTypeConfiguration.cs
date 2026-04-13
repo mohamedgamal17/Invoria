@@ -31,6 +31,13 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
                 .HasForeignKey("OrderId")
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasMany(x => x.FailureDetails)
+                .WithOne()
+                .HasForeignKey("OrderId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(x => x.FailureDetails).AutoInclude();
+
             builder.MapAudited();
 
             builder.HasIndex(x => x.CustomerId);
