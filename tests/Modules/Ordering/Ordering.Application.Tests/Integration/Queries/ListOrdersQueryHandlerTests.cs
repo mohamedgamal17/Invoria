@@ -258,4 +258,32 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         page.AssertPagingDto(0, 10, 1, 1);
         page.Data.Single().Id.Should().Be(orderMatch.Id);
     }
+
+    [Test]
+    public async Task Should_return_failure_details_when_include_order_items_is_true()
+    {
+        var customerId = Guid.NewGuid().ToString();
+        var order = new Order("FAIL-001", customerId);
+        var item = new OrderItem(Guid.NewGuid().ToString(), 4, 10m);
+        order.UpdateItems([item]);
+        order.Accept();
+        order.CancelDueToAllocationFailure("Insufficient stock");
+        order.ReplaceFailureDetails(
+        [
+            new OrderFailureDetails(item.ProductId, 7, 4, 3)
+        ]);
+        await OrderRepository.Add(order, CancellationToken.None);
+
+        var query = new ListOrdersQuery { Skip = 0, Length = 10, IncludeOrderItems = true };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var dto = result.Value!.Data.Single(d => d.Id == order.Id);
+        dto.FailureDetails.Should().HaveCount(1);
+        dto.FailureDetails[0].ItemId.Should().Be(item.ProductId);
+        dto.FailureDetails[0].QuantityRequested.Should().Be(7);
+        dto.FailureDetails[0].QuantityAvailable.Should().Be(4);
+        dto.FailureDetails[0].Shortage.Should().Be(3);
+    }
 }
