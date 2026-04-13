@@ -10,11 +10,13 @@ namespace Invoria.Ordering.Domain.Orders
         public string OrderNumber { get;private set; }
         public string CustomerId { get; private set; }
         public List<OrderItem> Items { get; private set; } 
+        public List<OrderFailureDetails> FailureDetails { get; private set; }
         public OrderStatus Status { get; private set; }
         public FullfillmentStatus FullfillmentStatus { get; set; }
         private Order()
         {
-            
+            Items = new List<OrderItem>();
+            FailureDetails = new List<OrderFailureDetails>();
         }
 
         public Order(string orderNumber, string customerId)
@@ -22,6 +24,7 @@ namespace Invoria.Ordering.Domain.Orders
             OrderNumber = orderNumber;
             CustomerId = customerId;
             Items = new List<OrderItem>();
+            FailureDetails = new List<OrderFailureDetails>();
             Status = OrderStatus.Pending;
             FullfillmentStatus = FullfillmentStatus.Pending;
         }
@@ -43,6 +46,12 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             Items = items;
+        }
+
+        public void ReplaceFailureDetails(List<OrderFailureDetails> failureDetails)
+        {
+            Guard.Against.Null(failureDetails);
+            FailureDetails = failureDetails;
         }
 
 
