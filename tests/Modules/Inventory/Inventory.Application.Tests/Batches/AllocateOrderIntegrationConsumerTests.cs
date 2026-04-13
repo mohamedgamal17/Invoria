@@ -86,7 +86,7 @@ public class AllocateOrderIntegrationConsumerTests
                     e.ItemErrors[0].ProductId == "p1" &&
                     e.ItemErrors[0].RequestedQuantity == 5 &&
                     e.ItemErrors[0].AvailableQuantity == 2 &&
-                    e.ItemErrors[0].Message.Contains("Insufficient stock")),
+                    e.ItemErrors[0].Shortage == 3),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
