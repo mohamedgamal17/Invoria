@@ -37,5 +37,27 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
         envelope.Result.Should().NotBeNull();
         envelope.Result!.Data.Should().NotBeNullOrEmpty();
     }
+
+    [Test]
+    public async Task Should_return_validation_errors_envelope_when_request_is_invalid()
+    {
+        var request = new PagingParams { Skip = 0, Length = 0 };
+
+        string uri = "/products?" + QueryStringHelper.ToQueryString(request);
+
+        var response = await Client.GetAsync(uri);
+
+        response.IsSuccessStatusCode.Should().BeFalse();
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope>();
+
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeFalse();
+        envelope.Error.Should().NotBeNull();
+        envelope.Error!.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        envelope.Error.Errors.Should().NotBeEmpty();
+        envelope.Error.Errors.Keys.Should().Contain(x => x.Contains("Length") || x == "GeneralErrors");
+    }
 }
 

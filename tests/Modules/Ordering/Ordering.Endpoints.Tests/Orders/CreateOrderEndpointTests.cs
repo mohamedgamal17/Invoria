@@ -46,5 +46,13 @@ public class CreateOrderEndpointTests : OrderingTestFixture
 
         response.IsSuccessStatusCode.Should().BeFalse();
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope>();
+
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeFalse();
+        envelope.Error.Should().NotBeNull();
+        envelope.Error!.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        envelope.Error.Errors.Should().NotBeEmpty();
     }
 }

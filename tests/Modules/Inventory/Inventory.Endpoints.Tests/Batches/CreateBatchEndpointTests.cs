@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Inventory.Endpoints.Batches.Requests;
 
 namespace Invoria.Inventory.Endpoints.Tests.Batches;
@@ -38,5 +39,13 @@ public class CreateBatchEndpointTests : InventoryTestFixture
 
         response.IsSuccessStatusCode.Should().BeFalse();
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope>();
+
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeFalse();
+        envelope.Error.Should().NotBeNull();
+        envelope.Error!.Status.Should().Be((int)HttpStatusCode.BadRequest);
+        envelope.Error.Errors.Should().NotBeEmpty();
     }
 }
