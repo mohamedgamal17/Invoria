@@ -68,6 +68,7 @@ public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<Allo
         {
             OrderId = message.Id,
             Reason = result.Exception?.Message ?? "Unknown allocation failure.",
+            CustomerId = message.CustomerId,
             OrderNumber = message.OrderNumber,
             Details = result.Exception?.ToString(),
             ItemErrors = MapItemErrors(message, result.Exception)
@@ -95,13 +96,18 @@ public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<Allo
 
         foreach (var error in preFlight.Errors)
         {
+            var requestedQuantity = requestedByProduct.TryGetValue(error.ProductId, out var rq)
+                ? rq
+                : error.RequestedQuantity;
+            var availableQuantity = error.AvailableQuantity;
+
             itemErrors.Add(new OrderAllocationItemErrorModel
             {
                 OrderItemId = firstOrderItemByProduct.TryGetValue(error.ProductId, out var orderItemId) ? orderItemId : "unknown",
                 ProductId = error.ProductId,
-                RequestedQuantity = requestedByProduct.TryGetValue(error.ProductId, out var rq) ? rq : error.RequestedQuantity,
-                AvailableQuantity = error.AvailableQuantity,
-                Message = error.Message
+                RequestedQuantity = requestedQuantity,
+                AvailableQuantity = availableQuantity,
+                Shortage = requestedQuantity - availableQuantity
             });
         }
 
