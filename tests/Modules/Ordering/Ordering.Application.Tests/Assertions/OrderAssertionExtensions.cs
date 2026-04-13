@@ -20,6 +20,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.FullfillmentStatus.Should().Be(order.FullfillmentStatus);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(order.Items.Count);
+            dto.FailureDetails.Should().HaveCount(order.FailureDetails.Count);
             foreach (var item in order.Items)
             {
                 var line = dto.Items.Single(i => i.ProductId == item.ProductId);
@@ -43,6 +44,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
+            dto.FailureDetails.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -54,6 +56,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
         {
             dto.Id.Should().Be(command.Id);
             dto.Items.Should().HaveCount(command.Items.Count);
+            dto.FailureDetails.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -74,6 +77,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
+            dto.FailureDetails.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
