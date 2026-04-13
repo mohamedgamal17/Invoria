@@ -38,7 +38,14 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 .ToList();
 
             var customerById = await LoadCustomersByIdsAsync(customerIds, cancellationToken);
-            var data = paging.Data.Select(o => MapToSummaryDto(o, customerById)).ToList();
+            var productIds = paging.Data
+                .SelectMany(o => o.FailureDetails)
+                .Select(f => f.ItemId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+            var productById = await LoadProductsByIdsAsync(productIds, cancellationToken);
+            var data = paging.Data.Select(o => MapToSummaryDto(o, customerById, productById)).ToList();
             return new PagingDto<OrderDto>
             {
                 Data = data,
@@ -46,7 +53,10 @@ namespace Invoria.Ordering.Application.Orders.Factories
             };
         }
 
-        private OrderDto MapToSummaryDto(Order view, IReadOnlyDictionary<string, CustomerDto> customerById)
+        private OrderDto MapToSummaryDto(
+            Order view,
+            IReadOnlyDictionary<string, CustomerDto> customerById,
+            IReadOnlyDictionary<string, ProductDto> productById)
         {
             var dto = new OrderDto
             {
@@ -56,7 +66,23 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
                 FullfillmentStatus = view.FullfillmentStatus,
-                Items = new List<OrderItemDto>()
+                Items = new List<OrderItemDto>(),
+                FailureDetails = view.FailureDetails
+                    .Select(detail =>
+                    {
+                        var failureDto = new OrderFailureDetailsDto
+                        {
+                            Id = detail.Id,
+                            ItemId = detail.ItemId,
+                            ItemName = productById.GetValueOrDefault(detail.ItemId)?.Name,
+                            QuantityRequested = detail.QuantityRequested,
+                            QuantityAvailable = detail.QuantityAvailable,
+                            Shortage = detail.Shortage
+                        };
+                        MapAudited(detail, failureDto);
+                        return failureDto;
+                    })
+                    .ToList()
             };
 
             MapAudited(view, dto);
@@ -66,7 +92,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
 
         public override async Task<OrderDto> PrepareDto(Order view)
         {
-            var productIds = ExtractDistinctProductIds(view.Items);
+            var productIds = ExtractDistinctProductIds(view.Items, view.FailureDetails);
             var productById = await LoadProductsByIdsAsync(productIds, CancellationToken.None);
 
             var customerIds = string.IsNullOrWhiteSpace(view.CustomerId)
@@ -80,8 +106,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
         public override async Task<List<OrderDto>> PrepareListDto(List<Order> views)
         {
             var productIds = views
-                .SelectMany(o => o.Items)
-                .Select(i => i.ProductId)
+                .SelectMany(o => ExtractDistinctProductIds(o.Items, o.FailureDetails))
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct()
                 .ToList();
@@ -119,6 +144,22 @@ namespace Invoria.Ordering.Application.Orders.Factories
                         Price = item.Price,
                         Product = productById.GetValueOrDefault(item.ProductId)
                     })
+                    .ToList(),
+                FailureDetails = view.FailureDetails
+                    .Select(detail =>
+                    {
+                        var dto = new OrderFailureDetailsDto
+                        {
+                            Id = detail.Id,
+                            ItemId = detail.ItemId,
+                            ItemName = productById.GetValueOrDefault(detail.ItemId)?.Name,
+                            QuantityRequested = detail.QuantityRequested,
+                            QuantityAvailable = detail.QuantityAvailable,
+                            Shortage = detail.Shortage
+                        };
+                        MapAudited(detail, dto);
+                        return dto;
+                    })
                     .ToList()
             };
 
@@ -127,11 +168,22 @@ namespace Invoria.Ordering.Application.Orders.Factories
             return dto;
         }
 
-        private static List<string> ExtractDistinctProductIds(IReadOnlyCollection<OrderItem> items)
+        private static List<string> ExtractDistinctProductIds(
+            IReadOnlyCollection<OrderItem> items,
+            IReadOnlyCollection<OrderFailureDetails> failureDetails)
         {
-            return items
+            var itemProductIds = items
                 .Select(i => i.ProductId)
                 .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+
+            var failedProductIds = failureDetails
+                .Select(f => f.ItemId)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .ToList();
+
+            return itemProductIds
+                .Concat(failedProductIds)
                 .Distinct()
                 .ToList();
         }
