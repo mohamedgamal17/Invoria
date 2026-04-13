@@ -9,6 +9,8 @@ public class OrderAllocationFailedIntegrationEvent
 
     public required string Reason { get; set; }
 
+    public string? CustomerId { get; set; }
+
     public string? OrderNumber { get; set; }
 
     public string? Details { get; set; }
@@ -26,5 +28,5 @@ public class OrderAllocationItemErrorModel
 
     public required int AvailableQuantity { get; set; }
 
-    public required string Message { get; set; }
+    public required int Shortage { get; set; }
 }
