@@ -82,8 +82,7 @@ public class SubmitPurchaseOrderCommandHandlerTests : ProcurementTestFixture
             purchaseNumber: "PO-" + Guid.NewGuid().ToString("N")[..8],
             supplierId: supplier.Id,
             orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3),
-            createdBy: null);
+            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3));
         await PurchaseOrderRepository.Add(purchaseOrder);
 
         var command = new SubmitPurchaseOrderCommand(purchaseOrder.Id);

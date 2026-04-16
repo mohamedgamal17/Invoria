@@ -10,7 +10,7 @@ public class PurchaseOrderDomainTests
     public void Constructor_rejects_empty_purchase_number()
     {
         Assert.Throws<ArgumentException>(() =>
-            new PurchaseOrder("order-1", "", "supplier-1", null, null, null));
+            new PurchaseOrder("order-1", "", "supplier-1", null, null));
     }
 
     [Test]
@@ -81,18 +81,6 @@ public class PurchaseOrderDomainTests
     }
 
     [Test]
-    public void Reopen_throws_when_any_item_has_created_batch_ids()
-    {
-        var order = CreateDraftOrder();
-        var line = NewLine(order.Id, 1, 50m);
-        line.RegisterCreatedBatch(NewId());
-        order.AddItem(line);
-        order.Submit();
-
-        Assert.Throws<InvalidOperationException>(() => order.Reopen("buyer-1", "need changes"));
-    }
-
-    [Test]
     public void Complete_throws_when_not_Approved()
     {
         var order = CreateDraftOrder();
@@ -130,19 +118,6 @@ public class PurchaseOrderDomainTests
     }
 
     [Test]
-    public void PurchaseOrderItem_RegisterCreatedBatch_appends_trace_ids()
-    {
-        var item = NewLine(NewId(), 1, 1m);
-        var b1 = NewId();
-        var b2 = NewId();
-
-        item.RegisterCreatedBatch(b1);
-        item.RegisterCreatedBatch(b2);
-
-        Assert.That(item.CreatedBatchIds, Is.EqualTo(new[] { b1, b2 }));
-    }
-
-    [Test]
     public void PurchaseOrderSequence_Create_starts_at_zero_and_Increment_is_sequential()
     {
         var sequence = PurchaseOrderSequence.Create(2026, 4, 7);
@@ -164,8 +139,7 @@ public class PurchaseOrderDomainTests
             "2026-00001",
             NewId(),
             DateTime.UtcNow,
-            null,
-            "creator");
+            null);
     }
 
     private static PurchaseOrderItem NewLine(string purchaseOrderId, int quantity, decimal unitPrice)
