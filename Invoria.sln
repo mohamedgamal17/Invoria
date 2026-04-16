@@ -117,6 +117,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Infrast
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Application.Tests", "tests\Modules\Procurement\Procurement.Application.Tests\Invoria.Procurement.Application.Tests.csproj", "{AB432BE0-B1CE-4B6F-9FFF-463510541B75}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Procurement", "Procurement", "{050879D0-AF8A-452F-88D3-28F3242DAB8D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Endpoints.Tests", "tests\Modules\Procurement\Procurement.Endpoints.Tests\Invoria.Procurement.Endpoints.Tests.csproj", "{61287598-2B1D-433D-AE68-6B7FFA47C3AA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -643,6 +647,18 @@ Global
 		{AB432BE0-B1CE-4B6F-9FFF-463510541B75}.Release|x64.Build.0 = Release|Any CPU
 		{AB432BE0-B1CE-4B6F-9FFF-463510541B75}.Release|x86.ActiveCfg = Release|Any CPU
 		{AB432BE0-B1CE-4B6F-9FFF-463510541B75}.Release|x86.Build.0 = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|x64.Build.0 = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Debug|x86.Build.0 = Debug|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|x64.ActiveCfg = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|x64.Build.0 = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|x86.ActiveCfg = Release|Any CPU
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -702,7 +718,9 @@ Global
 		{49EB325F-8E20-47A2-A69D-F295364F925B} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
 		{2B4F1F95-C1D6-4CAF-9617-BB0D0CF62705} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
 		{22F71578-82C9-4D86-A730-8A0DAD7B6904} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
-		{AB432BE0-B1CE-4B6F-9FFF-463510541B75} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
+		{AB432BE0-B1CE-4B6F-9FFF-463510541B75} = {050879D0-AF8A-452F-88D3-28F3242DAB8D}
+		{050879D0-AF8A-452F-88D3-28F3242DAB8D} = {3216E1E0-7019-4319-B813-369DAD98A347}
+		{61287598-2B1D-433D-AE68-6B7FFA47C3AA} = {050879D0-AF8A-452F-88D3-28F3242DAB8D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12DAB194-1672-4BA8-94A8-A5F83D36912D}
