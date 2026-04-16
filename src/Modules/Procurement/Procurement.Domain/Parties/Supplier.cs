@@ -47,4 +47,30 @@ public sealed class Supplier : AuditedAggregateRoot
             CreatedBy = createdBy
         };
     }
+
+    public void Update(
+        string supplierCode,
+        string name,
+        string? contactEmail,
+        string? phone,
+        string? lastModifiedBy)
+    {
+        if (string.IsNullOrWhiteSpace(supplierCode))
+        {
+            throw new ArgumentException("Supplier code cannot be empty.", nameof(supplierCode));
+        }
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Name is required.", nameof(name));
+        }
+
+        SupplierCode = supplierCode;
+        Name = name;
+        ContactEmail = contactEmail;
+        Phone = phone;
+
+        LastModifiedAt = DateTimeOffset.UtcNow;
+        LastModifiedBy = lastModifiedBy;
+    }
 }
