@@ -1,4 +1,5 @@
 using Invoria.Procurement.Domain.PurchaseOrders;
+using Invoria.Procurement.Contracts.PurchaseOrders;
 
 namespace Invoria.Procurement.Application.Tests.Domain.PurchaseOrders;
 
