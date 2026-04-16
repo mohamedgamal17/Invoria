@@ -43,6 +43,23 @@ public class PurchaseOrderDomainTests
     }
 
     [Test]
+    public void Complete_raises_domain_event()
+    {
+        var order = CreateDraftOrder();
+        order.AddItem(NewLine(order.Id, 1, 50m));
+
+        order.Submit();
+        order.Approve();
+
+        order.Complete();
+
+        Assert.That(order.DomainEvents.Count, Is.EqualTo(1));
+        Assert.That(
+            order.DomainEvents.Single(),
+            Is.TypeOf(typeof(Invoria.Procurement.Domain.PurchaseOrders.Events.PurchaseOrderCompletedDomainEvent)));
+    }
+
+    [Test]
     public void CanEdit_is_true_only_for_Draft_or_Reopened()
     {
         var draftOrder = CreateDraftOrder();
