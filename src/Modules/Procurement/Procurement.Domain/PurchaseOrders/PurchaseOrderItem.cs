@@ -4,7 +4,9 @@ namespace Invoria.Procurement.Domain.PurchaseOrders;
 
 public class PurchaseOrderItem : Entity
 {
-    private readonly List<string> _createdBatchIds = new();
+#pragma warning disable CS0414
+    private string _legacyCreatedBatchIds = "[]";
+#pragma warning restore CS0414
 
     public string PurchaseOrderId { get; private set; } = null!;
 
@@ -15,8 +17,6 @@ public class PurchaseOrderItem : Entity
     public decimal UnitPrice { get; private set; }
 
     public string? SupplierProductCode { get; private set; }
-
-    public IReadOnlyList<string> CreatedBatchIds => _createdBatchIds.AsReadOnly();
 
     public decimal LineTotal => Quantity * UnitPrice;
 
@@ -63,15 +63,5 @@ public class PurchaseOrderItem : Entity
         Quantity = quantity;
         UnitPrice = unitPrice;
         SupplierProductCode = supplierProductCode;
-    }
-
-    public void RegisterCreatedBatch(string batchId)
-    {
-        if (string.IsNullOrWhiteSpace(batchId))
-        {
-            throw new ArgumentException("Batch id cannot be empty.", nameof(batchId));
-        }
-
-        _createdBatchIds.Add(batchId);
     }
 }

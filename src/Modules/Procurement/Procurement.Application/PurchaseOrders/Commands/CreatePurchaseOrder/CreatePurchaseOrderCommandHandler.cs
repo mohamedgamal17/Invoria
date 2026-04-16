@@ -39,8 +39,7 @@ public sealed class CreatePurchaseOrderCommandHandler : IApplicatonRequestHandle
             purchaseNumber: purchaseOrderNumber,
             supplierId: request.SupplierId,
             orderDate: request.OrderDate,
-            expectedDeliveryDate: request.ExpectedDeliveryDate,
-            createdBy: null);
+            expectedDeliveryDate: request.ExpectedDeliveryDate);
 
         purchaseOrder.SetHeaderFinancials(request.TaxAmount, request.DiscountAmount);
 

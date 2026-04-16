@@ -43,8 +43,7 @@ public class PurchaseOrder : AuditedAggregateRoot
         string purchaseNumber,
         string supplierId,
         DateTime? orderDate,
-        DateTime? expectedDeliveryDate,
-        string? createdBy)
+        DateTime? expectedDeliveryDate)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -70,7 +69,6 @@ public class PurchaseOrder : AuditedAggregateRoot
         ExpectedDeliveryDate = expectedDeliveryDate;
         State = PurchaseState.Draft;
         CreatedAt = DateTimeOffset.UtcNow;
-        CreatedBy = createdBy;
         RecalculateFinancials();
     }
 
@@ -131,11 +129,6 @@ public class PurchaseOrder : AuditedAggregateRoot
         if (State is not (PurchaseState.Submitted or PurchaseState.Approved))
         {
             throw new InvalidOperationException("Only submitted or approved purchase orders can be reopened.");
-        }
-
-        if (_items.Any(i => i.CreatedBatchIds.Count > 0))
-        {
-            throw new InvalidOperationException("Purchase order cannot be reopened after inventory handoff.");
         }
 
         ApplyTransition(PurchaseState.Reopened, reason);
