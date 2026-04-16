@@ -3,6 +3,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Core\Invoria.BuildingBlocks.Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
     <ProjectReference Include="..\..\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
+    <ProjectReference Include="..\..\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj" />
     <ProjectReference Include="..\Inventory.Domain\Invoria.Inventory.Domain.csproj" />
     <ProjectReference Include="..\Inventory.Application\Invoria.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
