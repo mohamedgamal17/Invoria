@@ -93,6 +93,19 @@ public class PurchaseOrderDomainTests
         Assert.That(item.CreatedBatchIds, Is.EqualTo(new[] { b1, b2 }));
     }
 
+    [Test]
+    public void PurchaseOrderSequence_Create_starts_at_zero_and_Increment_is_sequential()
+    {
+        var sequence = PurchaseOrderSequence.Create(2026, 4, 7);
+        Assert.That(sequence.Id, Is.EqualTo("20260407"));
+        Assert.That(sequence.Year, Is.EqualTo(2026));
+        Assert.That(sequence.Month, Is.EqualTo(4));
+        Assert.That(sequence.Day, Is.EqualTo(7));
+        Assert.That(sequence.CurrentValue, Is.EqualTo(0));
+        Assert.That(sequence.Increment(), Is.EqualTo(1));
+        Assert.That(sequence.Increment(), Is.EqualTo(2));
+    }
+
     private static string NewId() => Guid.NewGuid().ToString("N");
 
     private static PurchaseOrder CreateDraftOrder()
