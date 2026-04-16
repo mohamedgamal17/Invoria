@@ -14,10 +14,12 @@ public static class BatchAssertionExtensions
         string productId,
         int quantity,
         decimal purchasePrice,
+        string? purchaseOrderItemId = null,
         int reservedQuantity = 0,
         BatchState? state = null)
     {
         batch.ProductId.Should().Be(productId);
+        batch.PurchaseOrderItemId.Should().Be(purchaseOrderItemId);
         batch.Quantity.Should().Be(quantity);
         batch.PurchasePrice.Should().Be(purchasePrice);
         batch.ReservedQuantity.Should().Be(reservedQuantity);
@@ -36,6 +38,7 @@ public static class BatchAssertionExtensions
     {
         dto.Id.Should().Be(batch.Id);
         dto.ProductId.Should().Be(batch.ProductId);
+        dto.PurchaseOrderItemId.Should().Be(batch.PurchaseOrderItemId);
         dto.Quantity.Should().Be(batch.Quantity);
         dto.PurchasePrice.Should().Be(batch.PurchasePrice);
         dto.ReservedQuantity.Should().Be(batch.ReservedQuantity);
@@ -45,6 +48,7 @@ public static class BatchAssertionExtensions
     {
         dto.Id.Should().NotBeNullOrWhiteSpace();
         dto.ProductId.Should().Be(command.ProductId);
+        dto.PurchaseOrderItemId.Should().BeNull();
         dto.Quantity.Should().Be(command.Quantity);
         dto.PurchasePrice.Should().Be(command.PurchasePrice);
         dto.ReservedQuantity.Should().Be(reservedQuantity);
@@ -56,7 +60,7 @@ public static class BatchAssertionExtensions
         string productId,
         int reservedQuantity = 0)
     {
-        batch.AssertBatch(productId, command.Quantity, command.PurchasePrice, reservedQuantity);
+        batch.AssertBatch(productId, command.Quantity, command.PurchasePrice, reservedQuantity: reservedQuantity);
     }
 
     public static void AssertBatchDto(
@@ -67,6 +71,7 @@ public static class BatchAssertionExtensions
     {
         dto.Id.Should().NotBeNullOrWhiteSpace();
         dto.ProductId.Should().Be(productId);
+        dto.PurchaseOrderItemId.Should().BeNull();
         dto.Quantity.Should().Be(command.Quantity);
         dto.PurchasePrice.Should().Be(command.PurchasePrice);
         dto.ReservedQuantity.Should().Be(reservedQuantity);

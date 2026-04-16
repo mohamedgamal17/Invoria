@@ -39,6 +39,7 @@
     <ProjectReference Include="..\..\..\..\src\Modules\Inventory\Inventory.Application\Invoria.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Inventory\Inventory.Domain\Invoria.Inventory.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Inventory\Inventory.Infrastructure\Invoria.Inventory.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Application.Tests\Invoria.Application.Tests.csproj" />
   </ItemGroup>
 
