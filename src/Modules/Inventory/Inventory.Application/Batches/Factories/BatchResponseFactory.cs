@@ -12,6 +12,7 @@ public class BatchResponseFactory : ResponseFactory<Batch, BatchDto>, IBatchResp
         {
             Id = view.Id,
             ProductId = view.ProductId,
+            PurchaseOrderItemId = view.PurchaseOrderItemId,
             Quantity = view.Quantity,
             ReservedQuantity = view.ReservedQuantity,
             PurchasePrice = view.PurchasePrice
