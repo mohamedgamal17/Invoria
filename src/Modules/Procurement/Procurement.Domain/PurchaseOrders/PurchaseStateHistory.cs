@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Procurement.Contracts.PurchaseOrders;
 
 namespace Invoria.Procurement.Domain.PurchaseOrders;
 

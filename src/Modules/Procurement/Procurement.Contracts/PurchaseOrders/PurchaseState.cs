@@ -1,4 +1,4 @@
-namespace Invoria.Procurement.Domain.PurchaseOrders;
+namespace Invoria.Procurement.Contracts.PurchaseOrders;
 
 public enum PurchaseState
 {
