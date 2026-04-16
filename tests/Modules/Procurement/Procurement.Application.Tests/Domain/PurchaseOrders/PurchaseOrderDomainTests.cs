@@ -43,6 +43,56 @@ public class PurchaseOrderDomainTests
     }
 
     [Test]
+    public void CanEdit_is_true_only_for_Draft_or_Reopened()
+    {
+        var draftOrder = CreateDraftOrder();
+        draftOrder.AddItem(NewLine(draftOrder.Id, 1, 50m));
+        draftOrder.Submit();
+        draftOrder.Reopen("buyer-1", "need changes");
+
+        var submittedOrder = CreateDraftOrder();
+        submittedOrder.AddItem(NewLine(submittedOrder.Id, 1, 50m));
+        submittedOrder.Submit();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(draftOrder.CanEdit, Is.True);
+            Assert.That(submittedOrder.CanEdit, Is.False);
+        });
+    }
+
+    [Test]
+    public void Reopen_from_Submitted_sets_state_and_appends_history()
+    {
+        var order = CreateDraftOrder();
+        order.AddItem(NewLine(order.Id, 1, 50m));
+        order.Submit();
+
+        order.Reopen("buyer-1", "need changes");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(order.State, Is.EqualTo(PurchaseState.Reopened));
+            Assert.That(order.CanEdit, Is.True);
+            Assert.That(order.StateHistory.Last().FromState, Is.EqualTo(PurchaseState.Submitted));
+            Assert.That(order.StateHistory.Last().ToState, Is.EqualTo(PurchaseState.Reopened));
+            Assert.That(order.StateHistory.Last().Reason, Is.EqualTo("need changes"));
+        });
+    }
+
+    [Test]
+    public void Reopen_throws_when_any_item_has_created_batch_ids()
+    {
+        var order = CreateDraftOrder();
+        var line = NewLine(order.Id, 1, 50m);
+        line.RegisterCreatedBatch(NewId());
+        order.AddItem(line);
+        order.Submit();
+
+        Assert.Throws<InvalidOperationException>(() => order.Reopen("buyer-1", "need changes"));
+    }
+
+    [Test]
     public void Complete_throws_when_not_Approved()
     {
         var order = CreateDraftOrder();
