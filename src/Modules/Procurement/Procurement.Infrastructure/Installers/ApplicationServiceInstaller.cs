@@ -1,5 +1,7 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Procurement.Application.Services;
+using Invoria.Procurement.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +14,8 @@ namespace Invoria.Procurement.Infrastructure.Installers
             services
                    .AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Invoria.Procurement.Application.AssemblyReference.Assembly))
                    .RegisterFactoriesFromAssembly(Invoria.Procurement.Application.AssemblyReference.Assembly);
+
+            services.AddTransient<IPurchaseOrderNumberGenerator, PurchaseOrderNumberGenerator>();
         }
     }
 }
