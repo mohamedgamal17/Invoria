@@ -48,7 +48,7 @@ public class PurchaseOrderDomainTests
         var draftOrder = CreateDraftOrder();
         draftOrder.AddItem(NewLine(draftOrder.Id, 1, 50m));
         draftOrder.Submit();
-        draftOrder.Reopen("buyer-1", "need changes");
+        draftOrder.Reopen();
 
         var submittedOrder = CreateDraftOrder();
         submittedOrder.AddItem(NewLine(submittedOrder.Id, 1, 50m));
@@ -68,7 +68,7 @@ public class PurchaseOrderDomainTests
         order.AddItem(NewLine(order.Id, 1, 50m));
         order.Submit();
 
-        order.Reopen("buyer-1", "need changes");
+        order.Reopen();
 
         Assert.Multiple(() =>
         {
@@ -76,7 +76,7 @@ public class PurchaseOrderDomainTests
             Assert.That(order.CanEdit, Is.True);
             Assert.That(order.StateHistory.Last().FromState, Is.EqualTo(PurchaseState.Submitted));
             Assert.That(order.StateHistory.Last().ToState, Is.EqualTo(PurchaseState.Reopened));
-            Assert.That(order.StateHistory.Last().Reason, Is.EqualTo("need changes"));
+            Assert.That(order.StateHistory.Last().Reason, Is.Null);
         });
     }
 

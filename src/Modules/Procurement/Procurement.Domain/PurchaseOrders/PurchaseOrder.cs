@@ -119,19 +119,14 @@ public class PurchaseOrder : AuditedAggregateRoot
         ApplyTransition(PurchaseState.Approved, null);
     }
 
-    public void Reopen(string reopenedBy, string? reason)
+    public void Reopen()
     {
-        if (string.IsNullOrWhiteSpace(reopenedBy))
-        {
-            throw new ArgumentException("Reopened by cannot be empty.", nameof(reopenedBy));
-        }
-
         if (State is not (PurchaseState.Submitted or PurchaseState.Approved))
         {
             throw new InvalidOperationException("Only submitted or approved purchase orders can be reopened.");
         }
 
-        ApplyTransition(PurchaseState.Reopened, reason);
+        ApplyTransition(PurchaseState.Reopened, null);
     }
 
     public void Complete()
