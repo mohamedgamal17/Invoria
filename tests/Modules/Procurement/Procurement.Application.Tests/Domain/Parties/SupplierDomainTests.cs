@@ -45,4 +45,49 @@ public class SupplierDomainTests
             Assert.That(s.CreatedAt, Is.Not.EqualTo(default(DateTimeOffset)));
         });
     }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Update_rejects_null_empty_or_whitespace_name(string? name)
+    {
+        var supplier = Supplier.Create("id-1", "SUP-99", "Acme Corp", null, null, null);
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            supplier.Update("SUP-99", name!, null, null, "modifier"));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("name"));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Update_rejects_null_empty_or_whitespace_supplier_code(string? supplierCode)
+    {
+        var supplier = Supplier.Create("id-1", "SUP-99", "Acme Corp", null, null, null);
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            supplier.Update(supplierCode!, "Acme Corp", null, null, "modifier"));
+
+        Assert.That(ex!.ParamName, Is.EqualTo("supplierCode"));
+    }
+
+    [Test]
+    public void Update_sets_fields_and_last_modified_audit()
+    {
+        var supplier = Supplier.Create("id-1", "SUP-99", "Acme Corp", "old@acme.com", "+1", "creator");
+
+        supplier.Update("SUP-100", "Acme Corp 2", "new@acme.com", "+2", "modifier");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(supplier.SupplierCode, Is.EqualTo("SUP-100"));
+            Assert.That(supplier.Name, Is.EqualTo("Acme Corp 2"));
+            Assert.That(supplier.ContactEmail, Is.EqualTo("new@acme.com"));
+            Assert.That(supplier.Phone, Is.EqualTo("+2"));
+            Assert.That(supplier.LastModifiedBy, Is.EqualTo("modifier"));
+            Assert.That(supplier.LastModifiedAt, Is.Not.Null);
+            Assert.That(supplier.LastModifiedAt, Is.Not.EqualTo(default(DateTimeOffset)));
+        });
+    }
 }
