@@ -7,4 +7,5 @@ public static class BatchTableConsts
     public const int IdMaxLength = 256;
 
     public const int ProductIdMaxLength = 256;
+    public const int PurchaseOrderItemIdMaxLength = 256;
 }

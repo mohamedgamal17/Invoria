@@ -6,6 +6,7 @@ namespace Invoria.Inventory.Domain.Batches;
 public class Batch : AuditedAggregateRoot
 {
     public string ProductId { get; private set; }
+    public string? PurchaseOrderItemId { get; private set; }
     public int Quantity { get; private set; }
     public int ReservedQuantity { get; private set; }
     public decimal PurchasePrice { get; private set; }
@@ -17,14 +18,20 @@ public class Batch : AuditedAggregateRoot
     {
     }
 
-    public Batch(string productId, int quantity,  decimal purchasePrice)
+    public Batch(string productId, int quantity, decimal purchasePrice, string? purchaseOrderItemId = null)
     {
         Guard.Against.NullOrWhiteSpace(productId);
         Guard.Against.OutOfRange(productId.Length, nameof(productId), 1, BatchTableConsts.ProductIdMaxLength);
         Guard.Against.Negative(quantity);
         Guard.Against.NegativeOrZero(purchasePrice);
+        if (purchaseOrderItemId is not null)
+        {
+            Guard.Against.NullOrWhiteSpace(purchaseOrderItemId);
+            Guard.Against.OutOfRange(purchaseOrderItemId.Length, nameof(purchaseOrderItemId), 1, BatchTableConsts.PurchaseOrderItemIdMaxLength);
+        }
 
         ProductId = productId;
+        PurchaseOrderItemId = purchaseOrderItemId;
         Quantity = quantity;
         PurchasePrice = purchasePrice;
         State = quantity > 0 ? BatchState.Active : BatchState.Depleted;
