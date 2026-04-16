@@ -14,11 +14,22 @@ public class BatchTests
         var productId = Guid.NewGuid().ToString();
         const int quantity = 10;
         const decimal purchasePrice = 25.5m;
+        var purchaseOrderItemId = Guid.NewGuid().ToString();
 
-        var batch = new Batch(productId, quantity,  purchasePrice);
+        var batch = new Batch(productId, quantity, purchasePrice, purchaseOrderItemId);
 
-        batch.AssertBatch(productId, quantity, purchasePrice);
+        batch.AssertBatch(productId, quantity, purchasePrice, purchaseOrderItemId: purchaseOrderItemId);
         batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    [TestCase("")]
+    [TestCase(" ")]
+    public void Should_throw_when_purchase_order_item_id_is_invalid(string purchaseOrderItemId)
+    {
+        var exception = Assert.Catch<ArgumentException>(() => new Batch("product-1", 1, 10m, purchaseOrderItemId));
+
+        Assert.That(exception, Is.Not.Null);
     }
 
     [Test]
