@@ -53,13 +53,11 @@ public class PurchaseOrderDomainTests
     }
 
     [Test]
-    public void Complete_throws_when_no_lines()
+    public void Submit_throws_when_no_lines()
     {
         var order = CreateDraftOrder();
-        order.Submit();
-        order.Approve();
 
-        Assert.Throws<InvalidOperationException>(() => order.Complete());
+        Assert.Throws<InvalidOperationException>(() => order.Submit());
     }
 
     [Test]
