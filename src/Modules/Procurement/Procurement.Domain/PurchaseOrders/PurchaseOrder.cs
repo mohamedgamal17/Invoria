@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Procurement.Contracts.PurchaseOrders;
+using Invoria.Procurement.Domain.PurchaseOrders.Events;
 
 namespace Invoria.Procurement.Domain.PurchaseOrders;
 
@@ -141,6 +142,20 @@ public class PurchaseOrder : AuditedAggregateRoot
 
         ApplyTransition(PurchaseState.Completed, null);
         CompletedDate = DateTime.UtcNow.Date;
+
+        AddDomainEvent(new PurchaseOrderCompletedDomainEvent(
+            purchaseOrderId: Id,
+            purchaseNumber: PurchaseNumber,
+            supplierId: SupplierId,
+            completedAt: DateTimeOffset.UtcNow,
+            items: _items
+                .Select(i => new PurchaseOrderCompletedDomainEvent.Item(
+                    PurchaseOrderItemId: i.Id,
+                    ProductId: i.ProductId,
+                    Quantity: i.Quantity,
+                    UnitPrice: i.UnitPrice,
+                    SupplierProductCode: i.SupplierProductCode))
+                .ToList()));
     }
 
     public void Cancel(string? reason)
