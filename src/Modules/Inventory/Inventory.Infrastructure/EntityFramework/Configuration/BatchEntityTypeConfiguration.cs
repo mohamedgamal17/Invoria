@@ -18,6 +18,8 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Configuration
 
             builder.Property(x => x.ProductId)
                 .HasMaxLength(BatchTableConsts.ProductIdMaxLength);
+            builder.Property(x => x.PurchaseOrderItemId)
+                .HasMaxLength(BatchTableConsts.PurchaseOrderItemIdMaxLength);
 
             builder.Property(x => x.Quantity);
             builder.Property(x => x.ReservedQuantity);
