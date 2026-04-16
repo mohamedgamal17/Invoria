@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.Procurement.Application.Parties.Queries.ListSuppliers;
 using Invoria.Procurement.Domain.Parties;
+using Invoria.Procurement.Domain.PurchaseOrders;
 using Invoria.Procurement.Domain.Repositories;
 using Invoria.Procurement.Infrastructure.EntityFramework;
 using MediatR;
@@ -31,6 +32,11 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     {
         await using var scope = ServiceProvider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ProcurementDbContext>();
+
+        // Suppliers are referenced by purchase orders; clear dependents first to keep tests isolated.
+        var purchaseOrders = await db.Set<PurchaseOrder>().ToListAsync();
+        db.RemoveRange(purchaseOrders);
+
         var suppliers = await db.Set<Supplier>().ToListAsync();
         db.RemoveRange(suppliers);
         await db.SaveChangesAsync();
