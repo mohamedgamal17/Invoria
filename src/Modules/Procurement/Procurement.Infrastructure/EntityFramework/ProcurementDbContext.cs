@@ -22,6 +22,8 @@ public class ProcurementDbContext : InvoriaDbContext<ProcurementDbContext>
 
     public DbSet<PurchaseStateHistory> PurchaseStateHistory => Set<PurchaseStateHistory>();
 
+    public DbSet<PurchaseOrderSequence> PurchaseOrderSequences => Set<PurchaseOrderSequence>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
