@@ -106,6 +106,11 @@ public class PurchaseOrder : AuditedAggregateRoot
 
     public void Submit()
     {
+        if (_items.Count == 0)
+        {
+            throw new InvalidOperationException("Purchase order must have one or more item.");
+        }
+
         ApplyTransition(PurchaseState.Submitted, null);
     }
 
