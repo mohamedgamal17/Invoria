@@ -4,9 +4,6 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Invoria.Procurement.Infrastructure.EntityFramework;
 
-/// <summary>
-/// Design-time factory for EF Core tools (migrations) without requiring the API host project.
-/// </summary>
 public sealed class ProcurementDbContextFactory : IDesignTimeDbContextFactory<ProcurementDbContext>
 {
     public ProcurementDbContext CreateDbContext(string[] args)

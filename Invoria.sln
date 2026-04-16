@@ -101,23 +101,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Inventory", "Inventory", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Inventory.Application.Tests", "tests\Modules\Inventory\Inventory.Application.Tests\Invoria.Inventory.Application.Tests.csproj", "{AF8C378F-329C-44CC-BB6C-CD3D3B01C878}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Inventory.Endpoints.Tests", "tests\Modules\Inventory\Inventory.Endpoints.Tests\Invoria.Inventory.Endpoints.Tests.csproj", "{E236F564-7E0D-44D4-BA6E-DBD326664C36}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{8BCBECBF-75E3-4D92-91A5-5DD294352039}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Inventory.Endpoints.Tests", "tests\Modules\Inventory\Inventory.Endpoints.Tests\Invoria.Inventory.Endpoints.Tests.csproj", "{E236F564-7E0D-44D4-BA6E-DBD326664C36}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Procurement", "Procurement", "{C66D5753-2B74-410F-8B15-3F42EE6FCFCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Domain", "src\Modules\Procurement\Procurement.Domain\Invoria.Procurement.Domain.csproj", "{F65CDFF2-ADA5-451A-BF41-79B4CB75663B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Domain", "src\Modules\Procurement\Procurement.Domain\Invoria.Procurement.Domain.csproj", "{F65CDFF2-ADA5-451A-BF41-79B4CB75663B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Application", "src\Modules\Procurement\Procurement.Application\Invoria.Procurement.Application.csproj", "{BB7E193F-525D-4063-8EC5-96BD651818E5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Application", "src\Modules\Procurement\Procurement.Application\Invoria.Procurement.Application.csproj", "{BB7E193F-525D-4063-8EC5-96BD651818E5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Contracts", "src\Modules\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj", "{49EB325F-8E20-47A2-A69D-F295364F925B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Contracts", "src\Modules\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj", "{49EB325F-8E20-47A2-A69D-F295364F925B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Endpoints", "src\Modules\Procurement\Procurement.Endpoints\Invoria.Procurement.Endpoints.csproj", "{2B4F1F95-C1D6-4CAF-9617-BB0D0CF62705}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Endpoints", "src\Modules\Procurement\Procurement.Endpoints\Invoria.Procurement.Endpoints.csproj", "{2B4F1F95-C1D6-4CAF-9617-BB0D0CF62705}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Infrastructure", "src\Modules\Procurement\Procurement.Infrastructure\Invoria.Procurement.Infrastructure.csproj", "{22F71578-82C9-4D86-A730-8A0DAD7B6904}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Infrastructure", "src\Modules\Procurement\Procurement.Infrastructure\Invoria.Procurement.Infrastructure.csproj", "{22F71578-82C9-4D86-A730-8A0DAD7B6904}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Procurement.Application.Tests", "tests\Modules\Procurement\Procurement.Application.Tests\Invoria.Procurement.Application.Tests.csproj", "{AB432BE0-B1CE-4B6F-9FFF-463510541B75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Procurement.Application.Tests", "tests\Modules\Procurement\Procurement.Application.Tests\Invoria.Procurement.Application.Tests.csproj", "{AB432BE0-B1CE-4B6F-9FFF-463510541B75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -698,7 +696,7 @@ Global
 		{A276A37D-9F14-4CBD-B28D-8B0965157121} = {3216E1E0-7019-4319-B813-369DAD98A347}
 		{AF8C378F-329C-44CC-BB6C-CD3D3B01C878} = {A276A37D-9F14-4CBD-B28D-8B0965157121}
 		{E236F564-7E0D-44D4-BA6E-DBD326664C36} = {A276A37D-9F14-4CBD-B28D-8B0965157121}
-		{C66D5753-2B74-410F-8B15-3F42EE6FCFCF} = {8BCBECBF-75E3-4D92-91A5-5DD294352039}
+		{C66D5753-2B74-410F-8B15-3F42EE6FCFCF} = {8F8D80D6-3DEA-4A11-947D-AC5C7EA00187}
 		{F65CDFF2-ADA5-451A-BF41-79B4CB75663B} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
 		{BB7E193F-525D-4063-8EC5-96BD651818E5} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
 		{49EB325F-8E20-47A2-A69D-F295364F925B} = {C66D5753-2B74-410F-8B15-3F42EE6FCFCF}
