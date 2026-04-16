@@ -36,8 +36,16 @@ public sealed class PurchaseOrderEntityTypeConfiguration : IEntityTypeConfigurat
 
         builder.MapAudited();
 
-        builder.Ignore(x => x.Items);
-        builder.Ignore(x => x.StateHistory);
+
+        builder
+            .Navigation(o => o.Items)
+            .HasField("_items")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder
+            .Navigation(o => o.StateHistory)
+            .HasField("_stateHistory")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         builder.HasOne<Supplier>()
             .WithMany()
@@ -46,12 +54,12 @@ public sealed class PurchaseOrderEntityTypeConfiguration : IEntityTypeConfigurat
 
         builder.HasIndex(x => x.SupplierId);
 
-        builder.HasMany<PurchaseOrderItem>("_items")
+        builder.HasMany<PurchaseOrderItem>(x=> x.Items)
             .WithOne()
             .HasForeignKey(x => x.PurchaseOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany<PurchaseStateHistory>("_stateHistory")
+        builder.HasMany<PurchaseStateHistory>(x=> x.StateHistory)
             .WithOne()
             .HasForeignKey(x => x.PurchaseOrderId)
             .OnDelete(DeleteBehavior.Cascade);
