@@ -8,9 +8,11 @@ public enum PurchaseState
 
     Approved = 3,
 
-    Completed = 4,
+    Reopened = 4,
 
-    Cancelled = 5,
+    Completed = 5,
 
-    Rejected = 6,
+    Cancelled = 6,
+
+    Rejected = 7,
 }

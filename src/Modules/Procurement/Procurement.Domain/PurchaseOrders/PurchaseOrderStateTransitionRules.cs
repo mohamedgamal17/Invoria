@@ -14,9 +14,10 @@ public static class PurchaseOrderStateTransitionRules
         return current switch
         {
             PurchaseState.Draft => next is PurchaseState.Submitted or PurchaseState.Cancelled,
-            PurchaseState.Submitted => next is PurchaseState.Approved or PurchaseState.Rejected
+            PurchaseState.Submitted => next is PurchaseState.Approved or PurchaseState.Reopened or PurchaseState.Rejected
                 or PurchaseState.Cancelled,
-            PurchaseState.Approved => next is PurchaseState.Completed or PurchaseState.Cancelled,
+            PurchaseState.Approved => next is PurchaseState.Reopened or PurchaseState.Completed or PurchaseState.Cancelled,
+            PurchaseState.Reopened => next is PurchaseState.Submitted or PurchaseState.Cancelled,
             PurchaseState.Completed => false,
             PurchaseState.Cancelled => false,
             PurchaseState.Rejected => false,

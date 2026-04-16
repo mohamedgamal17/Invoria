@@ -32,6 +32,8 @@ public class PurchaseOrder : AuditedAggregateRoot
 
     public IReadOnlyCollection<PurchaseStateHistory> StateHistory => _stateHistory.AsReadOnly();
 
+    public bool CanEdit => State is PurchaseState.Draft or PurchaseState.Reopened;
+
     private PurchaseOrder()
     {
     }
@@ -117,6 +119,26 @@ public class PurchaseOrder : AuditedAggregateRoot
     public void Approve()
     {
         ApplyTransition(PurchaseState.Approved, null);
+    }
+
+    public void Reopen(string reopenedBy, string? reason)
+    {
+        if (string.IsNullOrWhiteSpace(reopenedBy))
+        {
+            throw new ArgumentException("Reopened by cannot be empty.", nameof(reopenedBy));
+        }
+
+        if (State is not (PurchaseState.Submitted or PurchaseState.Approved))
+        {
+            throw new InvalidOperationException("Only submitted or approved purchase orders can be reopened.");
+        }
+
+        if (_items.Any(i => i.CreatedBatchIds.Count > 0))
+        {
+            throw new InvalidOperationException("Purchase order cannot be reopened after inventory handoff.");
+        }
+
+        ApplyTransition(PurchaseState.Reopened, reason);
     }
 
     public void Complete()
