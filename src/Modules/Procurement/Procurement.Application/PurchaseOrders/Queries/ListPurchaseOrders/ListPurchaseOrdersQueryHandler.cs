@@ -27,16 +27,19 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
         ListPurchaseOrdersQuery request,
         CancellationToken cancellationToken)
     {
-        var query = _purchaseOrderRepository.AsQuerable();
+        var query = _purchaseOrderRepository
+            .AsQuerable()
+            .AsNoTracking();
 
         if (request.IncludePurchaseItems)
         {
             query = query.Include(x => x.Items);
         }
 
-        // PurchaseOrder has SupplierId FK without Supplier DTO projection in this list query.
-        // Keep this flag for API compatibility and future expansion without widening the query by default.
-        _ = request.IncludeSupplier;
+        if (request.IncludeSupplier)
+        {
+            query = query.Include(x => x.Supplier);
+        }
 
         var numberTerm = request.Number?.Trim();
         if (!string.IsNullOrEmpty(numberTerm))

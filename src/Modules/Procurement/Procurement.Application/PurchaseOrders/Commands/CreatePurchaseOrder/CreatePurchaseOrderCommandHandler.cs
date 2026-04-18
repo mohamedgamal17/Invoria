@@ -5,6 +5,7 @@ using Invoria.Procurement.Application.Services;
 using Invoria.Procurement.Contracts.Dtos;
 using Invoria.Procurement.Domain.PurchaseOrders;
 using Invoria.Procurement.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Procurement.Application.PurchaseOrders.Commands.CreatePurchaseOrder;
 
@@ -58,7 +59,13 @@ public sealed class CreatePurchaseOrderCommandHandler : IApplicatonRequestHandle
 
         await _purchaseOrderRepository.Add(purchaseOrder, cancellationToken);
 
-        var dto = await _purchaseOrderResponseFactory.PrepareDto(purchaseOrder);
+        var persistedPurchaseOrder = await _purchaseOrderRepository
+            .AsQuerable()
+            .Include(x => x.Supplier)
+            .Include(x => x.Items)
+            .SingleAsync(x => x.Id == purchaseOrder.Id, cancellationToken);
+
+        var dto = await _purchaseOrderResponseFactory.PrepareDto(persistedPurchaseOrder);
         return dto;
     }
 }

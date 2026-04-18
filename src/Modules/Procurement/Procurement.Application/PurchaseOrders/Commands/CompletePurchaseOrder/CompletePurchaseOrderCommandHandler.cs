@@ -26,6 +26,7 @@ public sealed class CompletePurchaseOrderCommandHandler : IApplicatonRequestHand
     {
         var purchaseOrder = await _purchaseOrderRepository
             .AsQuerable()
+            .Include(x => x.Supplier)
             .Include(x => x.Items)
             .Include(x => x.StateHistory)
             .SingleOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
