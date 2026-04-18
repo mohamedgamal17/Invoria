@@ -32,7 +32,7 @@ namespace Invoria.Catalog.Endpoints.Products
             Summary(s =>
             {
                 s.Summary = "List products";
-                s.Description = "Returns a paged list of catalog products.";
+                s.Description = "Returns a paged list of catalog products with optional name filtering.";
                 s.Responses[StatusCodes.Status200OK] =
                     InvoriaOpenApiResponseDescriptions.Ok200 + " Returns paged product data.";
                 s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
@@ -47,7 +47,8 @@ namespace Invoria.Catalog.Endpoints.Products
             var query = new ListProductQuery
             {
                 Skip = req.Skip,
-                Length = req.Length
+                Length = req.Length,
+                Name = req.Name
             };
 
             var result = await _mediator.Send(query, ct);

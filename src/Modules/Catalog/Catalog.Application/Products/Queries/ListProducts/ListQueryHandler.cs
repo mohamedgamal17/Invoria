@@ -25,6 +25,13 @@ namespace Invoria.Catalog.Application.Products.Queries.ListProducts
         {
             var query = _productRepository.AsQuerable();
 
+            var nameTerm = request.Name?.Trim();
+            if (!string.IsNullOrEmpty(nameTerm))
+            {
+                var normalizedNameTerm = nameTerm.ToLower();
+                query = query.Where(x => x.Name.ToLower().Contains(normalizedNameTerm));
+            }
+
             var result = await query.ToPaged(request.Skip, request.Length);
 
             var response = await _productResponseFactory.PreparePagingDto(result);

@@ -7,5 +7,6 @@ namespace Invoria.Catalog.Application.Products.Queries.ListProducts
 {
     public class ListProductQuery  : PagingParams , IQuery<PagingDto<ProductDto>>
     {
+        public string? Name { get; set; }
     }
 }
