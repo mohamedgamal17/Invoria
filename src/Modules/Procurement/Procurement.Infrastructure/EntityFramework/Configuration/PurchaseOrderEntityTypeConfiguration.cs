@@ -47,7 +47,7 @@ public sealed class PurchaseOrderEntityTypeConfiguration : IEntityTypeConfigurat
             .HasField("_stateHistory")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasOne<Supplier>()
+        builder.HasOne(x => x.Supplier)
             .WithMany()
             .HasForeignKey(x => x.SupplierId)
             .OnDelete(DeleteBehavior.Restrict);

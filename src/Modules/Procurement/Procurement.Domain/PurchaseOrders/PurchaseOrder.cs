@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Procurement.Contracts.PurchaseOrders;
+using Invoria.Procurement.Domain.Parties;
 using Invoria.Procurement.Domain.PurchaseOrders.Events;
 
 namespace Invoria.Procurement.Domain.PurchaseOrders;
@@ -12,6 +13,8 @@ public class PurchaseOrder : AuditedAggregateRoot
     public string PurchaseNumber { get; private set; } = null!;
 
     public string SupplierId { get; private set; } = null!;
+
+    public Supplier? Supplier { get; private set; }
 
     public PurchaseState State { get; private set; }
 
