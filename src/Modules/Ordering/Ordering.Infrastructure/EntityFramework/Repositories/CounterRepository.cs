@@ -1,7 +1,5 @@
 using Invoria.Ordering.Domain.Orders;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using System.Data;
 
 namespace Invoria.Ordering.Infrastructure.EntityFramework.Repositories
@@ -47,6 +45,7 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Repositories
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
 
             return nextValue;
         }
