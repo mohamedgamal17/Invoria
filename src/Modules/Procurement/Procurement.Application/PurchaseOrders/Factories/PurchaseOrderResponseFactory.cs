@@ -13,6 +13,14 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
             Id = view.Id,
             PurchaseNumber = view.PurchaseNumber,
             SupplierId = view.SupplierId,
+            Supplier = view.Supplier == null
+                ? null
+                : new PurchaseOrderSupplierSummaryDto
+                {
+                    Id = view.Supplier.Id,
+                    SupplierCode = view.Supplier.SupplierCode,
+                    Name = view.Supplier.Name
+                },
             State = view.State,
             OrderDate = view.OrderDate,
             ExpectedDeliveryDate = view.ExpectedDeliveryDate,
@@ -35,6 +43,10 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
         };
 
         MapAudited(view, dto);
+        if (view.Supplier != null && dto.Supplier != null)
+        {
+            MapAudited(view.Supplier, dto.Supplier);
+        }
 
         return Task.FromResult(dto);
     }
