@@ -1,6 +1,8 @@
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
+using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
+using Microsoft.AspNetCore.Http;
 using Invoria.Procurement.Application.PurchaseOrders.Queries.ListPurchaseOrders;
 using Invoria.Procurement.Contracts.Dtos;
 using Invoria.Procurement.Endpoints.PurchaseOrders.Requests;
@@ -23,6 +25,16 @@ public sealed class ListPurchaseOrdersEndpoint : EndpointBase<ListPurchaseOrders
         Get("");
         AllowAnonymous();
         Group<PurchaseOrderRoutingGroup>();
+
+        Summary(s =>
+        {
+            s.Summary = "List purchase orders";
+            s.Description = "Returns a paged list of purchase orders with optional includes.";
+            s.Responses[StatusCodes.Status200OK] =
+                InvoriaOpenApiResponseDescriptions.Ok200 + " Returns paged purchase order data.";
+            s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
+            s.Responses[StatusCodes.Status500InternalServerError] = InvoriaOpenApiResponseDescriptions.InternalServerError500;
+        });
     }
 
     public override async Task HandleAsync(ListPurchaseOrdersRequest req, CancellationToken ct)

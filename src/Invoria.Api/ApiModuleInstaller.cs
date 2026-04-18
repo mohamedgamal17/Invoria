@@ -76,6 +76,32 @@ namespace Invoria.Api
                 opt.AutoTagPathSegmentIndex = 0;
 
                 opt.FlattenSchema = true;
+
+                opt.DocumentSettings = s =>
+                {
+                    s.Title = "Invoria API";
+                    s.Version = "v1";
+                    s.Description =
+                        "HTTP API for the Invoria modular backend. The host wires Catalog, CustomerManagement, Ordering, Inventory, and Procurement. "
+                        + "Successful and failed responses are wrapped in a JSON envelope: on success, isSuccess is true and the payload is in result; "
+                        + "on failure, isSuccess is false and problem details are in error (RFC 7807-style fields plus optional errorCode and field errors for validation).";
+                };
+
+                opt.TagDescriptions = tags =>
+                {
+                    tags["Products"] =
+                        "Catalog products: create, update, list, and retrieve items sold through Invoria.";
+                    tags["Customers"] =
+                        "Customer master data: register, update, search, and retrieve customers.";
+                    tags["Batches"] =
+                        "Inventory batches: create, update, list, and retrieve stock batches.";
+                    tags["Orders"] =
+                        "Sales orders: create and manage order lifecycle (accept, dispatch, complete, cancel, and related transitions).";
+                    tags["Suppliers"] =
+                        "Procurement suppliers: create, update, list, and retrieve supplier records.";
+                    tags["PurchaseOrders"] =
+                        "Purchase orders: create and drive PO workflow (submit, approve, reject, complete, cancel, reopen, and related actions).";
+                };
             });
         }
 

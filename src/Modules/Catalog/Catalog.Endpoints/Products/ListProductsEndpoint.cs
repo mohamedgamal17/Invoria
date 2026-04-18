@@ -2,7 +2,9 @@ using FluentValidation;
 using Invoria.BuildingBlocks.Application.Requests;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
+using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
+using Microsoft.AspNetCore.Http;
 using Invoria.Catalog.Application.Products.Queries.ListProducts;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Catalog.Endpoints.Products.Requests;
@@ -26,6 +28,16 @@ namespace Invoria.Catalog.Endpoints.Products
             AllowAnonymous();
 
             Group<ProductRoutingGroup>();
+
+            Summary(s =>
+            {
+                s.Summary = "List products";
+                s.Description = "Returns a paged list of catalog products.";
+                s.Responses[StatusCodes.Status200OK] =
+                    InvoriaOpenApiResponseDescriptions.Ok200 + " Returns paged product data.";
+                s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
+                s.Responses[StatusCodes.Status500InternalServerError] = InvoriaOpenApiResponseDescriptions.InternalServerError500;
+            });
         }
 
         public override async Task HandleAsync(ListProductsRequest req, CancellationToken ct)

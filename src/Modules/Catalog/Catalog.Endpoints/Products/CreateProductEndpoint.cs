@@ -1,6 +1,8 @@
 using FluentValidation;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
+using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
+using Microsoft.AspNetCore.Http;
 using Invoria.Catalog.Application.Products.Commands.CreateProduct;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Catalog.Endpoints.Products.Requests;
@@ -25,6 +27,16 @@ namespace Invoria.Catalog.Endpoints.Products
 
             Group<ProductRoutingGroup>();
 
+            Summary(s =>
+            {
+                s.Summary = "Create product";
+                s.Description = "Creates a new catalog product.";
+                s.Responses[StatusCodes.Status200OK] =
+                    InvoriaOpenApiResponseDescriptions.Ok200 + " Returns the created product.";
+                s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
+                s.Responses[StatusCodes.Status422UnprocessableEntity] = InvoriaOpenApiResponseDescriptions.UnprocessableEntity422;
+                s.Responses[StatusCodes.Status500InternalServerError] = InvoriaOpenApiResponseDescriptions.InternalServerError500;
+            });
         }
 
         public override async Task HandleAsync(CreateProductRequest req, CancellationToken ct)
