@@ -114,7 +114,8 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         result.Value.Should().NotBeNull();
         query.IncludePurchaseItems.Should().BeFalse();
         query.IncludeSupplier.Should().BeFalse();
-        result.Value!.Data.Should().ContainSingle(x => x.Id == purchaseOrder.Id);
+        var dto = result.Value!.Data.Single(x => x.Id == purchaseOrder.Id);
+        dto.Supplier.Should().BeNull();
     }
 
     [Test]
@@ -153,7 +154,11 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.Data.Should().ContainSingle(x => x.Id == purchaseOrder.Id);
+        var dto = result.Value!.Data.Single(x => x.Id == purchaseOrder.Id);
+        dto.Supplier.Should().NotBeNull();
+        dto.Supplier!.Id.Should().Be(purchaseOrder.SupplierId);
+        dto.Supplier.Name.Should().Be("List Supplier");
+        dto.Supplier.SupplierCode.Should().StartWith("SUP-");
     }
 
     private async Task<PurchaseOrder> CreatePurchaseOrderAsync(string purchaseNumber)
@@ -161,7 +166,7 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
             supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
-            name: "Supplier " + Guid.NewGuid().ToString("N")[..6],
+            name: "List Supplier",
             contactEmail: null,
             phone: null,
             createdBy: "tests");

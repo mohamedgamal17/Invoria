@@ -70,6 +70,11 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         result.Value.PurchaseNumber.Should().Be(purchaseOrder.PurchaseNumber);
         result.Value.SupplierId.Should().Be(purchaseOrder.SupplierId);
+        result.Value.Supplier.Should().NotBeNull();
+        result.Value.Supplier!.Id.Should().Be(supplier.Id);
+        result.Value.Supplier.Name.Should().Be(supplier.Name);
+        result.Value.Supplier.SupplierCode.Should().Be(supplier.SupplierCode);
+        result.Value.Supplier.CreatedAt.Should().Be(supplier.CreatedAt);
         result.Value.TaxAmount.Should().Be(purchaseOrder.TaxAmount);
         result.Value.DiscountAmount.Should().Be(purchaseOrder.DiscountAmount);
         result.Value.SubTotal.Should().Be(purchaseOrder.SubTotal);

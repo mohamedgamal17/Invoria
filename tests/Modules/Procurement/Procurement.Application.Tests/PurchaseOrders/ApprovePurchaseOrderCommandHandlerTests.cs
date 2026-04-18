@@ -38,6 +38,9 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
         result.Value!.State.Should().Be(PurchaseState.Approved);
+        result.Value.Supplier.Should().NotBeNull();
+        result.Value.Supplier!.Name.Should().Be("Approve Supplier");
+        result.Value.Supplier.SupplierCode.Should().StartWith("SUP-");
 
         var purchaseOrder = await PurchaseOrderRepository.SingleOrDefault(x => x.Id == created.Id);
         purchaseOrder.Should().NotBeNull();

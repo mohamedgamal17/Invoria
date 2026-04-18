@@ -38,6 +38,10 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
         result.Value!.Id.Should().Be(purchaseOrder.Id);
         result.Value.PurchaseNumber.Should().Be(purchaseOrder.PurchaseNumber);
         result.Value.SupplierId.Should().Be(purchaseOrder.SupplierId);
+        result.Value.Supplier.Should().NotBeNull();
+        result.Value.Supplier!.Id.Should().Be(purchaseOrder.SupplierId);
+        result.Value.Supplier.Name.Should().Be("Supplier A1B2C3");
+        result.Value.Supplier.SupplierCode.Should().StartWith("SUP-");
         result.Value.PurchaseOrderItems.Should().HaveCount(1);
     }
 
@@ -58,7 +62,7 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
             supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
-            name: "Supplier " + Guid.NewGuid().ToString("N")[..6],
+            name: "Supplier A1B2C3",
             contactEmail: null,
             phone: null,
             createdBy: "tests");
