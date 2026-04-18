@@ -25,6 +25,13 @@ namespace Invoria.CustomerManagement.Application.Customers.Queries.ListCustomers
         {
             var query = _customerRepository.AsQuerable();
 
+            var nameTerm = request.Name?.Trim();
+            if (!string.IsNullOrEmpty(nameTerm))
+            {
+                var normalizedNameTerm = nameTerm.ToLower();
+                query = query.Where(x => x.Name.ToLower().Contains(normalizedNameTerm));
+            }
+
             var result = await query.ToPaged(request.Skip, request.Length);
 
             var response = await _customerResponseFactory.PreparePagingDto(result);

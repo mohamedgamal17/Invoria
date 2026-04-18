@@ -47,7 +47,8 @@ namespace Invoria.CustomerManagement.Endpoints.Customers
             var query = new ListCustomerQuery
             {
                 Skip = req.Skip,
-                Length = req.Length
+                Length = req.Length,
+                Name = req.Name
             };
 
             var result = await _mediator.Send(query, ct);

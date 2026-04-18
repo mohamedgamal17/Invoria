@@ -7,6 +7,7 @@ namespace Invoria.CustomerManagement.Application.Customers.Queries.ListCustomers
 {
     public class ListCustomerQuery : PagingParams, IQuery<PagingDto<CustomerDto>>
     {
+        public string? Name { get; set; }
     }
 }
 
