@@ -4,6 +4,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
     <ProjectReference Include="..\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\Catalog.Domain\Invoria.Catalog.Domain.csproj" />
+    <ProjectReference Include="..\..\Inventory\Inventory.Application\Invoria.Inventory.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Application\Invoria.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
   </ItemGroup>
