@@ -18,13 +18,19 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
     [Test]
     public async Task Should_return_paged_list_of_products()
     {
-        var product = new Product("Test Product", "TEST-CODE", 10);
+        var uniqueKey = Guid.NewGuid().ToString("N");
+        var product = new Product($"Test Product {uniqueKey}", $"TEST-CODE-{uniqueKey}", 10);
 
         await ProductRepository.Add(product);
+        await BatchRepository.Add(new Invoria.Inventory.Domain.Batches.Batch(product.Id, 12, 10m));
 
-        var request = new PagingParams { Skip = 0, Length = 10 };
-
-        string uri = "/products?" + QueryStringHelper.ToQueryString(request);
+        var queryParams = new Dictionary<string, string?>
+        {
+            ["Skip"] = "0",
+            ["Length"] = "10",
+            ["Name"] = uniqueKey
+        };
+        var uri = QueryHelpers.AddQueryString("/products", queryParams);
 
         var response = await Client.GetAsync(uri);
 
@@ -36,6 +42,10 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
         envelope!.IsSuccess.Should().BeTrue();
         envelope.Result.Should().NotBeNull();
         envelope.Result!.Data.Should().NotBeNullOrEmpty();
+        var dto = envelope.Result.Data.First(x => x.Id == product.Id);
+        dto.Stock.Should().NotBeNull();
+        dto.Stock!.ActualQuantity.Should().Be(12);
+        dto.Stock.ReservedQuantity.Should().Be(0);
     }
 
     [Test]
@@ -46,6 +56,7 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
 
         await ProductRepository.Add(matchingProduct);
         await ProductRepository.Add(nonMatchingProduct);
+        await BatchRepository.Add(new Invoria.Inventory.Domain.Batches.Batch(matchingProduct.Id, 5, 10m));
 
         var queryParams = new Dictionary<string, string?>
         {
@@ -65,7 +76,11 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
         envelope.Should().NotBeNull();
         envelope!.IsSuccess.Should().BeTrue();
         envelope.Result.Should().NotBeNull();
-        envelope.Result!.Data.Should().ContainSingle(x => x.Name == "Gaming Mouse");
+        envelope.Result!.Data.Should().Contain(x => x.Name == "Gaming Mouse");
+        var gamingMouse = envelope.Result.Data.First(x => x.Id == matchingProduct.Id);
+        gamingMouse.Stock.Should().NotBeNull();
+        gamingMouse.Stock!.ActualQuantity.Should().Be(5);
+        gamingMouse.Stock.ReservedQuantity.Should().Be(0);
     }
 
     [Test]

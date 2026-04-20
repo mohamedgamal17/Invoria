@@ -20,6 +20,24 @@ namespace Invoria.Catalog.Application.Tests.Assertions
             dto.Name.Should().Be(product.Name);
             dto.Code.Should().Be(product.Code);
             dto.Price.Should().Be(product.Price);
+            dto.Stock.Should().NotBeNull();
+            dto.Stock!.ActualQuantity.Should().Be(0);
+            dto.Stock.ReservedQuantity.Should().Be(0);
+        }
+
+        public static void AssertProductDto(
+            this ProductDto dto,
+            Product product,
+            int expectedActualQuantity,
+            int expectedReservedQuantity)
+        {
+            dto.Id.Should().Be(product.Id);
+            dto.Name.Should().Be(product.Name);
+            dto.Code.Should().Be(product.Code);
+            dto.Price.Should().Be(product.Price);
+            dto.Stock.Should().NotBeNull();
+            dto.Stock!.ActualQuantity.Should().Be(expectedActualQuantity);
+            dto.Stock.ReservedQuantity.Should().Be(expectedReservedQuantity);
         }
     }
 }

@@ -5,6 +5,8 @@ using Invoria.Catalog.Application.Products.Queries.GetProductById;
 using Invoria.Catalog.Application.Tests.Assertions;
 using Invoria.Catalog.Domain;
 using Invoria.Catalog.Domain.Products;
+using Invoria.Inventory.Domain;
+using Invoria.Inventory.Domain.Batches;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Catalog.Application.Tests.Products
@@ -13,10 +15,12 @@ namespace Invoria.Catalog.Application.Tests.Products
     public class GetProductByIdQueryHandlerTests : ProductTestFixture
     {
         protected ICatalogRepository<Product> ProductRepository { get; }
+        protected IInventoryRepository<Batch> BatchRepository { get; }
 
         public GetProductByIdQueryHandlerTests()
         {
             ProductRepository = ServiceProvider.GetRequiredService<ICatalogRepository<Product>>();
+            BatchRepository = ServiceProvider.GetRequiredService<IInventoryRepository<Batch>>();
         }
 
         [Test]
@@ -25,6 +29,7 @@ namespace Invoria.Catalog.Application.Tests.Products
             // Arrange
             var product = new Product("Test Product", "TEST-CODE", 10);
             await ProductRepository.Add(product);
+            await BatchRepository.Add(new Batch(product.Id, 15, 10m));
 
             var query = new GetProductByIdQuery { Id = product.Id };
 
@@ -33,7 +38,7 @@ namespace Invoria.Catalog.Application.Tests.Products
 
             // Assert
             result.ShouldBeSuccess();
-            result.Value!.AssertProductDto(product);
+            result.Value!.AssertProductDto(product, 15, 0);
         }
 
         [Test]

@@ -16,6 +16,7 @@ public class GetProductByIdEndpointTests : ProductEndpointTestFixture
     {
         var product = new Product("Test Product", "TEST-CODE", 10);
         await ProductRepository.Add(product);
+        await BatchRepository.Add(new Invoria.Inventory.Domain.Batches.Batch(product.Id, 4, 10m));
 
         var response = await Client.GetAsync("/products/" + product.Id);
 
@@ -30,6 +31,9 @@ public class GetProductByIdEndpointTests : ProductEndpointTestFixture
         envelope.Result.Name.Should().Be(product.Name);
         envelope.Result.Code.Should().Be(product.Code);
         envelope.Result.Price.Should().Be(product.Price);
+        envelope.Result.Stock.Should().NotBeNull();
+        envelope.Result.Stock!.ActualQuantity.Should().Be(4);
+        envelope.Result.Stock.ReservedQuantity.Should().Be(0);
     }
 
     [Test]

@@ -6,6 +6,8 @@ using Invoria.Catalog.Application.Tests.Products;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.Catalog.Domain;
 using Invoria.Catalog.Domain.Products;
+using Invoria.Inventory.Domain;
+using Invoria.Inventory.Domain.Batches;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Catalog.Application.Tests.Services
@@ -15,11 +17,13 @@ namespace Invoria.Catalog.Application.Tests.Services
     {
         private readonly IProductService _productService;
         private readonly ICatalogRepository<Product> _productRepository;
+        private readonly IInventoryRepository<Batch> _batchRepository;
 
         public ProductServiceTests()
         {
             _productService = ServiceProvider.GetRequiredService<IProductService>();
             _productRepository = ServiceProvider.GetRequiredService<ICatalogRepository<Product>>();
+            _batchRepository = ServiceProvider.GetRequiredService<IInventoryRepository<Batch>>();
         }
 
         [Test]
@@ -27,11 +31,12 @@ namespace Invoria.Catalog.Application.Tests.Services
         {
             var product = new Product("Test Product", "TEST-CODE", 10);
             await _productRepository.Add(product);
+            await _batchRepository.Add(new Batch(product.Id, 8, 10m));
 
             var result = await _productService.GetProductByIdAsync(product.Id);
 
             result.ShouldBeSuccess();
-            result.Value!.AssertProductDto(product);
+            result.Value!.AssertProductDto(product, 8, 0);
         }
 
         [Test]
@@ -53,14 +58,16 @@ namespace Invoria.Catalog.Application.Tests.Services
             var b = new Product("B", "B-CODE", 2);
             await _productRepository.Add(a);
             await _productRepository.Add(b);
+            await _batchRepository.Add(new Batch(a.Id, 3, 10m));
+            await _batchRepository.Add(new Batch(b.Id, 7, 10m));
 
             var result = await _productService.ListProductsByIdsAsync(new[] { a.Id, b.Id });
 
             result.ShouldBeSuccess();
             result.Value.Should().HaveCount(2);
             var byId = result.Value!.ToDictionary(x => x.Id);
-            byId[a.Id].AssertProductDto(a);
-            byId[b.Id].AssertProductDto(b);
+            byId[a.Id].AssertProductDto(a, 3, 0);
+            byId[b.Id].AssertProductDto(b, 7, 0);
         }
 
         [Test]
