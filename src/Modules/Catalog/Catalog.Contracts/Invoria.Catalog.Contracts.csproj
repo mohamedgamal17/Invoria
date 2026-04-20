@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\Inventory\Inventory.Contracts\Invoria.Inventory.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
