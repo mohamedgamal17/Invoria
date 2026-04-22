@@ -67,6 +67,17 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 Status = view.Status,
                 FullfillmentStatus = view.FullfillmentStatus,
                 Items = new List<OrderItemDto>(),
+                StateTransitionHistory = view.StateTransitionHistory
+                    .Select(transition => new OrderStateTransitionHistoryDto
+                    {
+                        FromStatus = transition.FromStatus,
+                        ToStatus = transition.ToStatus,
+                        FromFullfillmentStatus = transition.FromFullfillmentStatus,
+                        ToFullfillmentStatus = transition.ToFullfillmentStatus,
+                        ChangedAt = transition.ChangedAt,
+                        Reason = transition.Reason
+                    })
+                    .ToList(),
                 FailureDetails = view.FailureDetails
                     .Select(detail =>
                     {
@@ -143,6 +154,17 @@ namespace Invoria.Ordering.Application.Orders.Factories
                         Quantity = item.Quantity,
                         Price = item.Price,
                         Product = productById.GetValueOrDefault(item.ProductId)
+                    })
+                    .ToList(),
+                StateTransitionHistory = view.StateTransitionHistory
+                    .Select(transition => new OrderStateTransitionHistoryDto
+                    {
+                        FromStatus = transition.FromStatus,
+                        ToStatus = transition.ToStatus,
+                        FromFullfillmentStatus = transition.FromFullfillmentStatus,
+                        ToFullfillmentStatus = transition.ToFullfillmentStatus,
+                        ChangedAt = transition.ChangedAt,
+                        Reason = transition.Reason
                     })
                     .ToList(),
                 FailureDetails = view.FailureDetails
