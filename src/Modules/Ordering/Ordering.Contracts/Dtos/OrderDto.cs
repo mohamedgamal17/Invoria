@@ -13,5 +13,6 @@ namespace Invoria.Ordering.Contracts.Dtos
         public FullfillmentStatus FullfillmentStatus { get; set; }
         public List<OrderItemDto> Items { get; set; } = new();
         public List<OrderFailureDetailsDto> FailureDetails { get; set; } = new();
+        public List<OrderStateTransitionHistoryDto> StateTransitionHistory { get; set; } = new();
     }
 }
