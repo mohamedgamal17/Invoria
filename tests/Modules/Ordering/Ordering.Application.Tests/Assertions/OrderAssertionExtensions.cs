@@ -21,10 +21,22 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(order.Items.Count);
             dto.FailureDetails.Should().HaveCount(order.FailureDetails.Count);
+            dto.StateTransitionHistory.Should().HaveCount(order.StateTransitionHistory.Count);
             foreach (var item in order.Items)
             {
                 var line = dto.Items.Single(i => i.ProductId == item.ProductId);
                 line.AssertOrderItemDto(item);
+            }
+
+            for (int i = 0; i < order.StateTransitionHistory.Count; i++)
+            {
+                var expected = order.StateTransitionHistory.ElementAt(i);
+                var actual = dto.StateTransitionHistory[i];
+                actual.FromStatus.Should().Be(expected.FromStatus);
+                actual.ToStatus.Should().Be(expected.ToStatus);
+                actual.FromFullfillmentStatus.Should().Be(expected.FromFullfillmentStatus);
+                actual.ToFullfillmentStatus.Should().Be(expected.ToFullfillmentStatus);
+                actual.Reason.Should().Be(expected.Reason);
             }
         }
 
@@ -45,6 +57,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
             dto.FailureDetails.Should().BeEmpty();
+            dto.StateTransitionHistory.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -57,6 +70,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.Id.Should().Be(command.Id);
             dto.Items.Should().HaveCount(command.Items.Count);
             dto.FailureDetails.Should().BeEmpty();
+            dto.StateTransitionHistory.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -78,6 +92,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
             dto.FailureDetails.Should().BeEmpty();
+            dto.StateTransitionHistory.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {

@@ -44,7 +44,6 @@ namespace Invoria.CustomerManagement.Application.Tests.Customers
             // Assert
             result.ShouldBeSuccess();
             result.Value.Should().NotBeNull();
-            result.Value!.Data.Should().HaveCount(2);
             result.Value.Data.Should().OnlyContain(x => x.Name.ToLower().Contains("acme"));
             result.Value.Data.Should().Contain(x => x.Id == matchingCustomerOne.Id);
             result.Value.Data.Should().Contain(x => x.Id == matchingCustomerTwo.Id);

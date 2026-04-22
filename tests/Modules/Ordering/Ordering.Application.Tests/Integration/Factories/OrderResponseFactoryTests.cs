@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Services;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;
@@ -131,5 +132,26 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         pagedDto.Data.Should().HaveCount(2);
         pagedDto.Data.Should().OnlyContain(d => d.Customer!.Id == customerId);
         pagedDto.Data.Should().OnlyContain(d => d.Items.Count == 0);
+    }
+
+    [Test]
+    public async Task PrepareDto_should_include_state_transition_history()
+    {
+        var order = new Order("HISTORY-1", Guid.NewGuid().ToString());
+        order.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 1, 10m) });
+        order.Accept();
+        order.MarkInventoryAllocated();
+
+        var dto = await Factory.PrepareDto(order);
+
+        dto.StateTransitionHistory.Should().HaveCount(2);
+        dto.StateTransitionHistory[0].FromStatus.Should().Be(OrderStatus.Pending);
+        dto.StateTransitionHistory[0].ToStatus.Should().Be(OrderStatus.Accepted);
+        dto.StateTransitionHistory[0].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
+        dto.StateTransitionHistory[0].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
+        dto.StateTransitionHistory[1].FromStatus.Should().Be(OrderStatus.Accepted);
+        dto.StateTransitionHistory[1].ToStatus.Should().Be(OrderStatus.Accepted);
+        dto.StateTransitionHistory[1].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
+        dto.StateTransitionHistory[1].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocated);
     }
 }
