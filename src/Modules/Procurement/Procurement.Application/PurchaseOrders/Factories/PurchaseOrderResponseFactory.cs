@@ -29,6 +29,16 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
             TaxAmount = view.TaxAmount,
             DiscountAmount = view.DiscountAmount,
             TotalAmount = view.TotalAmount,
+            StateHistory = view.StateHistory
+                .OrderBy(x => x.ChangedAt)
+                .Select(x => new PurchaseOrderStateHistoryDto
+                {
+                    FromState = x.FromState,
+                    ToState = x.ToState,
+                    ChangedAt = x.ChangedAt,
+                    Reason = x.Reason
+                })
+                .ToList(),
             PurchaseOrderItems = view.Items
                 .Select(x => new PurchaseOrderItemDto
                 {
