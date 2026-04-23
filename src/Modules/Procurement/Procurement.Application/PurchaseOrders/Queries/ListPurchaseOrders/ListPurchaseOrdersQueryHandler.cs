@@ -27,9 +27,11 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
         ListPurchaseOrdersQuery request,
         CancellationToken cancellationToken)
     {
-        var query = _purchaseOrderRepository
+        IQueryable<PurchaseOrder> query = _purchaseOrderRepository
             .AsQuerable()
-            .AsNoTracking();
+            .AsNoTracking()
+            .AsSplitQuery()
+            .Include(x => x.StateHistory);
 
         if (request.IncludePurchaseItems)
         {
@@ -44,8 +46,7 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
         var numberTerm = request.Number?.Trim();
         if (!string.IsNullOrEmpty(numberTerm))
         {
-            var normalizedNumberTerm = numberTerm.ToLower();
-            query = query.Where(x => x.PurchaseNumber.ToLower().Contains(normalizedNumberTerm));
+            query = query.Where(x => EF.Functions.Like(x.PurchaseNumber, $"%{numberTerm}%"));
         }
 
         query = query.OrderByDescending(x => x.Id);

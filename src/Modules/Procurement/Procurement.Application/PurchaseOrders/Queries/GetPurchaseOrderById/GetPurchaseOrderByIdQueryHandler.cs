@@ -26,8 +26,10 @@ public sealed class GetPurchaseOrderByIdQueryHandler : IApplicatonRequestHandler
     {
         var purchaseOrder = await _purchaseOrderRepository
             .AsQuerable()
+            .AsSplitQuery()
             .Include(x => x.Supplier)
             .Include(x => x.Items)
+            .Include(x => x.StateHistory)
             .SingleOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
         if (purchaseOrder == null)
