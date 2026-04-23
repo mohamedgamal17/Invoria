@@ -76,6 +76,34 @@ namespace Invoria.CustomerManagement.Application.Tests.Customers
             result.Value.Data.Should().Contain(x => x.Id == customerTwo.Id);
         }
 
+        [Test]
+        public async Task Should_return_customers_ordered_by_id_descending()
+        {
+            var customerOne = new Customer($"Order A {GetUniqueSuffix()}");
+            var customerTwo = new Customer($"Order B {GetUniqueSuffix()}");
+            var customerThree = new Customer($"Order C {GetUniqueSuffix()}");
+
+            await CustomerRepository.Add(customerOne);
+            await CustomerRepository.Add(customerTwo);
+            await CustomerRepository.Add(customerThree);
+
+            var query = new ListCustomerQuery
+            {
+                Skip = 0,
+                Length = 3
+            };
+
+            var result = await Mediator.Send(query);
+
+            result.ShouldBeSuccess();
+            result.Value.Should().NotBeNull();
+
+            var expectedIds = new[] { customerOne.Id, customerTwo.Id, customerThree.Id }
+                .OrderByDescending(x => x)
+                .ToList();
+            result.Value!.Data.Select(x => x.Id).Should().Equal(expectedIds);
+        }
+
         private static string GetUniqueSuffix()
         {
             return Guid.NewGuid().ToString("N")[..8];

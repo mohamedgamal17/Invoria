@@ -43,7 +43,7 @@ public class ListBatchesQueryHandlerTests : BatchTestFixture
     }
 
     [Test]
-    public async Task Should_return_paged_batches_ordered_by_id()
+    public async Task Should_return_paged_batches_ordered_by_id_descending()
     {
         var batchA = await BatchRepository.Add(new Batch("product-2", 10, 20m), CancellationToken.None);
         var batchB = await BatchRepository.Add(new Batch("product-1", 5, 15m), CancellationToken.None);
@@ -57,7 +57,7 @@ public class ListBatchesQueryHandlerTests : BatchTestFixture
         var page = result.Value!;
         page.AssertPagingDto(1, 2, 3, 2);
 
-        var orderedIds = new[] { batchA.Id, batchB.Id, batchC.Id }.OrderBy(x => x).ToList();
+        var orderedIds = new[] { batchA.Id, batchB.Id, batchC.Id }.OrderByDescending(x => x).ToList();
         page.Data.Select(x => x.Id).Should().Equal(orderedIds.Skip(1).Take(2));
     }
 

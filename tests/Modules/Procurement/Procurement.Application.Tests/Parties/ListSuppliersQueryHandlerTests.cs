@@ -59,7 +59,6 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
         result.Value.Info.Length.Should().Be(2);
         result.Value.Info.TotalCount.Should().Be(3);
         result.Value.Data.Should().HaveCount(2);
-        result.Value.Data.Select(x => x.Id).Should().Contain(third.Id);
     }
 
     [Test]
@@ -153,10 +152,29 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
         result.Value.Data.Select(x => x.Id).Should().Contain([one.Id, two.Id]);
     }
 
-    private async Task<Supplier> CreateSupplierAsync(string supplierCode, string name)
+    [Test]
+    public async Task Should_return_suppliers_ordered_by_id_descending()
+    {
+        var first = await CreateSupplierAsync("SUP-ORD-001", "Zulu", "00000000000000000000000000000001");
+        var second = await CreateSupplierAsync("SUP-ORD-002", "Alpha", "ffffffffffffffffffffffffffffffff");
+
+        var query = new ListSupplierQuery
+        {
+            Skip = 0,
+            Length = 10
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Data.Take(2).Select(x => x.Id).Should().Equal(second.Id, first.Id);
+    }
+
+    private async Task<Supplier> CreateSupplierAsync(string supplierCode, string name, string? id = null)
     {
         var supplier = Supplier.Create(
-            id: Guid.NewGuid().ToString("N"),
+            id: id ?? Guid.NewGuid().ToString("N"),
             supplierCode: supplierCode,
             name: name,
             contactEmail: null,

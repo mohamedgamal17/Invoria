@@ -68,6 +68,23 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
+    public async Task Should_return_orders_ordered_by_id_descending()
+    {
+        var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 3);
+
+        var query = new ListOrdersQuery { Skip = 0, Length = 3 };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var expectedIds = persisted
+            .Select(x => x.Id)
+            .OrderByDescending(x => x)
+            .ToList();
+        result.Value!.Data.Select(x => x.Id).Should().Equal(expectedIds);
+    }
+
+    [Test]
     public async Task Should_return_line_items_when_include_order_items_is_true()
     {
         var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 2);

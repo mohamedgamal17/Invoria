@@ -161,7 +161,28 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         dto.Supplier.SupplierCode.Should().StartWith("SUP-");
     }
 
-    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(string purchaseNumber)
+    [Test]
+    public async Task Should_return_purchase_orders_ordered_by_id_descending()
+    {
+        var highId = "ffffffffffffffffffffffffffffffff";
+        var lowId = "00000000000000000000000000000001";
+        await CreatePurchaseOrderAsync("PO-ORD-HIGH", highId);
+        await CreatePurchaseOrderAsync("PO-ORD-LOW", lowId);
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Data.Take(2).Select(x => x.Id).Should().Equal(highId, lowId);
+    }
+
+    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(string purchaseNumber, string? id = null)
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
@@ -173,7 +194,7 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         await SupplierRepository.Add(supplier);
 
         var purchaseOrder = new PurchaseOrder(
-            id: Guid.NewGuid().ToString("N"),
+            id: id ?? Guid.NewGuid().ToString("N"),
             purchaseNumber: purchaseNumber,
             supplierId: supplier.Id,
             orderDate: DateTime.UtcNow.Date,
