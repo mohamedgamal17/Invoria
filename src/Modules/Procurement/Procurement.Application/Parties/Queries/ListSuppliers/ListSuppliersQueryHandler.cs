@@ -40,7 +40,7 @@ public sealed class ListSuppliersQueryHandler : IApplicatonRequestHandler<ListSu
             query = query.Where(x => x.SupplierCode.ToLower().Contains(normalizedCodeTerm));
         }
 
-        query = query.OrderBy(x => x.Name).ThenBy(x => x.Id);
+        query = query.OrderByDescending(x => x.Id);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _supplierResponseFactory.PreparePagingDto(paged);

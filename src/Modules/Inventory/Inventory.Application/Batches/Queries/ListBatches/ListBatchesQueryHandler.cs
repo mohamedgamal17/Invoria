@@ -37,7 +37,7 @@ public class ListBatchesQueryHandler : IApplicatonRequestHandler<ListBatchesQuer
             query = query.Where(x => x.State == request.State.Value);
         }
 
-        query = query.OrderBy(x => x.Id);
+        query = query.OrderByDescending(x => x.Id);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _batchResponseFactory.PreparePagingDto(paged);

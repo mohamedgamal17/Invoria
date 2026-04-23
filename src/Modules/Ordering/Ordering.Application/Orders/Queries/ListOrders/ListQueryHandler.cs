@@ -34,7 +34,7 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
             query = query.Where(o => o.OrderNumber.StartsWith(orderNumberTerm));
         }
 
-        query = query.OrderByDescending(o => o.CreatedAt).ThenBy(o => o.Id);
+        query = query.OrderByDescending(o => o.Id);
 
         if (request.IncludeOrderItems)
         {

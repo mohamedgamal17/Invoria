@@ -32,6 +32,8 @@ namespace Invoria.Catalog.Application.Products.Queries.ListProducts
                 query = query.Where(x => x.Name.ToLower().Contains(normalizedNameTerm));
             }
 
+            query = query.OrderByDescending(x => x.Id);
+
             var result = await query.ToPaged(request.Skip, request.Length);
 
             var response = await _productResponseFactory.PreparePagingDto(result);

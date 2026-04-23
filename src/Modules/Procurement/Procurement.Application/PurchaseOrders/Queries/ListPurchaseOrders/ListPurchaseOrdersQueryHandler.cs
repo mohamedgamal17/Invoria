@@ -48,7 +48,7 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
             query = query.Where(x => x.PurchaseNumber.ToLower().Contains(normalizedNumberTerm));
         }
 
-        query = query.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id);
+        query = query.OrderByDescending(x => x.Id);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _purchaseOrderResponseFactory.PreparePagingDto(paged);
