@@ -43,6 +43,33 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
         result.Value.Supplier.Name.Should().Be("Supplier A1B2C3");
         result.Value.Supplier.SupplierCode.Should().StartWith("SUP-");
         result.Value.PurchaseOrderItems.Should().HaveCount(1);
+        result.Value.StateHistory.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task Should_return_state_history_by_default()
+    {
+        var purchaseOrder = await CreatePurchaseOrderAsync(
+            "PO-GET-HISTORY-001",
+            applyTransitions: x =>
+            {
+                x.Submit();
+                x.Reject("Supplier failed validation");
+            });
+
+        var query = new GetPurchaseOrderByIdQuery { Id = purchaseOrder.Id };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.StateHistory.Should().HaveCount(2);
+        result.Value.StateHistory[0].FromState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Draft);
+        result.Value.StateHistory[0].ToState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Submitted);
+        result.Value.StateHistory[1].FromState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Submitted);
+        result.Value.StateHistory[1].ToState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Rejected);
+        result.Value.StateHistory[1].Reason.Should().Be("Supplier failed validation");
+        result.Value.StateHistory[1].ChangedAt.Should().BeOnOrAfter(result.Value.StateHistory[0].ChangedAt);
     }
 
     [Test]
@@ -57,7 +84,9 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
         result.Exception.Should().BeOfType<NotFoundException>();
     }
 
-    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(string purchaseNumber)
+    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(
+        string purchaseNumber,
+        Action<PurchaseOrder>? applyTransitions = null)
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
@@ -82,6 +111,8 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
             quantity: 2,
             unitPrice: 100m,
             supplierProductCode: "SKU-01"));
+
+        applyTransitions?.Invoke(purchaseOrder);
 
         return await PurchaseOrderRepository.Add(purchaseOrder);
     }

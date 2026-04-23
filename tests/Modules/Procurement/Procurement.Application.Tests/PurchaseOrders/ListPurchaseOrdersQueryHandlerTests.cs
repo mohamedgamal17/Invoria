@@ -116,6 +116,40 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         query.IncludeSupplier.Should().BeFalse();
         var dto = result.Value!.Data.Single(x => x.Id == purchaseOrder.Id);
         dto.Supplier.Should().BeNull();
+        dto.StateHistory.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task Should_include_state_history_by_default()
+    {
+        var purchaseOrder = await CreatePurchaseOrderAsync(
+            "PO-HISTORY-001",
+            applyTransitions: x =>
+            {
+                x.Submit();
+                x.Reject("Missing compliance document");
+            });
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        var dto = result.Value!.Data.Single(x => x.Id == purchaseOrder.Id);
+        dto.StateHistory.Should().HaveCount(2);
+        dto.StateHistory[0].FromState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Draft);
+        dto.StateHistory[0].ToState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Submitted);
+        dto.StateHistory[0].Reason.Should().BeNull();
+        dto.StateHistory[0].ChangedAt.Should().NotBe(default);
+        dto.StateHistory[1].FromState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Submitted);
+        dto.StateHistory[1].ToState.Should().Be(Invoria.Procurement.Contracts.PurchaseOrders.PurchaseState.Rejected);
+        dto.StateHistory[1].Reason.Should().Be("Missing compliance document");
+        dto.StateHistory[1].ChangedAt.Should().BeOnOrAfter(dto.StateHistory[0].ChangedAt);
     }
 
     [Test]
@@ -182,7 +216,10 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         result.Value!.Data.Take(2).Select(x => x.Id).Should().Equal(highId, lowId);
     }
 
-    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(string purchaseNumber, string? id = null)
+    private async Task<PurchaseOrder> CreatePurchaseOrderAsync(
+        string purchaseNumber,
+        string? id = null,
+        Action<PurchaseOrder>? applyTransitions = null)
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
@@ -207,6 +244,8 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
             quantity: 2,
             unitPrice: 100m,
             supplierProductCode: "SKU-01"));
+
+        applyTransitions?.Invoke(purchaseOrder);
 
         return await PurchaseOrderRepository.Add(purchaseOrder);
     }
