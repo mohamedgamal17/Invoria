@@ -34,7 +34,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore solution
-        run: dotnet restore Invoria.sln
+        run: dotnet restore Invoria.sln --runtime win-x86
 
       - name: Build solution
         run: dotnet build Invoria.sln --configuration Release --no-restore
