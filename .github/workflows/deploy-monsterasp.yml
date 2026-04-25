@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
+<<<<<<< HEAD
   deploy:
     runs-on: windows-latest
     timeout-minutes: 20
@@ -14,25 +15,46 @@ jobs:
     env:
       API_PROJECT: src/Invoria.Api/Invoria.Api.csproj
       PUBLISH_DIR: publish
+=======
+  build-and-deploy:
+    runs-on: windows-latest
+
+    env:
+      PROD_WEBSITE_NAME: ${{ secrets.PROD_WEBSITE_NAME }}
+>>>>>>> b1a54bca6ad60f2cf8161e6eea16d9b22411506f
       PROD_SERVER_COMPUTER_NAME: ${{ secrets.PROD_SERVER_COMPUTER_NAME }}
       PROD_SERVER_USERNAME: ${{ secrets.PROD_SERVER_USERNAME }}
       PROD_SERVER_PASSWORD: ${{ secrets.PROD_SERVER_PASSWORD }}
-      PROD_WEBSITE_NAME: ${{ secrets.PROD_WEBSITE_NAME }}
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
+<<<<<<< HEAD
       - name: Setup .NET
+=======
+      - name: Setup .NET 8
+>>>>>>> b1a54bca6ad60f2cf8161e6eea16d9b22411506f
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
+<<<<<<< HEAD
       - name: Restore
         run: dotnet restore $env:API_PROJECT
 
       - name: Publish
         run: dotnet publish $env:API_PROJECT -c Release -o $env:PUBLISH_DIR /p:UseAppHost=false
+
+=======
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish --configuration Release --output ./publish --runtime win-x86 --self-contained false
 
       - name: Deploy via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.2.0
@@ -41,4 +63,8 @@ jobs:
           server-computer-name: ${{ env.PROD_SERVER_COMPUTER_NAME }}
           server-username: ${{ env.PROD_SERVER_USERNAME }}
           server-password: ${{ env.PROD_SERVER_PASSWORD }}
+<<<<<<< HEAD
           source-path: ./publish
+=======
+          source-path: ./publish
+>>>>>>> b1a54bca6ad60f2cf8161e6eea16d9b22411506f
