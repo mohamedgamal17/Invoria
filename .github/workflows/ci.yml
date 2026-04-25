@@ -29,6 +29,7 @@ jobs:
     env:
       DOTNET_NOLOGO: true
       CI_SQL_SA_PASSWORD: ${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }}
+      CI_DB_CONNECTION_STRING: Server=localhost,1433;Database=Invoria_CI;User Id=sa;Password=${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
 
     steps:
       - name: Checkout
@@ -64,11 +65,37 @@ jobs:
             sleep 2
           done
 
-      - name: Run tests with isolated databases
+      - name: Run all test projects
         shell: pwsh
         env:
-          SA_PASSWORD: ${{ env.CI_SQL_SA_PASSWORD }}
-        run: ./.github/scripts/run-tests-with-db.ps1
+          ConnectionStrings__Default: ${{ env.CI_DB_CONNECTION_STRING }}
+          ConnectionStrings__Rebus: ${{ env.CI_DB_CONNECTION_STRING }}
+        run: |
+          New-Item -Path "TestResults" -ItemType Directory -Force | Out-Null
+
+          $testProjects = @(
+            "tests/Invoria.Application.Tests/Invoria.Application.Tests.csproj"
+            "tests/Invoria.Endpoints.Tests/Invoria.Endpoints.Tests.csproj"
+            "tests/Modules/Catalog/Catalog.Application.Tests/Invoria.Catalog.Application.Tests.csproj"
+            "tests/Modules/Catalog/Catalog.Endpoints.Tests/Invoria.Catalog.Endpoints.Tests.csproj"
+            "tests/Modules/CustomerManagement/CustomerManagement.Application.Tests/Invoria.CustomerManagement.Application.Tests.csproj"
+            "tests/Modules/CustomerManagement/CustomerManagement.Endpoints.Tests/Invoria.CustomerManagement.Endpoints.Tests.csproj"
+            "tests/Modules/Inventory/Inventory.Application.Tests/Invoria.Inventory.Application.Tests.csproj"
+            "tests/Modules/Inventory/Inventory.Endpoints.Tests/Invoria.Inventory.Endpoints.Tests.csproj"
+            "tests/Modules/Ordering/Ordering.Application.Tests/Invoria.Ordering.Application.Tests.csproj"
+            "tests/Modules/Ordering/Ordering.Endpoints.Tests/Invoria.Ordering.Endpoints.Tests.csproj"
+            "tests/Modules/Procurement/Procurement.Application.Tests/Invoria.Procurement.Application.Tests.csproj"
+            "tests/Modules/Procurement/Procurement.Endpoints.Tests/Invoria.Procurement.Endpoints.Tests.csproj"
+          )
+
+          foreach ($project in $testProjects) {
+            $projectName = [System.IO.Path]::GetFileNameWithoutExtension($project)
+            dotnet test $project `
+              --configuration Release `
+              --no-build `
+              --logger "trx;LogFileName=$projectName.trx" `
+              --results-directory "TestResults/$projectName"
+          }
 
       - name: Upload test results
         if: always()
