@@ -34,11 +34,10 @@ jobs:
       - name: Publish
         run: dotnet publish $env:API_PROJECT -c Release -o $env:PUBLISH_DIR /p:UseAppHost=false --runtime win-x86 
 
-      - name: Deploy via WebDeploy
-        uses: rasmusbuchholdt/simply-web-deploy@2.2.0
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          website-name: ${{ env.PROD_WEBSITE_NAME }}
-          server-computer-name: ${{ env.PROD_SERVER_COMPUTER_NAME }}
-          server-username: ${{ env.PROD_SERVER_USERNAME }}
-          server-password: ${{ env.PROD_SERVER_PASSWORD }}
-          source-path: ./publish
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./publish/
