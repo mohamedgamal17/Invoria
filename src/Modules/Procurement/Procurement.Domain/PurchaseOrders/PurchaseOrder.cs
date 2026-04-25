@@ -108,6 +108,66 @@ public class PurchaseOrder : AuditedAggregateRoot
         RecalculateFinancials();
     }
 
+    public void UpdateHeader(
+        string supplierId,
+        DateTime? orderDate,
+        DateTime? expectedDeliveryDate,
+        decimal taxAmount,
+        decimal discountAmount)
+    {
+        EnsureEditable("Purchase order can only be updated in Draft or Reopened.");
+
+        if (string.IsNullOrWhiteSpace(supplierId))
+        {
+            throw new ArgumentException("Supplier id cannot be empty.", nameof(supplierId));
+        }
+
+        if (taxAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(taxAmount), "Tax cannot be negative.");
+        }
+
+        if (discountAmount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount cannot be negative.");
+        }
+
+        SupplierId = supplierId;
+        OrderDate = orderDate;
+        ExpectedDeliveryDate = expectedDeliveryDate;
+        TaxAmount = taxAmount;
+        DiscountAmount = discountAmount;
+        RecalculateFinancials();
+    }
+
+    public void ReplaceItems(IEnumerable<PurchaseOrderItem> items)
+    {
+        EnsureEditable("Purchase order items can only be updated in Draft or Reopened.");
+
+        if (items == null)
+        {
+            throw new ArgumentNullException(nameof(items));
+        }
+
+        var newItems = items.ToList();
+        if (newItems.Count == 0)
+        {
+            throw new InvalidOperationException("Purchase order must have one or more item.");
+        }
+
+        foreach (var item in newItems)
+        {
+            if (item.PurchaseOrderId != Id)
+            {
+                throw new InvalidOperationException("Item does not belong to this purchase order.");
+            }
+        }
+
+        _items.Clear();
+        _items.AddRange(newItems);
+        RecalculateFinancials();
+    }
+
     public void Submit()
     {
         if (_items.Count == 0)
@@ -217,6 +277,14 @@ public class PurchaseOrder : AuditedAggregateRoot
     private void EnsureState(PurchaseState expected, string message)
     {
         if (State != expected)
+        {
+            throw new InvalidOperationException(message);
+        }
+    }
+
+    private void EnsureEditable(string message)
+    {
+        if (!CanEdit)
         {
             throw new InvalidOperationException(message);
         }
