@@ -38,7 +38,7 @@ public sealed class UpdatePurchaseOrderCommandHandler : IApplicatonRequestHandle
 
         try
         {
-            purchaseOrder.UpdateHeader(
+            purchaseOrder.UpdateDetails(
                 supplierId: request.SupplierId,
                 orderDate: request.OrderDate,
                 expectedDeliveryDate: request.ExpectedDeliveryDate,
@@ -56,7 +56,7 @@ public sealed class UpdatePurchaseOrderCommandHandler : IApplicatonRequestHandle
                     supplierProductCode: x.SupplierProductCode))
                 .ToList();
 
-            purchaseOrder.ReplaceItems(newItems);
+            purchaseOrder.UpdateItems(newItems);
         }
         catch (InvalidOperationException ex)
         {

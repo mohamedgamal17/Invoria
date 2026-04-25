@@ -108,7 +108,7 @@ public class PurchaseOrder : AuditedAggregateRoot
         RecalculateFinancials();
     }
 
-    public void UpdateHeader(
+    public void UpdateDetails(
         string supplierId,
         DateTime? orderDate,
         DateTime? expectedDeliveryDate,
@@ -140,7 +140,7 @@ public class PurchaseOrder : AuditedAggregateRoot
         RecalculateFinancials();
     }
 
-    public void ReplaceItems(IEnumerable<PurchaseOrderItem> items)
+    public void UpdateItems(IEnumerable<PurchaseOrderItem> items)
     {
         EnsureEditable("Purchase order items can only be updated in Draft or Reopened.");
 
