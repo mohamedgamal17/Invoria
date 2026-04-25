@@ -17,7 +17,7 @@ namespace Invoria.BuildingBlocks.Application.Requests
 
             RuleFor(x => x.Length)
                 .GreaterThan(0)
-                .LessThanOrEqualTo(100);
+                .LessThanOrEqualTo(200);
 
         }
     }
