@@ -151,7 +151,8 @@ public abstract class TestFixture
     {
         var builder = new ConfigurationManager()
              .SetBasePath(Directory.GetCurrentDirectory())
-             .AddJsonFile("appsettings.json", true, false);
+             .AddJsonFile("appsettings.json", true, false)
+             .AddEnvironmentVariables();
       
 
         return builder.Build();
