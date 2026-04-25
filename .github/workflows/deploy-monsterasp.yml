@@ -32,7 +32,7 @@ jobs:
         run: dotnet restore $env:API_PROJECT
 
       - name: Publish
-        run: dotnet publish $env:API_PROJECT -c Release -o $env:PUBLISH_DIR /p:UseAppHost=false
+        run: dotnet publish $env:API_PROJECT -c Release -o $env:PUBLISH_DIR /p:UseAppHost=false --runtime win-x86 
 
       - name: Deploy via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.2.0
