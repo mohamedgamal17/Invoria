@@ -7,46 +7,41 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Build and Deploy Production
+  build-and-deploy:
     runs-on: windows-latest
-    timeout-minutes: 20
-    permissions:
-      contents: read
+
     env:
-      DOTNET_NOLOGO: true
-      API_PROJECT: src/Invoria.Api/Invoria.Api.csproj
-      PUBLISH_DIR: artifacts\publish
-      PROD_DB_CONNECTION_STRING: ${{ secrets.PROD_DB_CONNECTION_STRING }}
-      PROD_REBUS_QUEUE: ${{ secrets.PROD_REBUS_QUEUE }}
+      PROD_WEBSITE_NAME: ${{ secrets.PROD_WEBSITE_NAME }}
       PROD_SERVER_COMPUTER_NAME: ${{ secrets.PROD_SERVER_COMPUTER_NAME }}
       PROD_SERVER_USERNAME: ${{ secrets.PROD_SERVER_USERNAME }}
       PROD_SERVER_PASSWORD: ${{ secrets.PROD_SERVER_PASSWORD }}
-      PROD_WEBSITE_NAME: ${{ secrets.PROD_WEBSITE_NAME }}
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8 SDK
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: '8.0.x'
 
-      - name: Restore solution
-        run: dotnet restore Invoria.sln --runtime win-x86
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Build solution
-        run: dotnet build Invoria.sln --configuration Release --no-restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
 
-      - name: Publish API
-        run: dotnet publish src/Invoria.Api/Invoria.Api.csproj --configuration Release --no-build --runtime win-x86 --output ./artifacts/publish
+      - name: Run tests
+        run: dotnet test --no-build --verbosity normal
 
-      - name: Deploy to MonsterASP via WebDeploy action
+      - name: Publish
+        run: dotnet publish --configuration Release --output ./publish --runtime win-x86 --self-contained false
+
+      - name: Deploy via WebDeploy
         uses: rasmusbuchholdt/simply-web-deploy@2.2.0
         with:
           website-name: ${{ env.PROD_WEBSITE_NAME }}
           server-computer-name: ${{ env.PROD_SERVER_COMPUTER_NAME }}
           server-username: ${{ env.PROD_SERVER_USERNAME }}
           server-password: ${{ env.PROD_SERVER_PASSWORD }}
-          source-path: \artifacts\publish\
+          source-path: ./publish
