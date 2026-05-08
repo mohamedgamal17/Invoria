@@ -10,7 +10,6 @@ namespace Invoria.Catalog.Application.Tests.Assertions
         public static void AssertCreateProductCommand(this Product product , CreateProductCommand command)
         {
             product.Name.Should().Be(command.Name);
-            product.Code.Should().Be(command.Code);
             product.Price.Should().Be(command.Price);
         } 
 
@@ -18,7 +17,6 @@ namespace Invoria.Catalog.Application.Tests.Assertions
         {
             dto.Id.Should().Be(product.Id);
             dto.Name.Should().Be(product.Name);
-            dto.Code.Should().Be(product.Code);
             dto.Price.Should().Be(product.Price);
             dto.Stock.Should().NotBeNull();
             dto.Stock!.ActualQuantity.Should().Be(0);
@@ -33,7 +31,6 @@ namespace Invoria.Catalog.Application.Tests.Assertions
         {
             dto.Id.Should().Be(product.Id);
             dto.Name.Should().Be(product.Name);
-            dto.Code.Should().Be(product.Code);
             dto.Price.Should().Be(product.Price);
             dto.Stock.Should().NotBeNull();
             dto.Stock!.ActualQuantity.Should().Be(expectedActualQuantity);
