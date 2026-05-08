@@ -21,7 +21,7 @@ namespace Invoria.Catalog.Application.Products.Commands.CreateProduct
 
         public async Task<Result<ProductDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
         {
-            var product = new Product(request.Name, request.Code, request.Price);
+            var product = new Product(request.Name, request.Price);
 
             await _productRepository.Add(product);
 
