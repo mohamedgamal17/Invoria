@@ -30,7 +30,6 @@ public sealed class CountingListProductsProductService : IProductService
             {
                 Id = id,
                 Name = SyntheticListProductService.NameForId(id),
-                Code = null,
                 Price = 9.99m
             })
             .ToList();

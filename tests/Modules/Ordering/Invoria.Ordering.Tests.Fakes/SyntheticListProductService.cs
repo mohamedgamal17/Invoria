@@ -33,7 +33,6 @@ public sealed class SyntheticListProductService : IProductService
         {
             Id = id,
             Name = NameForId(id),
-            Code = null,
             Price = 9.99m
         };
     }
