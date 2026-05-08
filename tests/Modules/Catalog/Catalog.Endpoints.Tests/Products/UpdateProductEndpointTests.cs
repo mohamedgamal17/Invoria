@@ -27,7 +27,6 @@ namespace Invoria.Catalog.Endpoints.Tests.Products
             {
                 Id = fakeProduct.Id,
                 Name = Guid.NewGuid().ToString(),
-                Code = Guid.NewGuid().ToString(),
                 Price = 65
             };
 
@@ -45,7 +44,6 @@ namespace Invoria.Catalog.Endpoints.Tests.Products
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = Guid.NewGuid().ToString(),
-                Code = Guid.NewGuid().ToString(),
                 Price = 65
             };
 
@@ -58,7 +56,7 @@ namespace Invoria.Catalog.Endpoints.Tests.Products
 
         public async Task<Product> CreateProductAsync()
         {
-            var product = new Product(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 440);
+            var product = new Product(Guid.NewGuid().ToString(), 440);
 
             return await Product.Add(product);
         }

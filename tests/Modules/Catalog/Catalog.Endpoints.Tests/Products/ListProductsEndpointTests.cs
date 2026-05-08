@@ -19,7 +19,7 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
     public async Task Should_return_paged_list_of_products()
     {
         var uniqueKey = Guid.NewGuid().ToString("N");
-        var product = new Product($"Test Product {uniqueKey}", $"TEST-CODE-{uniqueKey}", 10);
+        var product = new Product($"Test Product {uniqueKey}", 10);
 
         await ProductRepository.Add(product);
         await BatchRepository.Add(new Invoria.Inventory.Domain.Batches.Batch(product.Id, 12, 10m));
@@ -51,8 +51,8 @@ public class ListProductsEndpointTests : ProductEndpointTestFixture
     [Test]
     public async Task Should_filter_products_by_name_when_name_query_param_is_provided()
     {
-        var matchingProduct = new Product("Gaming Mouse", "MOUSE-01", 50);
-        var nonMatchingProduct = new Product("Office Keyboard", "KEYBOARD-01", 30);
+        var matchingProduct = new Product("Gaming Mouse", 50);
+        var nonMatchingProduct = new Product("Office Keyboard", 30);
 
         await ProductRepository.Add(matchingProduct);
         await ProductRepository.Add(nonMatchingProduct);
