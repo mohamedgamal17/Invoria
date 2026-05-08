@@ -49,7 +49,6 @@ namespace Invoria.Catalog.Application.Products.Factories
             {
                 Id = view.Id,
                 Name = view.Name,
-                Code = view.Code,
                 Price = view.Price,
                 Stock = stock
             };
