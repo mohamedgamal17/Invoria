@@ -17,8 +17,6 @@ namespace Invoria.Catalog.Infrastructure.EntityFramework.Configuration
 
             builder.Property(x => x.Name).HasMaxLength(ProductTableConsts.NameMaxLength);
 
-            builder.Property(x => x.Code).IsRequired(false).HasMaxLength(ProductTableConsts.CodeMaxLength);
-
             builder.MapAudited();
         }
     }

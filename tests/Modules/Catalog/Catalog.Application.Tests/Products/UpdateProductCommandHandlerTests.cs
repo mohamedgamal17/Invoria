@@ -23,10 +23,10 @@ namespace Invoria.Catalog.Application.Tests.Products
         public async Task Should_update_product()
         {
             // Arrange
-            var initialProduct = new Product("Old Name", "OLD-CODE", 10);
+            var initialProduct = new Product("Old Name", 10);
             await ProductRepository.Add(initialProduct);
 
-            var command = new UpdateProductCommand(initialProduct.Id, "New Name", "NEW-CODE", 20);
+            var command = new UpdateProductCommand(initialProduct.Id, "New Name", 20);
 
             // Act
             var result = await Mediator.Send(command);
@@ -38,7 +38,6 @@ namespace Invoria.Catalog.Application.Tests.Products
 
             updatedProduct.Should().NotBeNull();
             updatedProduct!.Name.Should().Be("New Name");
-            updatedProduct.Code.Should().Be("NEW-CODE");
             updatedProduct.Price.Should().Be(20);
 
             result.Value!.AssertProductDto(updatedProduct);
@@ -49,7 +48,7 @@ namespace Invoria.Catalog.Application.Tests.Products
         {
             // Arrange
             var nonExistentId = Guid.NewGuid().ToString();
-            var command = new UpdateProductCommand(nonExistentId, "New Name", "NEW-CODE", 20);
+            var command = new UpdateProductCommand(nonExistentId, "New Name", 20);
 
             // Act
             var result = await Mediator.Send(command);

@@ -401,14 +401,14 @@ flowchart LR
     - File: `Products/Product.cs`
     - Aggregate root representing a catalog product.
     - Inherits from `AuditedAggregateRoot`, gaining base identity and auditing fields.
-    - Properties: `Name`, `Code` (optional), `Price`.
+    - Properties: `Name`, `Price`.
     - Behaviors:
       - Constructor enforces initialization of core fields.
-      - `Update(string name, string? code, decimal price)` for modifying state consistently.
+      - `Update(string name, decimal price)` for modifying state consistently.
   - **`ProductTableConsts`**
     - File: `Products/Product.cs`
     - Static class with schema-related constants:
-      - `TableName`, `IdMaxLength`, `NameMaxLength`, `CodeMaxLength`.
+      - `TableName`, `IdMaxLength`, `NameMaxLength`.
     - Used by validation and EF configuration to keep lengths consistent.
   - **`ICatalogRepository<T>`**
     - File: `ICatalogRepository.cs`
@@ -436,12 +436,12 @@ flowchart LR
   - **`CreateProductCommand`**
     - File: `Products/Commands/CreateProduct/CreateProductCommand.cs`
     - Implements `ICommand<ProductDto>`.
-    - Properties: `Name`, `Code`, `Price`.
+    - Properties: `Name`, `Price`.
     - Represents the intention to create a new product.
   - **`UpdateProductCommand`**
     - File: `Products/Commands/UpdateProduct/UpdateProductCommand.cs`
     - Implements `ICommand<ProductDto>`.
-    - Properties: `Id`, `Name`, `Code`, `Price`.
+    - Properties: `Id`, `Name`, `Price`.
     - Represents the intention to update an existing product.
 
 - **Command Handlers**
@@ -514,6 +514,8 @@ flowchart LR
     - Files under `EntityFramework/Migrations`, e.g.:
       - `20260315004635_ProductMigration.cs`
       - `20260315004635_ProductMigration.Designer.cs`
+      - `20260509120000_RemoveProductCode.cs`
+      - `20260509120000_RemoveProductCode.Designer.cs`
       - `CatalogDbContextModelSnapshot.cs`
     - Represent the current schema state for the Catalog module.
 
@@ -582,14 +584,13 @@ flowchart LR
 - **Requests and Validation**
   - **`ProductRequest`**
     - File: `Products/Requests/ProductRequest.cs`
-    - Base request type with properties: `Name`, `Code`, `Price`.
+    - Base request type with properties: `Name`, `Price`.
   - **`ProductRequestValidator<T>`**
     - File: `Products/Requests/ProductRequest.cs`
     - Generic validator class where `T : ProductRequest`.
     - Uses FluentValidation.
     - Rules:
       - `Name`: required, length between 3 and `ProductTableConsts.NameMaxLength`.
-      - `Code`: optional, when not null length between 3 and `ProductTableConsts.CodeMaxLength`.
       - `Price`: must be greater than 0.
     - Example of a cross-layer reference:
       - Uses `ProductTableConsts` from the Domain layer to ensure validation aligns with persistence constraints.
@@ -618,7 +619,7 @@ flowchart LR
   - **`ProductDto`**
     - File: `Dtos/ProductDto.cs`
     - Inherits from `AuditedEntityDto` (from building blocks).
-    - Properties: `Name`, `Code`, `Price`.
+    - Properties: `Name`, `Price`, `Stock` (from Inventory contracts).
     - Used as:
       - The response type for commands (`ICommand<ProductDto>`).
       - The response type for endpoints (`EndpointBase<..., ProductDto>`).

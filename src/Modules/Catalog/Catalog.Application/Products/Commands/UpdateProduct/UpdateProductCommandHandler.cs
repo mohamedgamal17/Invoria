@@ -28,7 +28,7 @@ namespace Invoria.Catalog.Application.Products.Commands.UpdateProduct
                 return Result.Failure<ProductDto>(new NotFoundException($"Product with ID {request.Id} not found"));
             }
 
-            product.Update(request.Name, request.Code, request.Price);
+            product.Update(request.Name, request.Price);
 
             await _productRepository.Update(product, cancellationToken);
 

@@ -166,7 +166,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
                 dto.Product.Should().NotBeNull();
                 dto.Product!.Id.Should().Be(expectedProduct.Id);
                 dto.Product.Name.Should().Be(expectedProduct.Name);
-                dto.Product.Code.Should().Be(expectedProduct.Code);
                 dto.Product.Price.Should().Be(expectedProduct.Price);
             }
         }

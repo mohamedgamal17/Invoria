@@ -20,7 +20,7 @@ namespace Invoria.Catalog.Application.Tests.Products
         [Test]
         public async Task Should_create_product()
         {
-            var command = new CreateProductCommand(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 50);
+            var command = new CreateProductCommand(Guid.NewGuid().ToString(), 50);
 
             var result = await Mediator.Send(command);
 

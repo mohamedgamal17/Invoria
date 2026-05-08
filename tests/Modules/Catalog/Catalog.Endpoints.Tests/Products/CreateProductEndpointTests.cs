@@ -15,7 +15,6 @@ namespace Invoria.Catalog.Endpoints.Tests.Products
             var request = new CreateProductRequest()
             {
                 Name = Guid.NewGuid().ToString(),
-                Code = Guid.NewGuid().ToString(),
                 Price = 65
             };
 
@@ -32,7 +31,6 @@ namespace Invoria.Catalog.Endpoints.Tests.Products
             var request = new CreateProductRequest
             {
                 Name = "a",
-                Code = "b",
                 Price = 0
             };
 

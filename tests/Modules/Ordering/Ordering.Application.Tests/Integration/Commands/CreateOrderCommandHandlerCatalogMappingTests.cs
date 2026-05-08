@@ -36,7 +36,6 @@ public class CreateOrderCommandHandlerCatalogMappingTests : OrderTestFixture
         {
             Id = id,
             Name = SyntheticListProductService.NameForId(id),
-            Code = null,
             Price = 9.99m
         };
 

@@ -14,7 +14,7 @@ public class GetProductByIdEndpointTests : ProductEndpointTestFixture
     [Test]
     public async Task Should_return_product_when_found()
     {
-        var product = new Product("Test Product", "TEST-CODE", 10);
+        var product = new Product("Test Product", 10);
         await ProductRepository.Add(product);
         await BatchRepository.Add(new Invoria.Inventory.Domain.Batches.Batch(product.Id, 4, 10m));
 
@@ -29,7 +29,6 @@ public class GetProductByIdEndpointTests : ProductEndpointTestFixture
         envelope.Result.Should().NotBeNull();
         envelope.Result!.Id.Should().Be(product.Id);
         envelope.Result.Name.Should().Be(product.Name);
-        envelope.Result.Code.Should().Be(product.Code);
         envelope.Result.Price.Should().Be(product.Price);
         envelope.Result.Stock.Should().NotBeNull();
         envelope.Result.Stock!.ActualQuantity.Should().Be(4);

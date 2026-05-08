@@ -29,7 +29,7 @@ namespace Invoria.Catalog.Application.Tests.Services
         [Test]
         public async Task GetProductByIdAsync_should_return_product_when_found()
         {
-            var product = new Product("Test Product", "TEST-CODE", 10);
+            var product = new Product("Test Product", 10);
             await _productRepository.Add(product);
             await _batchRepository.Add(new Batch(product.Id, 8, 10m));
 
@@ -54,8 +54,8 @@ namespace Invoria.Catalog.Application.Tests.Services
         [Test]
         public async Task ListProductsByIdsAsync_should_return_all_matching_products()
         {
-            var a = new Product("A", "A-CODE", 1);
-            var b = new Product("B", "B-CODE", 2);
+            var a = new Product("A", 1);
+            var b = new Product("B", 2);
             await _productRepository.Add(a);
             await _productRepository.Add(b);
             await _batchRepository.Add(new Batch(a.Id, 3, 10m));
@@ -73,7 +73,7 @@ namespace Invoria.Catalog.Application.Tests.Services
         [Test]
         public async Task ListProductsByIdsAsync_should_omit_missing_ids()
         {
-            var product = new Product("Only", "ONLY", 1);
+            var product = new Product("Only", 1);
             await _productRepository.Add(product);
             var missingId = Guid.NewGuid().ToString();
 
@@ -105,7 +105,7 @@ namespace Invoria.Catalog.Application.Tests.Services
         [Test]
         public async Task ListProductsByIdsAsync_should_deduplicate_ids()
         {
-            var product = new Product("One", "ONE", 1);
+            var product = new Product("One", 1);
             await _productRepository.Add(product);
 
             var result = await _productService.ListProductsByIdsAsync(new[] { product.Id, product.Id });
