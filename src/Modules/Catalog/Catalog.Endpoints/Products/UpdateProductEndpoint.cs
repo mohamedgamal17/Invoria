@@ -45,7 +45,7 @@ namespace Invoria.Catalog.Endpoints.Products
         {
             ValidateRequest(req);
 
-            var command = new UpdateProductCommand(req.Id, req.Name, req.Code, req.Price);
+            var command = new UpdateProductCommand(req.Id, req.Name, req.Price);
 
             var result = await _mediator.Send(command, ct);
 
