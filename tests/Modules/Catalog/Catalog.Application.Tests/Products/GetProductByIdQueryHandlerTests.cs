@@ -27,7 +27,7 @@ namespace Invoria.Catalog.Application.Tests.Products
         public async Task Should_return_product_when_found()
         {
             // Arrange
-            var product = new Product("Test Product", "TEST-CODE", 10);
+            var product = new Product("Test Product", 10);
             await ProductRepository.Add(product);
             await BatchRepository.Add(new Batch(product.Id, 15, 10m));
 
