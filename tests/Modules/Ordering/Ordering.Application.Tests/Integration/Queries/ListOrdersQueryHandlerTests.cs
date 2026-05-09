@@ -396,6 +396,35 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
+    public async Task Should_filter_by_fullfillment_status()
+    {
+        var customerId = Guid.NewGuid().ToString();
+
+        var pendingFulfillmentOrder = new Order("FULFILL-PENDING", customerId);
+        pendingFulfillmentOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 10m)]);
+        await OrderRepository.Add(pendingFulfillmentOrder, CancellationToken.None);
+
+        var allocatingOrder = new Order("FULFILL-ALLOCATING", customerId);
+        allocatingOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
+        allocatingOrder.Accept();
+        await OrderRepository.Add(allocatingOrder, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            FullfillmentStatus = FullfillmentStatus.Pending
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.Data.Should().ContainSingle(x => x.Id == pendingFulfillmentOrder.Id);
+        page.Data.Should().OnlyContain(x => x.FullfillmentStatus == FullfillmentStatus.Pending);
+    }
+
+    [Test]
     public async Task Should_filter_by_payment_type()
     {
         var customerId = Guid.NewGuid().ToString();
