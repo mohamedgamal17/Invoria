@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -29,6 +30,14 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         var orders = await db.Set<Order>().ToListAsync();
         db.RemoveRange(orders);
         await db.SaveChangesAsync();
+    }
+
+    private static void CompleteOrder(Order order)
+    {
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.Complete();
     }
 
     [Test]
@@ -355,5 +364,106 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         dto.FailureDetails[0].QuantityRequested.Should().Be(7);
         dto.FailureDetails[0].QuantityAvailable.Should().Be(4);
         dto.FailureDetails[0].Shortage.Should().Be(3);
+    }
+
+    [Test]
+    public async Task Should_filter_by_payment_type()
+    {
+        var customerId = Guid.NewGuid().ToString();
+
+        var immediateOrder = new Order("PAYMENT-TYPE-IMMEDIATE", customerId, OrderPaymentType.Immediate);
+        immediateOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 10m)]);
+        await OrderRepository.Add(immediateOrder, CancellationToken.None);
+
+        var debtOrder = new Order("PAYMENT-TYPE-DEBT", customerId, OrderPaymentType.Debt);
+        debtOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
+        await OrderRepository.Add(debtOrder, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            PaymentType = OrderPaymentType.Debt
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.Data.Should().ContainSingle(x => x.Id == debtOrder.Id);
+        page.Data.Should().OnlyContain(x => x.PaymentType == OrderPaymentType.Debt);
+    }
+
+    [Test]
+    public async Task Should_filter_by_payment_status()
+    {
+        var customerId = Guid.NewGuid().ToString();
+
+        var unpaidOrder = new Order("PAYMENT-STATUS-UNPAID", customerId, OrderPaymentType.Debt);
+        unpaidOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 10m)]);
+        await OrderRepository.Add(unpaidOrder, CancellationToken.None);
+
+        var partialOrder = new Order("PAYMENT-STATUS-PARTIAL", customerId, OrderPaymentType.Debt);
+        partialOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 15m)]);
+        await OrderRepository.Add(partialOrder, CancellationToken.None);
+        CompleteOrder(partialOrder);
+        partialOrder.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+        await OrderRepository.Update(partialOrder, CancellationToken.None);
+
+        var paidOrder = new Order("PAYMENT-STATUS-PAID", customerId, OrderPaymentType.Immediate);
+        paidOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 3, 10m)]);
+        await OrderRepository.Add(paidOrder, CancellationToken.None);
+        CompleteOrder(paidOrder);
+        paidOrder.RecordPayment(30m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+        await OrderRepository.Update(paidOrder, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            PaymentStatus = OrderPaymentStatus.Partial
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.Data.Should().ContainSingle(x => x.Id == partialOrder.Id);
+        page.Data.Should().OnlyContain(x => x.PaymentStatus == OrderPaymentStatus.Partial);
+    }
+
+    [Test]
+    public async Task Should_filter_by_payment_type_and_payment_status_together()
+    {
+        var customerId = Guid.NewGuid().ToString();
+
+        var targetOrder = new Order("PAYMENT-COMBO-TARGET", customerId, OrderPaymentType.Debt);
+        targetOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 10m)]);
+        await OrderRepository.Add(targetOrder, CancellationToken.None);
+        CompleteOrder(targetOrder);
+        targetOrder.RecordPayment(5m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+        await OrderRepository.Update(targetOrder, CancellationToken.None);
+
+        var wrongType = new Order("PAYMENT-COMBO-WRONG-TYPE", customerId, OrderPaymentType.Immediate);
+        wrongType.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 10m)]);
+        await OrderRepository.Add(wrongType, CancellationToken.None);
+
+        var wrongStatus = new Order("PAYMENT-COMBO-WRONG-STATUS", customerId, OrderPaymentType.Debt);
+        wrongStatus.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 10m)]);
+        await OrderRepository.Add(wrongStatus, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            PaymentType = OrderPaymentType.Debt,
+            PaymentStatus = OrderPaymentStatus.Partial
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.Data.Should().ContainSingle(x => x.Id == targetOrder.Id);
     }
 }
