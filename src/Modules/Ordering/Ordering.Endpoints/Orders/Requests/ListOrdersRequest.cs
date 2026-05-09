@@ -21,6 +21,9 @@ public class ListOrdersRequest : PagingParams
 
     [QueryParam]
     public OrderPaymentStatus? PaymentStatus { get; set; }
+
+    [QueryParam]
+    public OrderStatus? Status { get; set; }
 }
 
 public class ListOrdersRequestValidator : AbstractValidator<ListOrdersRequest>
