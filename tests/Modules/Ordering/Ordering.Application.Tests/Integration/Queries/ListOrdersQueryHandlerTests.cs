@@ -367,6 +367,35 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
+    public async Task Should_filter_by_order_status()
+    {
+        var customerId = Guid.NewGuid().ToString();
+
+        var pendingOrder = new Order("STATUS-PENDING", customerId);
+        pendingOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 10m)]);
+        await OrderRepository.Add(pendingOrder, CancellationToken.None);
+
+        var acceptedOrder = new Order("STATUS-ACCEPTED", customerId);
+        acceptedOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
+        acceptedOrder.Accept();
+        await OrderRepository.Add(acceptedOrder, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            Status = OrderStatus.Pending
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.Data.Should().ContainSingle(x => x.Id == pendingOrder.Id);
+        page.Data.Should().OnlyContain(x => x.Status == OrderStatus.Pending);
+    }
+
+    [Test]
     public async Task Should_filter_by_payment_type()
     {
         var customerId = Guid.NewGuid().ToString();
