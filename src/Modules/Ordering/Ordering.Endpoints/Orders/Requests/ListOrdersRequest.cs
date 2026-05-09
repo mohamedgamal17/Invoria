@@ -10,6 +10,9 @@ public class ListOrdersRequest : PagingParams
     public string? OrderNumber { get; set; }
 
     [QueryParam]
+    public string? CustomerId { get; set; }
+
+    [QueryParam]
     public bool IncludeOrderItems { get; set; }
 }
 

@@ -48,6 +48,7 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
             Skip = req.Skip,
             Length = req.Length,
             OrderNumber = req.OrderNumber,
+            CustomerId = req.CustomerId,
             IncludeOrderItems = req.IncludeOrderItems
         };
 
