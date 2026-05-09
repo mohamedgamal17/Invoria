@@ -41,6 +41,16 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
             query = query.Where(o => o.CustomerId == customerIdTerm);
         }
 
+        if (request.PaymentType.HasValue)
+        {
+            query = query.Where(o => o.PaymentType == request.PaymentType.Value);
+        }
+
+        if (request.PaymentStatus.HasValue)
+        {
+            query = query.Where(o => o.PaymentStatus == request.PaymentStatus.Value);
+        }
+
         query = query.OrderByDescending(o => o.Id);
 
         if (request.IncludeOrderItems)
