@@ -215,6 +215,59 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
+    public async Task Should_filter_by_customer_id()
+    {
+        var targetCustomerId = Guid.NewGuid().ToString();
+        var otherCustomerId = Guid.NewGuid().ToString();
+
+        var targetOrder = new Order("CUST-A-001", targetCustomerId);
+        targetOrder.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 1, 10m) });
+        await OrderRepository.Add(targetOrder, CancellationToken.None);
+
+        var otherOrder = new Order("CUST-B-001", otherCustomerId);
+        otherOrder.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 1, 20m) });
+        await OrderRepository.Add(otherOrder, CancellationToken.None);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            CustomerId = targetCustomerId
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.AssertPagingDto(0, 10, 1, 1);
+        page.Data.Single().Id.Should().Be(targetOrder.Id);
+        page.Data.Should().OnlyContain(x => x.CustomerId == targetCustomerId);
+    }
+
+    [Test]
+    public async Task Should_treat_whitespace_only_customer_id_as_no_filter()
+    {
+        var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 2);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            CustomerId = "   \t  "
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var page = result.Value!;
+        page.AssertPagingDto(0, 10, 2, 2);
+        foreach (var order in persisted)
+        {
+            page.Data.Should().Contain(x => x.Id == order.Id);
+        }
+    }
+
+    [Test]
     public async Task Should_return_line_items_when_filtering_by_order_number_with_include_order_items()
     {
         var customerId = Guid.NewGuid().ToString();
