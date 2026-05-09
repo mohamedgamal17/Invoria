@@ -46,6 +46,7 @@ public sealed class ListPurchaseOrdersEndpoint : EndpointBase<ListPurchaseOrders
             Skip = req.Skip,
             Length = req.Length,
             Number = req.Number,
+            Status = req.Status,
             IncludePurchaseItems = req.IncludePurchaseItems,
             IncludeSupplier = req.IncludeSupplier
         };
