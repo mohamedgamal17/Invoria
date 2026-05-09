@@ -52,10 +52,10 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void RecordPayment(decimal paidAmount, OrderPaymentMethod method, DateTimeOffset paidAt)
         {
-            if (string.IsNullOrWhiteSpace(Id))
+            if (Status != OrderStatus.Completed)
             {
                 throw new InvalidOperationException(
-                    "Order must have an identifier before recording payments.");
+                    "Payments can only be recorded after the order is completed.");
             }
 
             if (TotalOrderAmount <= 0m)
