@@ -102,6 +102,50 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
     }
 
     [Test]
+    public async Task Should_filter_by_supplier_id_when_set()
+    {
+        var forSupplierA = await CreatePurchaseOrderAsync("PO-SUP-A");
+        var forSupplierB = await CreatePurchaseOrderAsync("PO-SUP-B");
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            SupplierId = forSupplierA.SupplierId
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Info.TotalCount.Should().Be(1);
+        result.Value.Data.Should().ContainSingle();
+        result.Value.Data.Single().Id.Should().Be(forSupplierA.Id);
+        result.Value.Data.Should().NotContain(x => x.Id == forSupplierB.Id);
+    }
+
+    [Test]
+    public async Task Should_ignore_whitespace_only_supplier_id_filter()
+    {
+        var one = await CreatePurchaseOrderAsync("PO-SUPWS-1");
+        var two = await CreatePurchaseOrderAsync("PO-SUPWS-2");
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            SupplierId = "   "
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Info.TotalCount.Should().Be(2);
+        result.Value.Data.Select(x => x.Id).Should().Contain([one.Id, two.Id]);
+    }
+
+    [Test]
     public async Task Should_filter_by_number_contains_case_insensitive()
     {
         var matching = await CreatePurchaseOrderAsync("PO-FLTR-ALPHA-001");
@@ -267,21 +311,30 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
     private async Task<PurchaseOrder> CreatePurchaseOrderAsync(
         string purchaseNumber,
         string? id = null,
-        Action<PurchaseOrder>? applyTransitions = null)
+        Action<PurchaseOrder>? applyTransitions = null,
+        Supplier? supplier = null)
     {
-        var supplier = Supplier.Create(
-            id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
-            name: "List Supplier",
-            contactEmail: null,
-            phone: null,
-            createdBy: "tests");
-        await SupplierRepository.Add(supplier);
+        Supplier supplierEntity;
+        if (supplier is not null)
+        {
+            supplierEntity = supplier;
+        }
+        else
+        {
+            supplierEntity = Supplier.Create(
+                id: Guid.NewGuid().ToString("N"),
+                supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
+                name: "List Supplier",
+                contactEmail: null,
+                phone: null,
+                createdBy: "tests");
+            await SupplierRepository.Add(supplierEntity);
+        }
 
         var purchaseOrder = new PurchaseOrder(
             id: id ?? Guid.NewGuid().ToString("N"),
             purchaseNumber: purchaseNumber,
-            supplierId: supplier.Id,
+            supplierId: supplierEntity.Id,
             orderDate: DateTime.UtcNow.Date,
             expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(7));
 
