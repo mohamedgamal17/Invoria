@@ -5,6 +5,7 @@ using Invoria.BuildingBlocks.Infrastructure.Results;
 using Microsoft.AspNetCore.Http;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using MediatR;
 
@@ -47,7 +48,8 @@ public class CreateOrderEndpoint : EndpointBase<CreateOrderRequest, OrderDto>
             .Select(i => new CreateOrderItemCommand(i.ProductId, i.Quantity, i.Price))
             .ToList();
 
-        var command = new CreateOrderCommand(req.CustomerId, itemCommands);
+        var paymentType = req.PaymentType ?? OrderPaymentType.Immediate;
+        var command = new CreateOrderCommand(req.CustomerId, itemCommands, paymentType);
 
         var result = await _mediator.Send(command, ct);
 
