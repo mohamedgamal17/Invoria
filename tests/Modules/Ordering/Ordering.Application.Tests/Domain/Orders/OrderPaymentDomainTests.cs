@@ -23,6 +23,18 @@ public class OrderPaymentDomainTests
         return order;
     }
 
+    /// <summary>
+    /// Brings order to Completed so payments are allowed (<see cref="Order.RecordPayment" /> gate).
+    /// </summary>
+    private static void CompleteViaFulfillment(Order order)
+    {
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.Complete();
+        order.Status.Should().Be(OrderStatus.Completed);
+    }
+
     [Test]
     public void TotalOrderAmount_is_sum_of_line_extensions()
     {
@@ -54,9 +66,20 @@ public class OrderPaymentDomainTests
     }
 
     [Test]
+    public void RecordPayment_throws_when_order_not_completed()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+
+        order.Invoking(o => o.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>()
+            .WithMessage("*completed*");
+    }
+
+    [Test]
     public void PaymentStatus_Partial_after_partial_debt_payment()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        CompleteViaFulfillment(order);
         var paidAt = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
 
         order.RecordPayment(40m, OrderPaymentMethod.Cash, paidAt);
@@ -75,6 +98,7 @@ public class OrderPaymentDomainTests
     public void PaymentStatus_Paid_when_fully_paid_debt()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 2, 25m));
+        CompleteViaFulfillment(order);
 
         order.RecordPayment(30m, OrderPaymentMethod.BankTransfer, DateTimeOffset.UtcNow);
         order.RecordPayment(20m, OrderPaymentMethod.Cheque, DateTimeOffset.UtcNow);
@@ -88,6 +112,7 @@ public class OrderPaymentDomainTests
     public void Immediate_RecordPayment_succeeds_when_amount_equals_total()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 99.5m));
+        CompleteViaFulfillment(order);
 
         order.Invoking(o => o.RecordPayment(99.5m, OrderPaymentMethod.Other, DateTimeOffset.UtcNow))
             .Should().NotThrow();
@@ -100,6 +125,7 @@ public class OrderPaymentDomainTests
     public void Immediate_RecordPayment_fails_when_amount_not_equal_total()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 100m));
+        CompleteViaFulfillment(order);
 
         order.Invoking(o => o.RecordPayment(99m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
             .Should().Throw<InvalidOperationException>();
@@ -109,6 +135,7 @@ public class OrderPaymentDomainTests
     public void Immediate_second_RecordPayment_fails()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 10m));
+        CompleteViaFulfillment(order);
         order.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
         order.Invoking(o => o.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
@@ -119,6 +146,7 @@ public class OrderPaymentDomainTests
     public void Debt_RecordPayment_fails_when_exceeds_outstanding()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        CompleteViaFulfillment(order);
         order.RecordPayment(60m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
         order.Invoking(o => o.RecordPayment(50m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
@@ -129,6 +157,7 @@ public class OrderPaymentDomainTests
     public void RecordPayment_fails_when_amount_not_positive()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        CompleteViaFulfillment(order);
 
         order.Invoking(o => o.RecordPayment(0m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
             .Should().Throw<InvalidOperationException>();
@@ -138,6 +167,7 @@ public class OrderPaymentDomainTests
     public void RecordPayment_fails_when_fully_paid()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 50m));
+        CompleteViaFulfillment(order);
         order.RecordPayment(50m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
         order.Invoking(o => o.RecordPayment(1m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
@@ -158,6 +188,7 @@ public class OrderPaymentDomainTests
     public void RecordPayment_fails_when_total_is_zero()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 0m));
+        CompleteViaFulfillment(order);
 
         order.Invoking(o => o.RecordPayment(0.01m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
             .Should().Throw<InvalidOperationException>();
@@ -173,19 +204,10 @@ public class OrderPaymentDomainTests
     }
 
     [Test]
-    public void RecordPayment_requires_aggregate_Id()
-    {
-        var order = new Order("PAY-NOID", Guid.NewGuid().ToString(), OrderPaymentType.Debt);
-        order.UpdateItems([new OrderItem("p", 1, 10m)]);
-
-        order.Invoking(o => o.RecordPayment(5m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
-            .Should().Throw<InvalidOperationException>();
-    }
-
-    [Test]
     public void After_RecordPayment_persisted_summary_matches_total_minus_paid()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 2, 15m));
+        CompleteViaFulfillment(order);
         order.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
         order.AmountOutstanding.Should().Be(order.TotalOrderAmount - order.AmountPaid);
@@ -194,29 +216,15 @@ public class OrderPaymentDomainTests
     }
 
     [Test]
-    public void UpdateItems_after_partial_payment_recomputes_outstanding_and_status()
+    public void UpdateItems_while_pending_recomputes_outstanding_when_no_payments_yet()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
-        order.RecordPayment(40m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
         order.UpdateItems([new OrderItem("p", 1, 50m)]);
 
         order.TotalOrderAmount.Should().Be(50m);
-        order.AmountPaid.Should().Be(40m);
-        order.AmountOutstanding.Should().Be(10m);
-        order.PaymentStatus.Should().Be(OrderPaymentStatus.Partial);
-    }
-
-    [Test]
-    public void UpdateItems_when_total_drops_below_amount_paid_marks_Paid_with_zero_outstanding()
-    {
-        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
-        order.RecordPayment(40m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
-
-        order.UpdateItems([new OrderItem("p", 1, 30m)]);
-
-        order.TotalOrderAmount.Should().Be(30m);
-        order.AmountOutstanding.Should().Be(0m);
-        order.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);
+        order.AmountPaid.Should().Be(0m);
+        order.AmountOutstanding.Should().Be(50m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
     }
 }
