@@ -35,6 +35,7 @@ public class UpdateOrderCommandHandler : IApplicatonRequestHandler<UpdateOrderCo
         var order = await _orderRepository
             .AsQuerable()
             .Include(o => o.Items)
+            .Include(o => o.Payments)
             .SingleOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
 
         if (order == null)
