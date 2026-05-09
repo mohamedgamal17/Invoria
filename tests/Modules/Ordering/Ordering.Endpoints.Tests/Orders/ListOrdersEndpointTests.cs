@@ -195,6 +195,52 @@ public class ListOrdersEndpointTests : OrderingTestFixture
     }
 
     [Test]
+    public async Task Should_map_order_status_filter()
+    {
+        var productId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var pendingRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
+        };
+
+        var toAcceptRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
+        };
+
+        var pendingResponse = await Client.PostAsJsonAsync("/orders", pendingRequest);
+        pendingResponse.IsSuccessStatusCode.Should().BeTrue();
+        var pendingEnvelope = await pendingResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var pendingOrder = pendingEnvelope!.Result!;
+
+        var toAcceptResponse = await Client.PostAsJsonAsync("/orders", toAcceptRequest);
+        toAcceptResponse.IsSuccessStatusCode.Should().BeTrue();
+        var toAcceptEnvelope = await toAcceptResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var toAcceptOrder = toAcceptEnvelope!.Result!;
+
+        var acceptResponse = await Client.PostAsJsonAsync($"/orders/{toAcceptOrder.Id}/accept", new { });
+        acceptResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var listQuery = new { Skip = 0, Length = 100, Status = OrderStatus.Pending };
+        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
+
+        var response = await Client.GetAsync(uri);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result!.Data.Should().Contain(x => x.Id == pendingOrder.Id);
+        envelope.Result.Data.Should().NotContain(x => x.Id == toAcceptOrder.Id);
+        envelope.Result.Data.Should().OnlyContain(x => x.Status == OrderStatus.Pending);
+    }
+
+    [Test]
     public async Task Should_map_payment_type_filter()
     {
         var productId = Guid.NewGuid().ToString();
