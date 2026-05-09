@@ -121,6 +121,53 @@ public class ListOrdersEndpointTests : OrderingTestFixture
     }
 
     [Test]
+    public async Task Should_map_customer_id_filter()
+    {
+        var productId = Guid.NewGuid().ToString();
+        var targetCustomerId = Guid.NewGuid().ToString();
+        var otherCustomerId = Guid.NewGuid().ToString();
+
+        var targetCreateRequest = new CreateOrderRequest
+        {
+            CustomerId = targetCustomerId,
+            Items =
+            [
+                new CreateOrderLineItemRequest { ProductId = productId, Quantity = 2, Price = 7.5m }
+            ]
+        };
+
+        var otherCreateRequest = new CreateOrderRequest
+        {
+            CustomerId = otherCustomerId,
+            Items =
+            [
+                new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 5m }
+            ]
+        };
+
+        var targetCreateResponse = await Client.PostAsJsonAsync("/orders", targetCreateRequest);
+        targetCreateResponse.IsSuccessStatusCode.Should().BeTrue();
+        var targetEnvelope = await targetCreateResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var targetOrder = targetEnvelope!.Result!;
+
+        var otherCreateResponse = await Client.PostAsJsonAsync("/orders", otherCreateRequest);
+        otherCreateResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var listQuery = new { Skip = 0, Length = 100, CustomerId = targetCustomerId };
+        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
+
+        var response = await Client.GetAsync(uri);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result!.Data.Should().ContainSingle(x => x.Id == targetOrder.Id);
+        envelope.Result.Data.Should().OnlyContain(x => x.CustomerId == targetCustomerId);
+    }
+
+    [Test]
     public async Task Should_return_validation_errors_envelope_when_request_is_invalid()
     {
         var listQuery = new { Skip = 0, Length = 0 };
