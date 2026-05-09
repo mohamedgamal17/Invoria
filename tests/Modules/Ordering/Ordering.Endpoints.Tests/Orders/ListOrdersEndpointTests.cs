@@ -3,9 +3,14 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
+using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
+using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using Invoria.Endpoints.Tests.Utilities;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Ordering.Endpoints.Tests.Orders;
 
@@ -187,5 +192,120 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         envelope.Error!.Status.Should().Be((int)HttpStatusCode.BadRequest);
         envelope.Error.Errors.Should().NotBeEmpty();
         envelope.Error.Errors.Keys.Should().Contain(x => x.Contains("Length") || x == "GeneralErrors");
+    }
+
+    [Test]
+    public async Task Should_map_payment_type_filter()
+    {
+        var productId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var immediateRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            PaymentType = OrderPaymentType.Immediate,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
+        };
+
+        var debtRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            PaymentType = OrderPaymentType.Debt,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
+        };
+
+        var immediateResponse = await Client.PostAsJsonAsync("/orders", immediateRequest);
+        immediateResponse.IsSuccessStatusCode.Should().BeTrue();
+        var immediateEnvelope = await immediateResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var immediateOrder = immediateEnvelope!.Result!;
+
+        var debtResponse = await Client.PostAsJsonAsync("/orders", debtRequest);
+        debtResponse.IsSuccessStatusCode.Should().BeTrue();
+        var debtEnvelope = await debtResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var debtOrder = debtEnvelope!.Result!;
+
+        var listQuery = new { Skip = 0, Length = 100, PaymentType = OrderPaymentType.Debt };
+        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
+
+        var response = await Client.GetAsync(uri);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result!.Data.Should().ContainSingle(x => x.Id == debtOrder.Id);
+        envelope.Result.Data.Should().NotContain(x => x.Id == immediateOrder.Id);
+        envelope.Result.Data.Should().OnlyContain(x => x.PaymentType == OrderPaymentType.Debt);
+    }
+
+    [Test]
+    public async Task Should_map_payment_status_filter()
+    {
+        var productId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var unpaidRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            PaymentType = OrderPaymentType.Debt,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 2, Price = 10m }]
+        };
+
+        var unpaidResponse = await Client.PostAsJsonAsync("/orders", unpaidRequest);
+        unpaidResponse.IsSuccessStatusCode.Should().BeTrue();
+        var unpaidEnvelope = await unpaidResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var unpaidOrder = unpaidEnvelope!.Result!;
+
+        var partialRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            PaymentType = OrderPaymentType.Debt,
+            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 2, Price = 10m }]
+        };
+
+        var partialResponse = await Client.PostAsJsonAsync("/orders", partialRequest);
+        partialResponse.IsSuccessStatusCode.Should().BeTrue();
+        var partialEnvelope = await partialResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        var partialOrder = partialEnvelope!.Result!;
+
+        var acceptResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/accept", new { });
+        acceptResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(RecordOrderAllocationSucceededCommand.FromEvent(new OrderAllocationSucceededIntegrationEvent
+        {
+            OrderId = partialOrder.Id,
+            CustomerId = customerId,
+            AllocatedAt = DateTimeOffset.UtcNow,
+            AllocatedLines = []
+        }));
+
+        var dispatchResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/dispatch", new { Id = partialOrder.Id });
+        dispatchResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var completeResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/complete", new { });
+        completeResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var paymentResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/payments", new
+        {
+            PaidAmount = 10m,
+            PaymentMethod = OrderPaymentMethod.Cash
+        });
+        paymentResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var listQuery = new { Skip = 0, Length = 100, PaymentStatus = OrderPaymentStatus.Partial };
+        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
+
+        var response = await Client.GetAsync(uri);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result!.Data.Should().ContainSingle(x => x.Id == partialOrder.Id);
+        envelope.Result.Data.Should().NotContain(x => x.Id == unpaidOrder.Id);
+        envelope.Result.Data.Should().OnlyContain(x => x.PaymentStatus == OrderPaymentStatus.Partial);
     }
 }
