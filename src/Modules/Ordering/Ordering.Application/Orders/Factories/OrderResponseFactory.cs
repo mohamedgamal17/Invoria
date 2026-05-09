@@ -66,6 +66,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
                 FullfillmentStatus = view.FullfillmentStatus,
+                Payments = new List<OrderPaymentDto>(),
                 Items = new List<OrderItemDto>(),
                 StateTransitionHistory = view.StateTransitionHistory
                     .Select(transition => new OrderStateTransitionHistoryDto
@@ -96,6 +97,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
                     .ToList()
             };
 
+            ApplyPaymentScalars(view, dto);
             MapAudited(view, dto);
 
             return dto;
@@ -182,12 +184,34 @@ namespace Invoria.Ordering.Application.Orders.Factories
                         MapAudited(detail, dto);
                         return dto;
                     })
-                    .ToList()
+                    .ToList(),
+                Payments = MapPayments(view.Payments),
             };
 
+            ApplyPaymentScalars(view, dto);
             MapAudited(view, dto);
 
             return dto;
+        }
+
+        private List<OrderPaymentDto> MapPayments(IReadOnlyCollection<OrderPayment> payments)
+        {
+            var list = new List<OrderPaymentDto>();
+            foreach (var p in payments.OrderBy(x => x.PaidAt))
+            {
+                var paymentDto = new OrderPaymentDto
+                {
+                    Id = p.Id,
+                    OrderId = p.OrderId,
+                    PaidAmount = p.PaidAmount,
+                    PaymentMethod = p.PaymentMethod,
+                    PaidAt = p.PaidAt,
+                };
+                MapAudited(p, paymentDto);
+                list.Add(paymentDto);
+            }
+
+            return list;
         }
 
         private static List<string> ExtractDistinctProductIds(
@@ -208,6 +232,14 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 .Concat(failedProductIds)
                 .Distinct()
                 .ToList();
+        }
+
+        private static void ApplyPaymentScalars(Order view, OrderDto dto)
+        {
+            dto.PaymentType = view.PaymentType;
+            dto.AmountPaid = view.AmountPaid;
+            dto.AmountOutstanding = view.AmountOutstanding;
+            dto.PaymentStatus = view.PaymentStatus;
         }
 
         private async Task<Dictionary<string, ProductDto>> LoadProductsByIdsAsync(
