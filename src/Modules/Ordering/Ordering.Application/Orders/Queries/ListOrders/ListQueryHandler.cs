@@ -38,7 +38,9 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
 
         if (request.IncludeOrderItems)
         {
-            query = query.Include(o => o.Items);
+            query = query
+                .Include(o => o.Items)
+                .Include(o => o.Payments);
         }
 
         var paged = await query.ToPaged(request.Skip, request.Length);
