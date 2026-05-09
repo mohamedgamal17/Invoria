@@ -54,6 +54,12 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
             query = query.Where(x => x.State == request.Status.Value);
         }
 
+        var supplierIdTerm = request.SupplierId?.Trim();
+        if (!string.IsNullOrEmpty(supplierIdTerm))
+        {
+            query = query.Where(x => x.SupplierId == supplierIdTerm);
+        }
+
         query = query.OrderByDescending(x => x.Id);
 
         var paged = await query.ToPaged(request.Skip, request.Length);

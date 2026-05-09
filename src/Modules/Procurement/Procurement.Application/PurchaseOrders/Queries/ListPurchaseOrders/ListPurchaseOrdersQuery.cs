@@ -15,6 +15,11 @@ public sealed class ListPurchaseOrdersQuery : PagingParams, IQuery<PagingDto<Pur
     /// </summary>
     public PurchaseState? Status { get; set; }
 
+    /// <summary>
+    /// When set (non-whitespace), only purchase orders matching this supplier id are returned.
+    /// </summary>
+    public string? SupplierId { get; set; }
+
     public bool IncludePurchaseItems { get; set; }
 
     public bool IncludeSupplier { get; set; }
