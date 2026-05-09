@@ -49,6 +49,11 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
             query = query.Where(x => EF.Functions.Like(x.PurchaseNumber, $"%{numberTerm}%"));
         }
 
+        if (request.Status.HasValue)
+        {
+            query = query.Where(x => x.State == request.Status.Value);
+        }
+
         query = query.OrderByDescending(x => x.Id);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
