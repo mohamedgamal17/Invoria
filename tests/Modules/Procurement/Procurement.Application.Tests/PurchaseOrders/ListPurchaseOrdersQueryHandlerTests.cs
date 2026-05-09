@@ -3,6 +3,7 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.Procurement.Application.PurchaseOrders.Queries.ListPurchaseOrders;
 using Invoria.Procurement.Domain.Parties;
 using Invoria.Procurement.Domain.PurchaseOrders;
+using Invoria.Procurement.Contracts.PurchaseOrders;
 using Invoria.Procurement.Domain.Repositories;
 using Invoria.Procurement.Infrastructure.EntityFramework;
 using MediatR;
@@ -51,6 +52,53 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         result.Value.Info.Length.Should().Be(1);
         result.Value.Info.TotalCount.Should().Be(3);
         result.Value.Data.Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task Should_filter_by_status_when_set()
+    {
+        var draft = await CreatePurchaseOrderAsync("PO-STATUS-DRAFT");
+        var submitted = await CreatePurchaseOrderAsync(
+            "PO-STATUS-SUB",
+            applyTransitions: x => x.Submit());
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            Status = PurchaseState.Submitted
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Info.TotalCount.Should().Be(1);
+        result.Value.Data.Should().ContainSingle();
+        result.Value.Data.Single().Id.Should().Be(submitted.Id);
+        result.Value.Data.Should().NotContain(x => x.Id == draft.Id);
+    }
+
+    [Test]
+    public async Task Should_return_all_states_when_status_omitted()
+    {
+        var draft = await CreatePurchaseOrderAsync("PO-ALL-DRAFT");
+        var submitted = await CreatePurchaseOrderAsync(
+            "PO-ALL-SUB",
+            applyTransitions: x => x.Submit());
+
+        var query = new ListPurchaseOrdersQuery
+        {
+            Skip = 0,
+            Length = 10
+        };
+
+        var result = await Mediator.Send(query);
+
+        result.ShouldBeSuccess();
+        result.Value.Should().NotBeNull();
+        result.Value!.Info.TotalCount.Should().Be(2);
+        result.Value.Data.Select(x => x.Id).Should().Contain([draft.Id, submitted.Id]);
     }
 
     [Test]
