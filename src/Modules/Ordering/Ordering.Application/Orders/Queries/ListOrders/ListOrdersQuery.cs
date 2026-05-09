@@ -13,6 +13,11 @@ public class ListOrdersQuery : PagingParams, IQuery<PagingDto<OrderDto>>
     public string? OrderNumber { get; set; }
 
     /// <summary>
+    /// When set (non-whitespace), only orders matching this customer id are returned.
+    /// </summary>
+    public string? CustomerId { get; set; }
+
+    /// <summary>
     /// When true, line items and catalog product data are loaded. Default is false (header-level list only).
     /// </summary>
     public bool IncludeOrderItems { get; set; }
