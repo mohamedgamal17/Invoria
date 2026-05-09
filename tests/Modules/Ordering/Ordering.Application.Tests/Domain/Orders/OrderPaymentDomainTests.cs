@@ -1,0 +1,222 @@
+using FluentAssertions;
+using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Domain.Orders;
+
+namespace Invoria.Ordering.Application.Tests.Domain.Orders;
+
+[TestFixture]
+public class OrderPaymentDomainTests
+{
+    private static void SetEntityId(Entity<string> entity, string id)
+    {
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(entity, id);
+    }
+
+    private static Order CreateOrderWithItems(
+        OrderPaymentType paymentType,
+        params OrderItem[] items)
+    {
+        var order = new Order("PAY-1", Guid.NewGuid().ToString(), paymentType);
+        SetEntityId(order, "order-pay-1");
+        order.UpdateItems(items.ToList());
+        return order;
+    }
+
+    [Test]
+    public void TotalOrderAmount_is_sum_of_line_extensions()
+    {
+        var order = CreateOrderWithItems(
+            OrderPaymentType.Debt,
+            new OrderItem("a", 2, 10m),
+            new OrderItem("b", 1, 5m));
+
+        order.TotalOrderAmount.Should().Be(25m);
+    }
+
+    [Test]
+    public void TotalOrderAmount_with_no_items_is_zero()
+    {
+        var order = new Order("PAY-EMPTY", Guid.NewGuid().ToString());
+        SetEntityId(order, "order-empty");
+
+        order.TotalOrderAmount.Should().Be(0m);
+    }
+
+    [Test]
+    public void PaymentStatus_Unpaid_when_no_payments()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+
+        order.AmountPaid.Should().Be(0m);
+        order.AmountOutstanding.Should().Be(100m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
+    }
+
+    [Test]
+    public void PaymentStatus_Partial_after_partial_debt_payment()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        var paidAt = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
+
+        order.RecordPayment(40m, OrderPaymentMethod.Cash, paidAt);
+
+        order.AmountPaid.Should().Be(40m);
+        order.AmountOutstanding.Should().Be(60m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Partial);
+        order.Payments.Should().ContainSingle();
+        order.Payments[0].PaidAmount.Should().Be(40m);
+        order.Payments[0].PaymentMethod.Should().Be(OrderPaymentMethod.Cash);
+        order.Payments[0].PaidAt.Should().Be(paidAt);
+        order.Payments[0].OrderId.Should().Be("order-pay-1");
+    }
+
+    [Test]
+    public void PaymentStatus_Paid_when_fully_paid_debt()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 2, 25m));
+
+        order.RecordPayment(30m, OrderPaymentMethod.BankTransfer, DateTimeOffset.UtcNow);
+        order.RecordPayment(20m, OrderPaymentMethod.Cheque, DateTimeOffset.UtcNow);
+
+        order.AmountPaid.Should().Be(50m);
+        order.AmountOutstanding.Should().Be(0m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);
+    }
+
+    [Test]
+    public void Immediate_RecordPayment_succeeds_when_amount_equals_total()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 99.5m));
+
+        order.Invoking(o => o.RecordPayment(99.5m, OrderPaymentMethod.Other, DateTimeOffset.UtcNow))
+            .Should().NotThrow();
+
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);
+        order.Payments.Should().ContainSingle();
+    }
+
+    [Test]
+    public void Immediate_RecordPayment_fails_when_amount_not_equal_total()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 100m));
+
+        order.Invoking(o => o.RecordPayment(99m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void Immediate_second_RecordPayment_fails()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Immediate, new OrderItem("p", 1, 10m));
+        order.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.Invoking(o => o.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void Debt_RecordPayment_fails_when_exceeds_outstanding()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        order.RecordPayment(60m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.Invoking(o => o.RecordPayment(50m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void RecordPayment_fails_when_amount_not_positive()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+
+        order.Invoking(o => o.RecordPayment(0m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void RecordPayment_fails_when_fully_paid()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 50m));
+        order.RecordPayment(50m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.Invoking(o => o.RecordPayment(1m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void RecordPayment_fails_when_no_items()
+    {
+        var order = new Order("PAY-NO-ITEMS", Guid.NewGuid().ToString(), OrderPaymentType.Debt);
+        SetEntityId(order, "order-no-items");
+
+        order.Invoking(o => o.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void RecordPayment_fails_when_total_is_zero()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 0m));
+
+        order.Invoking(o => o.RecordPayment(0.01m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void Order_default_payment_type_is_Immediate()
+    {
+        var order = new Order("DEF", "cust");
+
+        order.PaymentType.Should().Be(OrderPaymentType.Immediate);
+        order.Payments.Should().BeEmpty();
+    }
+
+    [Test]
+    public void RecordPayment_requires_aggregate_Id()
+    {
+        var order = new Order("PAY-NOID", Guid.NewGuid().ToString(), OrderPaymentType.Debt);
+        order.UpdateItems([new OrderItem("p", 1, 10m)]);
+
+        order.Invoking(o => o.RecordPayment(5m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void After_RecordPayment_persisted_summary_matches_total_minus_paid()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 2, 15m));
+        order.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.AmountOutstanding.Should().Be(order.TotalOrderAmount - order.AmountPaid);
+        order.AmountPaid.Should().Be(10m);
+        order.TotalOrderAmount.Should().Be(30m);
+    }
+
+    [Test]
+    public void UpdateItems_after_partial_payment_recomputes_outstanding_and_status()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        order.RecordPayment(40m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.UpdateItems([new OrderItem("p", 1, 50m)]);
+
+        order.TotalOrderAmount.Should().Be(50m);
+        order.AmountPaid.Should().Be(40m);
+        order.AmountOutstanding.Should().Be(10m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Partial);
+    }
+
+    [Test]
+    public void UpdateItems_when_total_drops_below_amount_paid_marks_Paid_with_zero_outstanding()
+    {
+        var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 1, 100m));
+        order.RecordPayment(40m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
+
+        order.UpdateItems([new OrderItem("p", 1, 30m)]);
+
+        order.TotalOrderAmount.Should().Be(30m);
+        order.AmountOutstanding.Should().Be(0m);
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);
+    }
+}
