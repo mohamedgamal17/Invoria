@@ -35,6 +35,32 @@ public class ListPurchaseOrdersEndpointTests : ProcurementTestFixture
     }
 
     [Test]
+    public async Task Should_filter_by_supplier_id_when_query_param_set()
+    {
+        var first = await CreatePurchaseOrderAsync("SUPF1");
+        var second = await CreatePurchaseOrderAsync("SUPF2");
+
+        var query = new
+        {
+            Skip = 0,
+            Length = 100,
+            SupplierId = first.SupplierId
+        };
+        var uri = "/purchase-orders?" + QueryStringHelper.ToQueryString(query);
+
+        var response = await Client.GetAsync(uri);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<PurchaseOrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result.Should().NotBeNull();
+        envelope.Result!.Data.Should().ContainSingle(x => x.Id == first.Id);
+        envelope.Result.Data.Should().NotContain(x => x.Id == second.Id);
+    }
+
+    [Test]
     public async Task Should_filter_by_status_when_query_param_set()
     {
         var draftPo = await CreatePurchaseOrderAsync("STDRAFT");
