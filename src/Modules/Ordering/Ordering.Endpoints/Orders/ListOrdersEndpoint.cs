@@ -49,7 +49,9 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
             Length = req.Length,
             OrderNumber = req.OrderNumber,
             CustomerId = req.CustomerId,
-            IncludeOrderItems = req.IncludeOrderItems
+            IncludeOrderItems = req.IncludeOrderItems,
+            PaymentType = req.PaymentType,
+            PaymentStatus = req.PaymentStatus
         };
 
         var result = await _mediator.Send(query, ct);

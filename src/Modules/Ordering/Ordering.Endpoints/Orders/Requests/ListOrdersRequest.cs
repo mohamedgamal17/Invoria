@@ -1,6 +1,7 @@
 using FastEndpoints;
 using FluentValidation;
 using Invoria.BuildingBlocks.Application.Requests;
+using Invoria.Ordering.Contracts.Orders;
 
 namespace Invoria.Ordering.Endpoints.Orders.Requests;
 
@@ -14,6 +15,12 @@ public class ListOrdersRequest : PagingParams
 
     [QueryParam]
     public bool IncludeOrderItems { get; set; }
+
+    [QueryParam]
+    public OrderPaymentType? PaymentType { get; set; }
+
+    [QueryParam]
+    public OrderPaymentStatus? PaymentStatus { get; set; }
 }
 
 public class ListOrdersRequestValidator : AbstractValidator<ListOrdersRequest>
