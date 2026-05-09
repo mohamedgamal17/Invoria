@@ -1,0 +1,1 @@
+Per-branch PR narratives live here. Copy the template from [`../Branch-Changes.md`](../Branch-Changes.md), save as `<branch-with-slashes-replaced-by-hyphens>.md`, and paste the body into your PR when opening it.

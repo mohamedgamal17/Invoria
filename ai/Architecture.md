@@ -7,8 +7,9 @@ This document describes the current architecture of the Invoria solution based o
 - **Business module**: Catalog (`Invoria.Catalog.*`)
 - **Business module**: CustomerManagement (`Invoria.CustomerManagement.*`)
 - **Business module**: Ordering (`Invoria.Ordering.*`)
+- **Business module**: Procurement (`Invoria.Procurement.*`) — suppliers, purchase orders, and CQRS
 - **Business module**: Inventory (`Invoria.Inventory.*`) — batches and CQRS; consumes Ordering integration events via Rebus
-- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, and Ordering-focused application and endpoint tests where present
+- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, Ordering-, and Procurement-focused application and endpoint tests where present
 
 The sections below list only modules, layers, classes, and relationships that exist in the repository.
 
@@ -64,12 +65,20 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Contracts: `Invoria.Inventory.Contracts`
   - Current scope: batch aggregate and endpoints; Rebus handler registration and optional integration consumer types for cross-module events
 
+- **Procurement Module**
+  - Domain: `Invoria.Procurement.Domain`
+  - Application: `Invoria.Procurement.Application`
+  - Infrastructure: `Invoria.Procurement.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Procurement.Endpoints`
+  - Contracts: `Invoria.Procurement.Contracts`
+
 - **Tests**
   - `Invoria.Application.Tests`
   - `Invoria.Endpoints.Tests`
   - `Invoria.Catalog.Application.Tests`
   - `Invoria.Inventory.Application.Tests`, `Invoria.Inventory.Endpoints.Tests` (where present)
   - `Invoria.Ordering.Application.Tests`, `Invoria.Ordering.Endpoints.Tests` (where present)
+  - `Invoria.Procurement.Application.Tests`, `Invoria.Procurement.Endpoints.Tests` (where present)
 
 ### High-Level Module Dependencies
 
@@ -121,6 +130,8 @@ flowchart LR
   ordContracts -.->|"integration event types (e.g. AllocateOrderIntegrationEvent)"| invApp
   ordContracts -.->|"referenced for handler types"| invInfra
 ```
+
+Other business modules (CustomerManagement, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
 
 ---
 
@@ -260,12 +271,102 @@ flowchart LR
 
 ---
 
+## Procurement Module
+
+The Procurement module follows the same layered layout as Catalog and Inventory: Domain, Application, Infrastructure, Endpoints, and Contracts.
+
+```mermaid
+flowchart LR
+  procEndpoints[Procurement.Endpoints]
+  procApp[Procurement.Application]
+  procDomain[Procurement.Domain]
+  procInfra[Procurement.Infrastructure]
+  procContracts[Procurement.Contracts]
+
+  procEndpoints --> procApp
+  procEndpoints --> procContracts
+
+  procApp --> procDomain
+  procApp --> procContracts
+
+  procInfra --> procDomain
+  procInfra --> procApp
+
+  bbDomain[BuildingBlocks.Domain]
+  bbEf[BuildingBlocks.EntityFramework]
+
+  procDomain -->|"extends"| bbDomain
+  procInfra -->|"uses"| bbEf
+```
+
+### Domain (`Invoria.Procurement.Domain`)
+
+- **Location**
+  - `src/Modules/Procurement/Procurement.Domain`
+
+- **Representative types**
+  - **`Supplier`** (`Parties/Supplier.cs`) — supplier aggregate with table constants in `SupplierTableConsts`.
+  - **`PurchaseOrder`** (`PurchaseOrders/PurchaseOrder.cs`) — purchase order aggregate with line items (`PurchaseOrderItem`), state transition rules (`PurchaseOrderStateTransitionRules`), and domain events such as `PurchaseOrderCompletedDomainEvent`.
+  - **`PurchaseStateHistory`** — history of state changes for a purchase order.
+  - **`PurchaseOrderSequence`** — supports purchase order numbering.
+  - **`IProcurementRepository<T>`** — module repository abstraction extending the generic repository pattern from BuildingBlocks.
+
+### Application (`Invoria.Procurement.Application`)
+
+- **Location**
+  - `src/Modules/Procurement/Procurement.Application`
+
+- **CQRS**
+  - Commands and queries for suppliers (e.g. create/update) and purchase orders (e.g. create, submit, approve, reopen, list, get by id).
+  - Handlers, factories (e.g. `PurchaseOrderResponseFactory`), and domain event handlers such as `PurchaseOrderCompletedDomainEventHandler`.
+- **Services**
+  - **`IPurchaseOrderNumberGenerator`** — abstraction for generating purchase order numbers (implemented in Infrastructure).
+
+### Infrastructure (`Invoria.Procurement.Infrastructure`)
+
+- **Location**
+  - `src/Modules/Procurement/Procurement.Infrastructure`
+
+- **Persistence**
+  - **`ProcurementDbContext`** — EF Core context inheriting from `InvoriaDbContext<ProcurementDbContext>`; migrations under `EntityFramework/Migrations`.
+  - **`ProcurementRepository<TEntity>`** — generic EF repository implementing `IProcurementRepository<TEntity>`.
+
+- **Bootstrap**
+  - **`ProcurementModuleBootStrapper`** / **`ProcurementModuleInstaller`** — register DbContext, repositories, installers, and apply migrations at startup where configured.
+
+- **Other**
+  - **`PurchaseOrderNumberGenerator`** — concrete number generation using the procurement database context.
+
+### Presentation (`Invoria.Procurement.Endpoints`)
+
+- **Location**
+  - `src/Modules/Procurement/Procurement.Endpoints`
+
+- Supplier and purchase order FastEndpoints (create, update, list, get, submit, approve, etc.) expose HTTP APIs and delegate to the Application layer via MediatR.
+
+### Contracts (`Invoria.Procurement.Contracts`)
+
+- **Location**
+  - `src/Modules/Procurement/Procurement.Contracts`
+
+- DTOs such as `PurchaseOrderDto`, enums such as `PurchaseState`, and models like `PurchaseOrderItemModel` support API and cross-boundary use. Other modules (for example Inventory) may reference `Invoria.Procurement.Contracts` for shared shapes where configured.
+
+### Tests (`Invoria.Procurement.Application.Tests`, `Invoria.Procurement.Endpoints.Tests`)
+
+- **Locations**
+  - `tests/Modules/Procurement/Procurement.Application.Tests`
+  - `tests/Modules/Procurement/Procurement.Endpoints.Tests`
+
+- Application and endpoint tests follow the same patterns as other modules (handlers, queries, HTTP contracts).
+
+---
+
 ## Host Module (Invoria.Api)
 
 ### Responsibilities
 
 - Bootstrap the application and configure shared infrastructure.
-- Install functional modules (currently, Catalog, CustomerManagement, Ordering, and Inventory skeleton).
+- Install functional modules (currently, Catalog, CustomerManagement, Ordering, Inventory, and Procurement).
 - Configure FastEndpoints discovery and Swagger.
 - Register global exception handling and problem details.
 
@@ -274,7 +375,7 @@ flowchart LR
 - **`ApiModuleInstaller`**
   - Location: `src/Invoria.Api/ApiModuleInstaller.cs`
   - Implements `IModuleInstaller` from building blocks.
-  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Inventory, and Ordering.
+  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Inventory, Ordering, and Procurement.
   - Configures **Rebus** once (`AddInvoriaRebus`): SQL Server transport, subscription storage in SQL Server, System.Text.Json serialization, and type-based routing (see `MapAssemblyOf<IntegrationEventsAssemblyMarker>` for the assembly used as the integration-events routing anchor).
   - Adds shared application infrastructure via `AddApplicationInfrastructure()`.
   - Registers global exception handler `GlobalExceptionHandler` and `ProblemDetails`.
@@ -700,7 +801,7 @@ flowchart LR
   - Orchestrates module installation and shared infrastructure (including Rebus).
   - Depends on:
     - BuildingBlocks Core and Infrastructure for modularity and endpoint wiring.
-    - Module installers for Catalog, CustomerManagement, Inventory, Ordering (each module’s Infrastructure project).
+    - Module installers for Catalog, CustomerManagement, Inventory, Ordering, and Procurement (each module’s Infrastructure project).
 
 - **Catalog.Endpoints (Presentation)**
   - Only interacts with the **Application** layer and shared infrastructure:
@@ -730,6 +831,9 @@ flowchart LR
   - Integration event **contracts** live in **`Invoria.Ordering.Contracts`** (for example `AllocateOrderIntegrationEvent`).
   - **Application** includes `AllocateOrderIntegrationConsumer` (`Batches/Consumers/`), implementing `IHandleMessages<AllocateOrderIntegrationEvent>`.
   - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and may host `AllocateOrderIntegrationEventHandler` under `Events/`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` in that project file.
+
+- **Procurement (layered module)**
+  - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
 
 This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using shared contract types in `Ordering.Contracts` and handlers registered in consuming modules (e.g. Inventory).
 
