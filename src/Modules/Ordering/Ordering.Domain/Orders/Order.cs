@@ -12,24 +12,96 @@ namespace Invoria.Ordering.Domain.Orders
         public List<OrderItem> Items { get; private set; } 
         public List<OrderFailureDetails> FailureDetails { get; private set; }
         public List<OrderStateTransitionHistory> StateTransitionHistory { get; private set; }
+        public List<OrderPayment> Payments { get; private set; }
+        public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
         public FullfillmentStatus FullfillmentStatus { get; set; }
+
+        public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
+
+        public decimal AmountPaid { get; private set; }
+
+        public decimal AmountOutstanding { get; private set; }
+
+        public OrderPaymentStatus PaymentStatus { get; private set; }
+
         private Order()
         {
             Items = new List<OrderItem>();
             FailureDetails = new List<OrderFailureDetails>();
             StateTransitionHistory = new List<OrderStateTransitionHistory>();
+            Payments = new List<OrderPayment>();
+            PaymentStatus = OrderPaymentStatus.Unpaid;
         }
 
-        public Order(string orderNumber, string customerId)
+        public Order(string orderNumber, string customerId, OrderPaymentType paymentType = OrderPaymentType.Immediate)
         {
             OrderNumber = orderNumber;
             CustomerId = customerId;
+            PaymentType = paymentType;
             Items = new List<OrderItem>();
             FailureDetails = new List<OrderFailureDetails>();
             StateTransitionHistory = new List<OrderStateTransitionHistory>();
+            Payments = new List<OrderPayment>();
             Status = OrderStatus.Pending;
             FullfillmentStatus = FullfillmentStatus.Pending;
+            AmountPaid = 0m;
+            AmountOutstanding = 0m;
+            PaymentStatus = OrderPaymentStatus.Unpaid;
+        }
+
+        public void RecordPayment(decimal paidAmount, OrderPaymentMethod method, DateTimeOffset paidAt)
+        {
+            if (Status != OrderStatus.Completed)
+            {
+                throw new InvalidOperationException(
+                    "Payments can only be recorded after the order is completed.");
+            }
+
+            if (TotalOrderAmount <= 0m)
+            {
+                throw new InvalidOperationException(
+                    "Cannot record payments when the order has no positive total amount.");
+            }
+
+            if (paidAmount <= 0m)
+            {
+                throw new InvalidOperationException("Payment amount must be greater than zero.");
+            }
+
+            var paidSoFar = Payments.Sum(p => p.PaidAmount);
+            var outstandingBefore = Math.Max(0m, TotalOrderAmount - paidSoFar);
+
+            if (outstandingBefore <= 0m)
+            {
+                throw new InvalidOperationException("Order is already fully paid.");
+            }
+
+            if (PaymentType == OrderPaymentType.Immediate)
+            {
+                if (Payments.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        "Immediate payment orders accept only a single full payment.");
+                }
+
+                if (paidAmount != TotalOrderAmount)
+                {
+                    throw new InvalidOperationException(
+                        "Immediate payment orders require a single payment equal to the total order amount.");
+                }
+            }
+            else
+            {
+                if (paidAmount > outstandingBefore)
+                {
+                    throw new InvalidOperationException(
+                        "Payment amount cannot exceed the outstanding balance.");
+                }
+            }
+
+            Payments.Add(new OrderPayment(Id, paidAmount, method, paidAt));
+            RefreshPaymentSummary();
         }
 
 
@@ -49,6 +121,33 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             Items = items;
+            RefreshPaymentSummary();
+        }
+
+        private void RefreshPaymentSummary()
+        {
+            AmountPaid = Payments.Sum(p => p.PaidAmount);
+            AmountOutstanding = Math.Max(0m, TotalOrderAmount - AmountPaid);
+
+            if (TotalOrderAmount == 0m)
+            {
+                PaymentStatus = OrderPaymentStatus.Unpaid;
+                return;
+            }
+
+            if (AmountPaid == 0m)
+            {
+                PaymentStatus = OrderPaymentStatus.Unpaid;
+                return;
+            }
+
+            if (AmountPaid >= TotalOrderAmount)
+            {
+                PaymentStatus = OrderPaymentStatus.Paid;
+                return;
+            }
+
+            PaymentStatus = OrderPaymentStatus.Partial;
         }
 
         public void ReplaceFailureDetails(List<OrderFailureDetails> failureDetails)

@@ -5,12 +5,16 @@ using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Orders.Commands.UpdateOrder;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Tests.Assertions
 {
     public static class OrderAssertionExtensions
     {
+        private static decimal SumCreateOrderLines(IEnumerable<CreateOrderItemCommand> items) =>
+            items.Sum(i => i.Quantity * i.Price);
+
         public static void AssertOrderDto(this OrderDto dto, Order order, CustomerDto? expectedCustomer = null)
         {
             dto.Id.Should().Be(order.Id);
@@ -18,6 +22,11 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.CustomerId.Should().Be(order.CustomerId);
             dto.Status.Should().Be(order.Status);
             dto.FullfillmentStatus.Should().Be(order.FullfillmentStatus);
+            dto.PaymentType.Should().Be(order.PaymentType);
+            dto.AmountPaid.Should().Be(order.AmountPaid);
+            dto.AmountOutstanding.Should().Be(order.AmountOutstanding);
+            dto.PaymentStatus.Should().Be(order.PaymentStatus);
+            dto.Payments.Should().HaveCount(order.Payments.Count);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(order.Items.Count);
             dto.FailureDetails.Should().HaveCount(order.FailureDetails.Count);
@@ -38,6 +47,17 @@ namespace Invoria.Ordering.Application.Tests.Assertions
                 actual.ToFullfillmentStatus.Should().Be(expected.ToFullfillmentStatus);
                 actual.Reason.Should().Be(expected.Reason);
             }
+
+            var sortedPayments = order.Payments.OrderBy(p => p.PaidAt).ToList();
+            for (var i = 0; i < sortedPayments.Count; i++)
+            {
+                var pm = dto.Payments.OrderBy(p => p.PaidAt).ElementAt(i);
+                pm.OrderId.Should().Be(sortedPayments[i].OrderId);
+                pm.PaidAmount.Should().Be(sortedPayments[i].PaidAmount);
+                pm.PaymentMethod.Should().Be(sortedPayments[i].PaymentMethod);
+                pm.PaidAt.Should().Be(sortedPayments[i].PaidAt);
+                pm.Id.Should().Be(sortedPayments[i].Id);
+            }
         }
 
         public static void AssertOrderItemDto(this OrderItemDto dto, OrderItem item)
@@ -54,6 +74,12 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.CustomerId.Should().Be(command.CustomerId);
             dto.Status.Should().Be(OrderStatus.Pending);
             dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
+            dto.PaymentType.Should().Be(command.PaymentType);
+            dto.AmountPaid.Should().Be(0);
+            dto.Payments.Should().BeEmpty();
+            var total = SumCreateOrderLines(command.Items);
+            dto.AmountOutstanding.Should().Be(total);
+            dto.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
             dto.FailureDetails.Should().BeEmpty();
@@ -72,6 +98,9 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.FailureDetails.Should().BeEmpty();
             dto.StateTransitionHistory.Should().BeEmpty();
 
+            var lineTotal = SumCreateOrderLines(command.Items);
+            dto.AmountOutstanding.Should().Be(lineTotal - dto.AmountPaid);
+
             for (int i = 0; i < command.Items.Count; i++)
             {
                 dto.Items[i].AssertOrderItemDto(command.Items[i], expectedProduct: null);
@@ -89,6 +118,11 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.CustomerId.Should().Be(command.CustomerId);
             dto.Status.Should().Be(OrderStatus.Pending);
             dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
+            dto.PaymentType.Should().Be(command.PaymentType);
+            dto.AmountPaid.Should().Be(0);
+            dto.Payments.Should().BeEmpty();
+            dto.AmountOutstanding.Should().Be(SumCreateOrderLines(command.Items));
+            dto.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
             dto.FailureDetails.Should().BeEmpty();

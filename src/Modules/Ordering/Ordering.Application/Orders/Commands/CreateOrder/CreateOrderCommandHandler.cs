@@ -35,7 +35,7 @@ namespace Invoria.Ordering.Application.Orders.Commands.CreateOrder
 
             var orderNumber = await _orderNumberGenerator.GenerateAsync(cancellationToken);
 
-            var order = new Order(orderNumber, request.CustomerId);
+            var order = new Order(orderNumber, request.CustomerId, request.PaymentType);
 
             var items = itemCommands
                 .Select(c => new OrderItem(c.ProductId, c.Quantity, c.Price))

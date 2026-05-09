@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Services;
 using Invoria.Ordering.Contracts.Orders;
@@ -153,5 +154,55 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         dto.StateTransitionHistory[1].ToStatus.Should().Be(OrderStatus.Accepted);
         dto.StateTransitionHistory[1].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
         dto.StateTransitionHistory[1].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocated);
+    }
+
+    [Test]
+    public async Task PrepareDto_should_map_payment_aggregate_and_payment_lines_after_record_payment()
+    {
+        var customerId = Guid.NewGuid().ToString();
+        var productId = Guid.NewGuid().ToString();
+        var order = new Order("PAY-MAP", customerId, OrderPaymentType.Debt);
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, $"paymap-{Guid.NewGuid():N}");
+
+        order.UpdateItems(new List<OrderItem> { new(productId, 1, 100m) });
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.Complete();
+        order.RecordPayment(25m, OrderPaymentMethod.Cheque, DateTimeOffset.Parse("2026-06-01T10:00:00Z"));
+
+        var dto = await Factory.PrepareDto(order);
+
+        dto.PaymentType.Should().Be(OrderPaymentType.Debt);
+        dto.AmountPaid.Should().Be(25m);
+        dto.AmountOutstanding.Should().Be(75m);
+        dto.PaymentStatus.Should().Be(OrderPaymentStatus.Partial);
+        dto.Payments.Should().ContainSingle();
+        dto.Payments[0].PaidAmount.Should().Be(25m);
+        dto.Payments[0].PaymentMethod.Should().Be(OrderPaymentMethod.Cheque);
+        dto.Payments[0].OrderId.Should().Be(order.Id);
+    }
+
+    [Test]
+    public async Task PreparePagingDto_summary_should_include_payment_scalars_with_empty_payment_lines()
+    {
+        var cid = Guid.NewGuid().ToString();
+        var order = new Order("SUM-PAY", cid, OrderPaymentType.Debt);
+        order.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 2, 10m) });
+
+        var paging = new PagingDto<Order>
+        {
+            Data = new List<Order> { order },
+            Info = new PagingInfoDto { Length = 1, Skip = 0, TotalCount = 1 }
+        };
+
+        var paged = await Factory.PreparePagingDto(paging, includeOrderItems: false);
+
+        var d = paged.Data.Single();
+        d.Payments.Should().BeEmpty();
+        d.PaymentType.Should().Be(OrderPaymentType.Debt);
+        d.AmountPaid.Should().Be(0);
+        d.AmountOutstanding.Should().Be(20m);
+        d.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
     }
 }

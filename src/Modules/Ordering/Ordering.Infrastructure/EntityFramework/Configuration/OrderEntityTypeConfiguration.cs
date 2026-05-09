@@ -26,6 +26,18 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
             builder.Property(x => x.FullfillmentStatus)
                 .HasDefaultValue(FullfillmentStatus.Pending);
 
+            builder.Property(x => x.PaymentType)
+                .IsRequired();
+
+            builder.Property(x => x.AmountPaid)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(x => x.AmountOutstanding)
+                .HasColumnType("decimal(18,2)");
+
+            builder.Property(x => x.PaymentStatus)
+                .IsRequired();
+
             builder.HasMany(x => x.Items)
                 .WithOne()
                 .HasForeignKey("OrderId")
@@ -38,6 +50,11 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
 
             builder.HasMany(x => x.StateTransitionHistory)
                 .WithOne()
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(x => x.Payments)
+                .WithOne(x => x.Order)
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
