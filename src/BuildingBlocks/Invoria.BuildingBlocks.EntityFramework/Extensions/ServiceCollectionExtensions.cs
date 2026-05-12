@@ -20,9 +20,15 @@ public static class ServiceCollectionExtensions
             services.AddScoped<IDbHookEngine, DbHookEngine>();
         }
 
+        services.AddScoped<IEntityCrudChangeAccumulator, EntityCrudChangeAccumulator>();
+
         services.AddTransient<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
 
+        services.AddScoped<IBeforeDbHookSave, EntityCrudCaptureBeforeSaveHook>();
+
         services.AddScoped<IAfterDbHookSave, DispatchDomainEventsAfterSaveHook>();
+
+        services.AddScoped<IAfterDbHookSave, DispatchEntityCrudDomainEventsAfterSaveHook>();
 
         services.AddDbContext<TContext>((sp, options) =>
         {
