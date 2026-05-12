@@ -14,6 +14,9 @@
     <ProjectReference Include="..\Modules\Procurement\Procurement.Endpoints\Invoria.Procurement.Endpoints.csproj" />
     <ProjectReference Include="..\Modules\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj" />
     <ProjectReference Include="..\Modules\Procurement\Procurement.Infrastructure\Invoria.Procurement.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Reporting\Reporting.Endpoints\Invoria.Reporting.Endpoints.csproj" />
+    <ProjectReference Include="..\Modules\Reporting\Reporting.Contracts\Invoria.Reporting.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\Reporting\Reporting.Infrastructure\Invoria.Reporting.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
