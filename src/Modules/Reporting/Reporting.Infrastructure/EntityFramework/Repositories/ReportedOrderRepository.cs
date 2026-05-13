@@ -4,18 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Reporting.Infrastructure.EntityFramework.Repositories;
 
-public sealed class ReportedOrderRepository : IReportedOrderRepository
+public sealed class ReportedOrderRepository : ReportingRepository<ReportedOrder>, IReportedOrderRepository
 {
-    private readonly ReportingDbContext _dbContext;
-
     public ReportedOrderRepository(ReportingDbContext dbContext)
+        : base(dbContext)
     {
-        _dbContext = dbContext;
     }
 
     public Task<ReportedOrder?> GetByIdWithGraphAsync(string id, CancellationToken cancellationToken)
     {
-        return _dbContext.ReportedOrders
+        return DbContext.ReportedOrders
             .AsSplitQuery()
             .Include(o => o.Lines)
             .Include(o => o.Payments)
@@ -26,12 +24,12 @@ public sealed class ReportedOrderRepository : IReportedOrderRepository
 
     public async Task UpsertGraphAsync(ReportedOrder order, CancellationToken cancellationToken)
     {
-        var entry = _dbContext.Entry(order);
+        var entry = DbContext.Entry(order);
         if (entry.State == EntityState.Detached)
         {
-            await _dbContext.ReportedOrders.AddAsync(order, cancellationToken);
+            await DbContext.ReportedOrders.AddAsync(order, cancellationToken);
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await DbContext.SaveChangesAsync(cancellationToken);
     }
 }
