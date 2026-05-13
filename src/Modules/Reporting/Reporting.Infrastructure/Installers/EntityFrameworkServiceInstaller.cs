@@ -21,6 +21,7 @@ namespace Invoria.Reporting.Infrastructure.Installers
             });
 
             services.AddTransient(typeof(IReportingRepository<>), typeof(ReportingRepository<>));
+            services.AddTransient<IReportedOrderRepository, ReportedOrderRepository>();
         }
     }
 }
