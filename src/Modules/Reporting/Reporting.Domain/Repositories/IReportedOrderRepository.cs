@@ -6,7 +6,7 @@ namespace Invoria.Reporting.Domain.Repositories;
 /// Read/write access to the denormalized order projection graph.
 /// Infrastructure implements idempotent upsert semantics (replace graph by order id).
 /// </summary>
-public interface IReportedOrderRepository
+public interface IReportedOrderRepository : IReportingRepository<ReportedOrder>
 {
     Task<ReportedOrder?> GetByIdWithGraphAsync(string id, CancellationToken cancellationToken);
 
