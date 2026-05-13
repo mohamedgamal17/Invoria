@@ -23,6 +23,7 @@ namespace Invoria.Reporting.Infrastructure
             if (bus is not null)
             {
                 await bus.Subscribe<OrderCreatedIntegrationEvent>();
+                await bus.Subscribe<OrderUpdatedIntegrationEvent>();
             }
         }
     }
