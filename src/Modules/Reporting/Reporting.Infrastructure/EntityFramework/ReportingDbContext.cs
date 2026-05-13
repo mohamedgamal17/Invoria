@@ -18,6 +18,8 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework
 
         public DbSet<ReportedOrderFailureDetail> ReportedOrderFailureDetails => Set<ReportedOrderFailureDetail>();
 
+        public DbSet<ReportedOrderStatusByDay> ReportedOrderStatusByDays => Set<ReportedOrderStatusByDay>();
+
         public ReportingDbContext(DbContextOptions<ReportingDbContext> options, IDbHookEngine dbHookEngine) : base(options, dbHookEngine)
         {
         }
