@@ -20,6 +20,8 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework
 
         public DbSet<ReportedOrderStatusByDay> ReportedOrderStatusByDays => Set<ReportedOrderStatusByDay>();
 
+        public DbSet<OrderPeriodSummary> OrderPeriodSummaries => Set<OrderPeriodSummary>();
+
         public ReportingDbContext(DbContextOptions<ReportingDbContext> options, IDbHookEngine dbHookEngine) : base(options, dbHookEngine)
         {
         }
