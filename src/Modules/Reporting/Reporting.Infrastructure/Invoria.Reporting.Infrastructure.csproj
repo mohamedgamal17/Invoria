@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
     <ProjectReference Include="..\Reporting.Domain\Invoria.Reporting.Domain.csproj" />
     <ProjectReference Include="..\Reporting.Application\Invoria.Reporting.Application.csproj" />
+    <ProjectReference Include="..\Reporting.Contracts\Invoria.Reporting.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Reporting.Endpoints\Invoria.Reporting.Endpoints.csproj" />
   </ItemGroup>
