@@ -4,8 +4,9 @@
 ![Status](https://img.shields.io/badge/status-under_development-orange)
 ![Architecture](https://img.shields.io/badge/architecture-modular_clean-blue)
 
-Invoria is a modular .NET 8 backend platform organized around business modules and clean architecture principles.  
-The solution is designed for clear separation of concerns, scalable feature development, and cross-module integration through contracts and messaging.
+**Invoria** is a modular .NET 8 **ERP backend** for running core business operations in one place: products and catalog, customers, sales orders, inventory, procurement, and reporting.
+
+It is built as independent business modules with clean architecture, shared building blocks, and messaging between domains (see [`ai/Architecture.md`](ai/Architecture.md) for technical detail).
 
 ## 🚧 Development Status
 
@@ -14,12 +15,16 @@ Some modules and integrations are still evolving, and behavior or APIs may chang
 
 ## ✨ Features
 
-- **Modular architecture** with independent business modules and shared building blocks.
-- **CQRS-oriented application layer** with request handlers and DTO-based contracts.
-- **HTTP API layer** built with FastEndpoints and documented with Swagger/OpenAPI.
-- **Persistence with EF Core** and module-specific DbContexts/migrations.
-- **Integration messaging** using Rebus with SQL Server transport.
-- **Cross-cutting infrastructure** for exception handling, validation, and result-to-HTTP mapping.
+Core ERP areas supported today:
+
+- **Catalog** — create and manage products.
+- **Customers** — create and manage customer records.
+- **Orders** — create and manage orders through their lifecycle (accept, update lines, record payments, dispatch, complete, cancel, reopen, and more).
+- **Inventory** — track batches and tie stock allocations to order lines.
+- **Procurement** — manage suppliers and purchase orders (submit, approve, complete, and other workflow steps).
+- **Reporting** — view order status summaries and period rollups (by day, week, or month).
+
+For how modules are wired (layers, messaging, persistence), see [`ai/Architecture.md`](ai/Architecture.md).
 
 ## 📦 Business Modules
 
