@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Reporting\Reporting.Application\Invoria.Reporting.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Reporting\Reporting.Domain\Invoria.Reporting.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Reporting\Reporting.Endpoints\Invoria.Reporting.Endpoints.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Reporting\Reporting.Infrastructure\Invoria.Reporting.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Ordering\Ordering.Contracts\Invoria.Ordering.Contracts.csproj" />
   </ItemGroup>
