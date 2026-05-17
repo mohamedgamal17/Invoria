@@ -6,9 +6,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Application\Invoria.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Infrastructure\Invoria.BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\Reporting.Application\Invoria.Reporting.Application.csproj" />
     <ProjectReference Include="..\Reporting.Contracts\Invoria.Reporting.Contracts.csproj" />
+    <ProjectReference Include="..\Reporting.Domain\Invoria.Reporting.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
