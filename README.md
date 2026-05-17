@@ -26,14 +26,6 @@ Core ERP areas supported today:
 
 For how modules are wired (layers, messaging, persistence), see [`ai/Architecture.md`](ai/Architecture.md).
 
-## 📦 Business Modules
-
-- **Catalog**: product-related domain, commands, queries, endpoints, and contracts.
-- **CustomerManagement**: customer-focused domain/application/endpoints stack.
-- **Ordering**: order workflows and integration contracts/events for downstream modules.
-- **Inventory**: batch management and integration event consumption from ordering flows.
-- **Procurement**: procurement domain and APIs integrated into the host.
-
 ## 🏛️ Architecture
 
 Invoria follows a **modular clean architecture** structure:
@@ -49,23 +41,6 @@ Invoria follows a **modular clean architecture** structure:
 - **Infrastructure**: EF Core persistence, service installers, external integration plumbing.
 - **Endpoints**: HTTP transport concerns, validation, request/response orchestration.
 - **Contracts**: DTOs and integration event contracts shared across boundaries.
-
-### High-Level Interaction (Modules)
-
-The diagram below focuses on **module-to-module interactions** and hides internal implementation details such as building blocks, EF, and wiring.
-
-```mermaid
-flowchart LR
-  catalog[Catalog]
-  customerMgmt[CustomerManagement]
-  ordering[Ordering]
-  inventory[Inventory]
-  procurement[Procurement]
-
-  ordering -->|"publishes integration events"| inventory
-```
-
-For lower-level architecture details (layers, building blocks, and Rebus wiring), see `ai/Architecture.md`.
 
 ## 🛠️ Tech Stack and Dependencies
 
@@ -199,10 +174,3 @@ Invoria/
 |- ai/
 `- Invoria.sln
 ```
-
-## 🤝 Contributing
-
-- Keep changes scoped and module-focused.
-- Follow existing architecture boundaries (Domain/Application/Infrastructure/Endpoints/Contracts).
-- Add or update tests for functional changes.
-- Prefer clear, incremental pull requests while the project is evolving.
