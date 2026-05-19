@@ -2,17 +2,19 @@ using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Materialization.OrderPeriodSummary;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Infrastructure.EntityFramework;
+using OrderPeriodSummaryEntity = Invoria.Reporting.Domain.Orders.OrderPeriodSummary.OrderPeriodSummary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Invoria.Reporting.Infrastructure.Orders.Materialization.OrderPeriodSummary;
 
 /// <summary>
-/// Full rebuild of <see cref="OrderPeriodSummary"/> from <see cref="ReportedOrder"/>.
+/// Full rebuild of <see cref="Invoria.Reporting.Domain.Orders.OrderPeriodSummary.OrderPeriodSummary"/> from <see cref="Invoria.Reporting.Domain.Orders.ReportedOrder"/>.
 /// </summary>
 public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollupRefresher
 {
     private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
+    private const int MaxChunkSize = 50;
 
     private readonly ReportingDbContext _dbContext;
     private readonly ILogger<OrderPeriodSummaryRollupRefresher> _logger;
@@ -31,12 +33,6 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
             _dbContext.Database.ProviderName,
             InMemoryProviderName,
             StringComparison.Ordinal);
-
-        if (isInMemory)
-        {
-            await RefreshCoreAsync(isInMemory, cancellationToken);
-            return;
-        }
 
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
@@ -58,6 +54,10 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
         {
             var existing = await _dbContext.OrderPeriodSummaries.ToListAsync(cancellationToken);
             _dbContext.OrderPeriodSummaries.RemoveRange(existing);
+            if (existing.Count > 0)
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
         }
         else
         {
@@ -65,106 +65,151 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
         }
 
         const int placedClock = 0;
+        var sourceOrders = _dbContext.ReportedOrders.AsQueryable();
+        var totalSourceOrders = await sourceOrders.CountAsync(cancellationToken);
 
-        var orders = await _dbContext.ReportedOrders
-            .AsNoTracking()
-            .ToListAsync(cancellationToken);
-
-        var accumulators = new Dictionary<(string Granularity, string PeriodKey), BucketAccumulator>();
-
-        foreach (var o in orders)
+        foreach (var granularity in ReportedOrderPeriodBucketing.AllGranularities)
         {
-            var eff = o.CreatedAt;
-            foreach (var gran in ReportedOrderPeriodBucketing.AllGranularities)
+            var skip = 0;
+
+            while (true)
             {
-                var b = ReportedOrderPeriodBucketing.GetBucket(eff, gran);
-                if (b is null)
+                var (aggregates, sourceOrderCount) = await FetchChunkAggregatesAsync(
+                    sourceOrders,
+                    granularity,
+                    skip,
+                    MaxChunkSize,
+                    cancellationToken);
+
+                if (sourceOrderCount == 0)
                 {
-                    continue;
+                    break;
                 }
 
-                var key = (gran, b.Value.PeriodKey);
-                if (!accumulators.TryGetValue(key, out var acc))
-                {
-                    acc = new BucketAccumulator(b.Value.PeriodStart, b.Value.PeriodEnd);
-                    accumulators[key] = acc;
-                }
-
-                acc.AddIfNewOrder(o);
+                await UpsertChunkAsync(granularity, placedClock, aggregates, cancellationToken);
+                skip += sourceOrderCount;
             }
         }
 
-        var rows = accumulators
-            .Select(kv => new global::Invoria.Reporting.Domain.Orders.OrderPeriodSummary
-            {
-                Granularity = kv.Key.Granularity,
-                PeriodKey = kv.Key.PeriodKey,
-                DateField = placedClock,
-                PeriodStart = kv.Value.PeriodStart,
-                PeriodEnd = kv.Value.PeriodEnd,
-                OrderCount = kv.Value.OrderCount,
-                GrossRevenue = kv.Value.GrossRevenue,
-                NetRevenue = kv.Value.NetRevenue,
-                DiscountAmount = 0m,
-                CancelledCount = kv.Value.CancelledCount,
-                DeliveredCount = kv.Value.DeliveredCount
-            })
-            .ToList();
-
-        if (rows.Count > 0)
-        {
-            await _dbContext.OrderPeriodSummaries.AddRangeAsync(rows, cancellationToken);
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var totalRows = await _dbContext.OrderPeriodSummaries.CountAsync(cancellationToken);
 
         _logger.LogInformation(
             "Order period summary materialization refreshed: {RowCount} rows from {SourceOrders} orders.",
-            rows.Count,
-            orders.Count);
+            totalRows,
+            totalSourceOrders);
     }
 
-    private sealed class BucketAccumulator
+    private async Task UpsertChunkAsync(
+        string granularity,
+        int placedClock,
+        IReadOnlyList<PeriodChunkAggregate> aggregates,
+        CancellationToken cancellationToken)
     {
-        private readonly HashSet<string> _orderIds = new(StringComparer.Ordinal);
-
-        public BucketAccumulator(DateOnly periodStart, DateOnly periodEnd)
+        if (aggregates.Count == 0)
         {
-            PeriodStart = periodStart;
-            PeriodEnd = periodEnd;
+            return;
         }
 
-        public DateOnly PeriodStart { get; }
-        public DateOnly PeriodEnd { get; }
+        var periodKeys = aggregates.Select(a => a.PeriodKey).ToList();
 
-        public int OrderCount => _orderIds.Count;
+        var existing = await _dbContext.OrderPeriodSummaries
+            .Where(x => x.Granularity == granularity
+                        && x.DateField == placedClock
+                        && periodKeys.Contains(x.PeriodKey))
+            .ToDictionaryAsync(x => x.PeriodKey, StringComparer.Ordinal, cancellationToken);
 
-        public decimal GrossRevenue { get; private set; }
-
-        public decimal NetRevenue { get; private set; }
-
-        public int CancelledCount { get; private set; }
-
-        public int DeliveredCount { get; private set; }
-
-        public void AddIfNewOrder(ReportedOrder o)
+        foreach (var partial in aggregates)
         {
-            if (!_orderIds.Add(o.Id))
+            if (existing.TryGetValue(partial.PeriodKey, out var row))
             {
-                return;
+                row.OrderCount += partial.OrderCount;
+                row.GrossRevenue += partial.GrossRevenue;
+                row.NetRevenue += partial.NetRevenue;
+                row.CancelledCount += partial.CancelledCount;
+                row.DeliveredCount += partial.DeliveredCount;
+                continue;
             }
 
-            GrossRevenue += o.TotalOrderAmount;
-            NetRevenue += o.AmountPaid;
-            if (o.OrderStatus == OrderStatus.Cancelled)
+            var inserted = new OrderPeriodSummaryEntity
             {
-                CancelledCount++;
-            }
+                Granularity = granularity,
+                PeriodKey = partial.PeriodKey,
+                DateField = placedClock,
+                PeriodStart = partial.PeriodStart,
+                PeriodEnd = partial.PeriodEnd,
+                OrderCount = partial.OrderCount,
+                GrossRevenue = partial.GrossRevenue,
+                NetRevenue = partial.NetRevenue,
+                DiscountAmount = 0m,
+                CancelledCount = partial.CancelledCount,
+                DeliveredCount = partial.DeliveredCount
+            };
 
-            if (o.OrderStatus == OrderStatus.Completed)
-            {
-                DeliveredCount++;
-            }
+            _dbContext.OrderPeriodSummaries.Add(inserted);
+            existing[partial.PeriodKey] = inserted;
         }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static async Task<(IReadOnlyList<PeriodChunkAggregate> Aggregates, int SourceOrderCount)> FetchChunkAggregatesAsync(
+        IQueryable<ReportedOrder> orders,
+        string granularity,
+        int skip,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var chunk = orders.AsNoTracking().OrderBy(o => o.Id).Skip(skip).Take(take);
+        return await FetchChunkAggregatesForChunkAsync(chunk, granularity, cancellationToken);
+    }
+
+    private static async Task<(IReadOnlyList<PeriodChunkAggregate>, int)> FetchChunkAggregatesForChunkAsync(
+        IQueryable<ReportedOrder> chunk,
+        string granularity,
+        CancellationToken cancellationToken)
+    {
+        var slices = await chunk
+            .Select(o => new OrderSlice(
+                o.CreatedAt,
+                o.TotalOrderAmount,
+                o.AmountPaid,
+                o.OrderStatus))
+            .ToListAsync(cancellationToken);
+
+        if (slices.Count == 0)
+        {
+            return ([], 0);
+        }
+
+        var aggregates = slices
+            .Select(s =>
+            {
+                var bucket = ReportedOrderPeriodBucketing.GetBucket(s.CreatedAt, granularity);
+                return (Slice: s, Bucket: bucket);
+            })
+            .Where(x => x.Bucket is not null)
+            .GroupBy(x => x.Bucket!.Value.PeriodKey)
+            .Select(g =>
+            {
+                var first = g.First().Bucket!.Value;
+                return new PeriodChunkAggregate(
+                    g.Key,
+                    first.PeriodStart,
+                    first.PeriodEnd,
+                    g.Count(),
+                    g.Sum(x => x.Slice.TotalOrderAmount),
+                    g.Sum(x => x.Slice.AmountPaid),
+                    g.Count(x => x.Slice.OrderStatus == OrderStatus.Cancelled),
+                    g.Count(x => x.Slice.OrderStatus == OrderStatus.Completed));
+            })
+            .ToList();
+
+        return (aggregates, slices.Count);
+    }
+
+    private sealed record OrderSlice(
+        DateTimeOffset CreatedAt,
+        decimal TotalOrderAmount,
+        decimal AmountPaid,
+        OrderStatus OrderStatus);
 }
