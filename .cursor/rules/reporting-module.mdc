@@ -58,6 +58,7 @@ Infrastructure folder name collides with domain type `OrderPeriodSummary`. In re
 - `GetOrderStatusSummary`: optional inclusive `DayUtc` range when both bounds set; else all rows; `GroupBy(OrderStatus)` + `Sum(Count)` for API aggregation.
 - `GetDebtOverview`: `IReportingRepository<DebtSummaryBase>`, `OfType<DebtGlobalSummary>()`, `SingleOrDefault`; `NotFound` when not materialized; map to `DebtOverviewDto` (includes `CollectionRate`).
 - `ListCustomerDebtOverview`: `OfType<DebtCustomerSummary>()`, `OrderByDescending(TotalOutstanding)` then `CustomerId`, project to `CustomerDebtOverviewDto`, `ToPaged`.
+- `GetCustomerDebtSummary`: `OfType<DebtCustomerSummary>()`, filter by `CustomerId`, `SingleOrDefault`; `NotFound` when customer has no debt row; map to `CustomerDebtOverviewDto`.
 
 ## Write path (integration)
 
