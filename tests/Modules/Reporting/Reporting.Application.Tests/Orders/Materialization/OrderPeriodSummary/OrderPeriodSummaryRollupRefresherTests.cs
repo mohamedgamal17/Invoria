@@ -1,42 +1,19 @@
-using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders;
-using Invoria.Reporting.Infrastructure.EntityFramework;
-using Invoria.Reporting.Infrastructure.Orders.Materialization.OrderPeriodSummary;
+using Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace Invoria.Reporting.Application.Tests.Orders.Materialization.OrderPeriodSummary;
 
 [TestFixture]
-public sealed class OrderPeriodSummaryRollupRefresherTests
+public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryRollupRefresherTestFixture
 {
-    private static ReportingDbContext CreateContext(string databaseName)
-    {
-        var options = new DbContextOptionsBuilder<ReportingDbContext>()
-            .UseInMemoryDatabase(databaseName)
-            .Options;
-
-        var hookEngine = new Mock<IDbHookEngine>();
-        hookEngine
-            .Setup(h => h.RunBeforeSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        hookEngine
-            .Setup(h => h.RunAfterSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        return new ReportingDbContext(options, hookEngine.Object);
-    }
-
     [Test]
     public async Task Refresh_materializes_day_week_and_month_for_placed_date_field()
     {
         var placedAt = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
-        db.ReportedOrders.Add(new ReportedOrder
+        Db.ReportedOrders.Add(new ReportedOrder
         {
             Id = "o1",
             OrderNumber = "o1",
@@ -52,23 +29,20 @@ public sealed class OrderPeriodSummaryRollupRefresherTests
             CreatedAt = placedAt,
             SourceLastKnownAt = placedAt
         });
-        await db.SaveChangesAsync();
+        await Db.SaveChangesAsync();
 
-        var refresher = new OrderPeriodSummaryRollupRefresher(
-            db,
-            NullLogger<OrderPeriodSummaryRollupRefresher>.Instance);
-        await refresher.RefreshAsync(CancellationToken.None);
+        await Refresher.RefreshAsync(CancellationToken.None);
 
         const int placed = 0;
-        var day = await db.OrderPeriodSummaries.AsNoTracking()
+        var day = await Db.OrderPeriodSummaries.AsNoTracking()
             .SingleAsync(x => x.Granularity == nameof(OrderPeriodSummaryGranularity.Day)
                                && x.DateField == placed
                                && x.PeriodKey == "2026-05-01");
-        var week = await db.OrderPeriodSummaries.AsNoTracking()
+        var week = await Db.OrderPeriodSummaries.AsNoTracking()
             .SingleAsync(x => x.Granularity == nameof(OrderPeriodSummaryGranularity.Week)
                               && x.DateField == placed
                               && x.PeriodKey == "W/c 2026-04-27");
-        var month = await db.OrderPeriodSummaries.AsNoTracking()
+        var month = await Db.OrderPeriodSummaries.AsNoTracking()
             .SingleAsync(x => x.Granularity == nameof(OrderPeriodSummaryGranularity.Month)
                               && x.DateField == placed
                               && x.PeriodKey == "2026-05");
@@ -86,10 +60,8 @@ public sealed class OrderPeriodSummaryRollupRefresherTests
     [Test]
     public async Task Second_refresh_replaces_previous_rollups()
     {
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
         var t = DateTimeOffset.Parse("2026-01-01T00:00:00Z");
-        db.ReportedOrders.Add(new ReportedOrder
+        Db.ReportedOrders.Add(new ReportedOrder
         {
             Id = "x",
             OrderNumber = "x",
@@ -105,18 +77,116 @@ public sealed class OrderPeriodSummaryRollupRefresherTests
             CreatedAt = t,
             SourceLastKnownAt = t
         });
-        await db.SaveChangesAsync();
+        await Db.SaveChangesAsync();
 
-        var refresher = new OrderPeriodSummaryRollupRefresher(
-            db,
-            NullLogger<OrderPeriodSummaryRollupRefresher>.Instance);
-        await refresher.RefreshAsync(CancellationToken.None);
-        Assert.That(await db.OrderPeriodSummaries.CountAsync(), Is.GreaterThan(0));
+        await Refresher.RefreshAsync(CancellationToken.None);
+        Assert.That(await Db.OrderPeriodSummaries.CountAsync(), Is.GreaterThan(0));
 
-        db.ReportedOrders.RemoveRange(db.ReportedOrders);
-        await db.SaveChangesAsync();
+        Db.ReportedOrders.RemoveRange(Db.ReportedOrders);
+        await Db.SaveChangesAsync();
 
-        await refresher.RefreshAsync(CancellationToken.None);
-        Assert.That(await db.OrderPeriodSummaries.CountAsync(), Is.EqualTo(0));
+        await Refresher.RefreshAsync(CancellationToken.None);
+        Assert.That(await Db.OrderPeriodSummaries.CountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task Refresh_with_more_than_fifty_orders_aggregates_day_bucket()
+    {
+        const int orderCount = 51;
+        const decimal amountPerOrder = 2m;
+        var placedAt = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
+
+        for (var i = 0; i < orderCount; i++)
+        {
+            var id = $"o{i:D3}";
+            Db.ReportedOrders.Add(new ReportedOrder
+            {
+                Id = id,
+                OrderNumber = id,
+                CustomerId = "c",
+                OrderStatus = OrderStatus.Pending,
+                FullfillmentStatus = FullfillmentStatus.Pending,
+                PaymentType = OrderPaymentType.Debt,
+                PaymentStatus = OrderPaymentStatus.Unpaid,
+                TotalOrderAmount = amountPerOrder,
+                AmountPaid = 1m,
+                AmountOutstanding = 1m,
+                ReplicationVersion = 1,
+                CreatedAt = placedAt,
+                SourceLastKnownAt = placedAt
+            });
+        }
+
+        await Db.SaveChangesAsync();
+
+        await Refresher.RefreshAsync(CancellationToken.None);
+
+        const int placed = 0;
+        var day = await Db.OrderPeriodSummaries.AsNoTracking()
+            .SingleAsync(x => x.Granularity == nameof(OrderPeriodSummaryGranularity.Day)
+                               && x.DateField == placed
+                               && x.PeriodKey == "2026-05-01");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(day.OrderCount, Is.EqualTo(orderCount));
+            Assert.That(day.GrossRevenue, Is.EqualTo(orderCount * amountPerOrder));
+            Assert.That(day.NetRevenue, Is.EqualTo(orderCount * 1m));
+        });
+    }
+
+    [Test]
+    public async Task Refresh_counts_cancelled_and_delivered()
+    {
+        var placedAt = DateTimeOffset.Parse("2026-05-02T10:00:00Z");
+
+        Db.ReportedOrders.Add(new ReportedOrder
+        {
+            Id = "cancelled",
+            OrderNumber = "cancelled",
+            CustomerId = "c",
+            OrderStatus = OrderStatus.Cancelled,
+            FullfillmentStatus = FullfillmentStatus.Pending,
+            PaymentType = OrderPaymentType.Debt,
+            PaymentStatus = OrderPaymentStatus.Unpaid,
+            TotalOrderAmount = 5m,
+            AmountPaid = 0m,
+            AmountOutstanding = 5m,
+            ReplicationVersion = 1,
+            CreatedAt = placedAt,
+            SourceLastKnownAt = placedAt
+        });
+        Db.ReportedOrders.Add(new ReportedOrder
+        {
+            Id = "completed",
+            OrderNumber = "completed",
+            CustomerId = "c",
+            OrderStatus = OrderStatus.Completed,
+            FullfillmentStatus = FullfillmentStatus.Pending,
+            PaymentType = OrderPaymentType.Debt,
+            PaymentStatus = OrderPaymentStatus.Paid,
+            TotalOrderAmount = 8m,
+            AmountPaid = 8m,
+            AmountOutstanding = 0m,
+            ReplicationVersion = 1,
+            CreatedAt = placedAt,
+            SourceLastKnownAt = placedAt
+        });
+        await Db.SaveChangesAsync();
+
+        await Refresher.RefreshAsync(CancellationToken.None);
+
+        const int placed = 0;
+        var day = await Db.OrderPeriodSummaries.AsNoTracking()
+            .SingleAsync(x => x.Granularity == nameof(OrderPeriodSummaryGranularity.Day)
+                               && x.DateField == placed
+                               && x.PeriodKey == "2026-05-02");
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(day.OrderCount, Is.EqualTo(2));
+            Assert.That(day.CancelledCount, Is.EqualTo(1));
+            Assert.That(day.DeliveredCount, Is.EqualTo(1));
+        });
     }
 }

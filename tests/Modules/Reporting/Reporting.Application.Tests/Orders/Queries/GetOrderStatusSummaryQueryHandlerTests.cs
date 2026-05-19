@@ -2,9 +2,13 @@ using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.GetOrderStatusSummary;
 using Invoria.Reporting.Domain.Orders;
+using Invoria.Reporting.Domain.Orders.StatusSummary;
 using Invoria.Reporting.Infrastructure.EntityFramework;
+using Invoria.Reporting.Domain.Repositories;
+using Invoria.Reporting.Infrastructure.EntityFramework.Repositories;
 using Invoria.Reporting.Infrastructure.Orders.Materialization.StatusSummary;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -17,6 +21,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
     {
         var options = new DbContextOptionsBuilder<ReportingDbContext>()
             .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         var hookEngine = new Mock<IDbHookEngine>();
@@ -67,8 +72,8 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var refresher = new ReportedOrderStatusSummaryRollupRefresher(db, NullLogger<ReportedOrderStatusSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
 
-        var reader = new ReportedOrderStatusSummaryRollupReader(db);
-        var handler = new GetOrderStatusSummaryQueryHandler(reader);
+        var repository = new ReportingRepository<ReportedOrderStatusByDay>(db);
+        var handler = new GetOrderStatusSummaryQueryHandler(repository);
 
         var from = DateTimeOffset.Parse("2026-05-01T00:00:00Z");
         var to = DateTimeOffset.Parse("2026-05-02T23:59:59Z");
@@ -105,8 +110,8 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var refresher = new ReportedOrderStatusSummaryRollupRefresher(db, NullLogger<ReportedOrderStatusSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
 
-        var reader = new ReportedOrderStatusSummaryRollupReader(db);
-        var handler = new GetOrderStatusSummaryQueryHandler(reader);
+        var repository = new ReportingRepository<ReportedOrderStatusByDay>(db);
+        var handler = new GetOrderStatusSummaryQueryHandler(repository);
 
         var from = DateTimeOffset.Parse("2026-05-01T00:00:00Z");
         var to = DateTimeOffset.Parse("2026-05-01T23:59:59Z");
@@ -133,8 +138,8 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var refresher = new ReportedOrderStatusSummaryRollupRefresher(db, NullLogger<ReportedOrderStatusSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
 
-        var reader = new ReportedOrderStatusSummaryRollupReader(db);
-        var handler = new GetOrderStatusSummaryQueryHandler(reader);
+        var repository = new ReportingRepository<ReportedOrderStatusByDay>(db);
+        var handler = new GetOrderStatusSummaryQueryHandler(repository);
 
         var result = await handler.Handle(
             new GetOrderStatusSummaryQuery
@@ -165,8 +170,8 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var refresher = new ReportedOrderStatusSummaryRollupRefresher(db, NullLogger<ReportedOrderStatusSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
 
-        var reader = new ReportedOrderStatusSummaryRollupReader(db);
-        var handler = new GetOrderStatusSummaryQueryHandler(reader);
+        var repository = new ReportingRepository<ReportedOrderStatusByDay>(db);
+        var handler = new GetOrderStatusSummaryQueryHandler(repository);
 
         var result = await handler.Handle(new GetOrderStatusSummaryQuery(), CancellationToken.None);
 

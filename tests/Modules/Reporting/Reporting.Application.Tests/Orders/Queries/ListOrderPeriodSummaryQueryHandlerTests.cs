@@ -3,9 +3,13 @@ using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.ListOrderPeriodSummary;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders;
+using Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
 using Invoria.Reporting.Infrastructure.EntityFramework;
+using Invoria.Reporting.Domain.Repositories;
+using Invoria.Reporting.Infrastructure.EntityFramework.Repositories;
 using Invoria.Reporting.Infrastructure.Orders.Materialization.OrderPeriodSummary;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -18,6 +22,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
     {
         var options = new DbContextOptionsBuilder<ReportingDbContext>()
             .UseInMemoryDatabase(databaseName)
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         var hookEngine = new Mock<IDbHookEngine>();
@@ -38,8 +43,8 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
             NullLogger<OrderPeriodSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
 
-        var reader = new OrderPeriodSummaryRollupReader(db);
-        return new ListOrderPeriodSummaryQueryHandler(reader);
+        var repository = new ReportingRepository<OrderPeriodSummary>(db);
+        return new ListOrderPeriodSummaryQueryHandler(repository);
     }
 
     private static ReportedOrder CreateOrder(
