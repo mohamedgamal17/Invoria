@@ -1,4 +1,3 @@
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.GetDebtOverview;
 using Invoria.Reporting.Domain.Orders;
@@ -52,15 +51,26 @@ public sealed class GetDebtOverviewQueryHandlerTests
         };
 
     [Test]
-    public async Task Handle_without_materialization_returns_not_found()
+    public async Task Handle_without_materialization_returns_zeroed_defaults()
     {
         await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         var handler = new GetDebtOverviewQueryHandler(new ReportingRepository<DebtSummaryBase>(db));
 
         var result = await handler.Handle(new GetDebtOverviewQuery(), CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Exception, Is.InstanceOf<NotFoundException>());
+        Assert.That(result.IsSuccess, Is.True);
+        var dto = result.Value!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(dto.TotalOutstanding, Is.Zero);
+            Assert.That(dto.TotalPaid, Is.Zero);
+            Assert.That(dto.TotalOrderValue, Is.Zero);
+            Assert.That(dto.DebtOrderCount, Is.Zero);
+            Assert.That(dto.PartiallyPaidCount, Is.Zero);
+            Assert.That(dto.UnpaidCount, Is.Zero);
+            Assert.That(dto.CollectionRate, Is.Zero);
+            Assert.That(dto.ComputedAt, Is.EqualTo(default(DateTimeOffset)));
+        });
     }
 
     [Test]

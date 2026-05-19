@@ -1,5 +1,4 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders.DebtSummary;
@@ -30,8 +29,10 @@ public sealed class GetCustomerDebtSummaryQueryHandler
 
         if (summary is null)
         {
-            return Result.Failure<CustomerDebtOverviewDto>(
-                new NotFoundException($"Customer debt overview for customer '{request.CustomerId}' was not found."));
+            return Result.Success(new CustomerDebtOverviewDto
+            {
+                CustomerId = request.CustomerId
+            });
         }
 
         return Result.Success(new CustomerDebtOverviewDto

@@ -1,4 +1,3 @@
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.GetCustomerDebtSummary;
 using Invoria.Reporting.Domain.Orders;
@@ -75,7 +74,7 @@ public sealed class GetCustomerDebtSummaryQueryHandlerTests
     }
 
     [Test]
-    public async Task Handle_returns_not_found_when_customer_has_no_debt_row()
+    public async Task Handle_returns_zeroed_defaults_when_customer_has_no_debt_row()
     {
         var t = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
 
@@ -93,7 +92,20 @@ public sealed class GetCustomerDebtSummaryQueryHandlerTests
             new GetCustomerDebtSummaryQuery { CustomerId = "unknown" },
             CancellationToken.None);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Exception, Is.InstanceOf<NotFoundException>());
+        Assert.That(result.IsSuccess, Is.True);
+        var dto = result.Value!;
+        Assert.Multiple(() =>
+        {
+            Assert.That(dto.CustomerId, Is.EqualTo("unknown"));
+            Assert.That(dto.TotalOutstanding, Is.Zero);
+            Assert.That(dto.TotalPaid, Is.Zero);
+            Assert.That(dto.TotalOrderValue, Is.Zero);
+            Assert.That(dto.DebtOrderCount, Is.Zero);
+            Assert.That(dto.PartiallyPaidCount, Is.Zero);
+            Assert.That(dto.UnpaidCount, Is.Zero);
+            Assert.That(dto.OldestDebtDate, Is.EqualTo(default(DateTimeOffset)));
+            Assert.That(dto.OldestDebtAmount, Is.Zero);
+            Assert.That(dto.ComputedAt, Is.EqualTo(default(DateTimeOffset)));
+        });
     }
 }

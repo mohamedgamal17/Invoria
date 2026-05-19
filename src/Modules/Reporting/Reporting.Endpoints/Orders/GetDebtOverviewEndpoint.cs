@@ -34,8 +34,8 @@ public sealed class GetDebtOverviewEndpoint : EndpointBase<EmptyRequest, DebtOve
                 "Values are rebuilt about every 5 minutes and may lag live order data. " +
                 "This endpoint does not apply customer or date filters.";
             s.Responses[StatusCodes.Status200OK] =
-                InvoriaOpenApiResponseDescriptions.Ok200 + " Returns the global debt overview snapshot.";
-            s.Responses[StatusCodes.Status404NotFound] = InvoriaOpenApiResponseDescriptions.NotFound404;
+                InvoriaOpenApiResponseDescriptions.Ok200 +
+                " Returns the global debt overview snapshot, or zeroed defaults when not yet materialized.";
             s.Responses[StatusCodes.Status500InternalServerError] = InvoriaOpenApiResponseDescriptions.InternalServerError500;
         });
     }

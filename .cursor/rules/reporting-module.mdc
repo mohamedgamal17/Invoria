@@ -56,9 +56,9 @@ Infrastructure folder name collides with domain type `OrderPeriodSummary`. In re
 - Use `_repository.AsQuerable().AsNoTracking()` (project spelling) and project to Contracts DTOs in LINQ.
 - `ListOrderPeriodSummary`: filter `Granularity` + `DateField == 0`, period overlap on `PeriodStart`/`PeriodEnd`, `OrderByDescending` by period, `ToPaged`.
 - `GetOrderStatusSummary`: optional inclusive `DayUtc` range when both bounds set; else all rows; `GroupBy(OrderStatus)` + `Sum(Count)` for API aggregation.
-- `GetDebtOverview`: `IReportingRepository<DebtSummaryBase>`, `OfType<DebtGlobalSummary>()`, `SingleOrDefault`; `NotFound` when not materialized; map to `DebtOverviewDto` (includes `CollectionRate`).
+- `GetDebtOverview`: `IReportingRepository<DebtSummaryBase>`, `OfType<DebtGlobalSummary>()`, `SingleOrDefault`; when not materialized return zeroed `DebtOverviewDto`; else map to `DebtOverviewDto` (includes `CollectionRate`).
 - `ListCustomerDebtOverview`: `OfType<DebtCustomerSummary>()`, `OrderByDescending(TotalOutstanding)` then `CustomerId`, project to `CustomerDebtOverviewDto`, `ToPaged`.
-- `GetCustomerDebtSummary`: `OfType<DebtCustomerSummary>()`, filter by `CustomerId`, `SingleOrDefault`; `NotFound` when customer has no debt row; map to `CustomerDebtOverviewDto`.
+- `GetCustomerDebtSummary`: `OfType<DebtCustomerSummary>()`, filter by `CustomerId`, `SingleOrDefault`; when customer has no debt row return zeroed `CustomerDebtOverviewDto` with requested `CustomerId`; else map from row.
 
 ## Write path (integration)
 

@@ -1,5 +1,4 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders.DebtSummary;
@@ -30,8 +29,7 @@ public sealed class GetDebtOverviewQueryHandler
 
         if (global is null)
         {
-            return Result.Failure<DebtOverviewDto>(
-                new NotFoundException("Debt overview has not been materialized yet."));
+            return Result.Success(new DebtOverviewDto());
         }
 
         return Result.Success(new DebtOverviewDto

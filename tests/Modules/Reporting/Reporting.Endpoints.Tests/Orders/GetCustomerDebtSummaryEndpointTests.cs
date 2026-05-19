@@ -36,7 +36,7 @@ public sealed class GetCustomerDebtSummaryEndpointTests : ReportingOrdersEndpoin
     }
 
     [Test]
-    public async Task Should_return_404_when_customer_debt_overview_not_found()
+    public async Task Should_return_zeroed_defaults_when_customer_has_no_debt_row()
     {
         var t = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
 
@@ -47,7 +47,14 @@ public sealed class GetCustomerDebtSummaryEndpointTests : ReportingOrdersEndpoin
 
         var response = await Client.GetAsync("/reporting/orders/customer-debt-overview/unknown");
 
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<CustomerDebtOverviewDto>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+        envelope.Result.Should().NotBeNull();
+        envelope.Result!.CustomerId.Should().Be("unknown");
+        envelope.Result.TotalOutstanding.Should().Be(0m);
+        envelope.Result.DebtOrderCount.Should().Be(0);
     }
 }
