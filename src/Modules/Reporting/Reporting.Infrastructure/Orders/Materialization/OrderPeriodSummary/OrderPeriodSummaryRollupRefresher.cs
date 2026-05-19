@@ -13,7 +13,6 @@ namespace Invoria.Reporting.Infrastructure.Orders.Materialization.OrderPeriodSum
 /// </summary>
 public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollupRefresher
 {
-    private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
     private const int MaxChunkSize = 50;
 
     private readonly ReportingDbContext _dbContext;
@@ -29,15 +28,10 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
 
     public async Task RefreshAsync(CancellationToken cancellationToken)
     {
-        var isInMemory = string.Equals(
-            _dbContext.Database.ProviderName,
-            InMemoryProviderName,
-            StringComparison.Ordinal);
-
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            await RefreshCoreAsync(isInMemory, cancellationToken);
+            await RefreshCoreAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -48,21 +42,9 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
         }
     }
 
-    private async Task RefreshCoreAsync(bool isInMemory, CancellationToken cancellationToken)
+    private async Task RefreshCoreAsync(CancellationToken cancellationToken)
     {
-        if (isInMemory)
-        {
-            var existing = await _dbContext.OrderPeriodSummaries.ToListAsync(cancellationToken);
-            _dbContext.OrderPeriodSummaries.RemoveRange(existing);
-            if (existing.Count > 0)
-            {
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-        }
-        else
-        {
-            await _dbContext.OrderPeriodSummaries.ExecuteDeleteAsync(cancellationToken);
-        }
+        await _dbContext.OrderPeriodSummaries.ExecuteDeleteAsync(cancellationToken);
 
         const int placedClock = 0;
         var sourceOrders = _dbContext.ReportedOrders.AsQueryable();

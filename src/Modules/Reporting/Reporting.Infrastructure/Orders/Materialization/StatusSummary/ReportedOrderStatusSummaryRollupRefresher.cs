@@ -13,7 +13,6 @@ namespace Invoria.Reporting.Infrastructure.Orders.Materialization.StatusSummary;
 /// </summary>
 public sealed class ReportedOrderStatusSummaryRollupRefresher : IReportedOrderStatusSummaryRollupRefresher
 {
-    private const string InMemoryProviderName = "Microsoft.EntityFrameworkCore.InMemory";
     private const int MaxChunkSize = 50;
 
     private readonly ReportingDbContext _dbContext;
@@ -29,16 +28,11 @@ public sealed class ReportedOrderStatusSummaryRollupRefresher : IReportedOrderSt
 
     public async Task RefreshAsync(CancellationToken cancellationToken)
     {
-        var isInMemory = string.Equals(
-            _dbContext.Database.ProviderName,
-            InMemoryProviderName,
-            StringComparison.Ordinal);
-
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            await RefreshCoreAsync(isInMemory, cancellationToken);
+            await RefreshCoreAsync(cancellationToken);
             await tx.CommitAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -49,21 +43,9 @@ public sealed class ReportedOrderStatusSummaryRollupRefresher : IReportedOrderSt
         }
     }
 
-    private async Task RefreshCoreAsync(bool isInMemory, CancellationToken cancellationToken)
+    private async Task RefreshCoreAsync(CancellationToken cancellationToken)
     {
-        if (isInMemory)
-        {
-            var existing = await _dbContext.ReportedOrderStatusByDays.ToListAsync(cancellationToken);
-            _dbContext.ReportedOrderStatusByDays.RemoveRange(existing);
-            if (existing.Count > 0)
-            {
-                await _dbContext.SaveChangesAsync(cancellationToken);
-            }
-        }
-        else
-        {
-            await _dbContext.ReportedOrderStatusByDays.ExecuteDeleteAsync(cancellationToken);
-        }
+        await _dbContext.ReportedOrderStatusByDays.ExecuteDeleteAsync(cancellationToken);
 
         var sourceOrders = _dbContext.ReportedOrders.AsQueryable();
         var totalSourceOrders = await sourceOrders.CountAsync(cancellationToken);

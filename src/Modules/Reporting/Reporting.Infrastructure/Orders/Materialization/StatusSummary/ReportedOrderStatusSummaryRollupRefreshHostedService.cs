@@ -1,3 +1,4 @@
+using Invoria.Reporting.Application.Orders.Materialization.DebtSummary;
 using Invoria.Reporting.Application.Orders.Materialization.OrderPeriodSummary;
 using Invoria.Reporting.Application.Orders.Materialization.StatusSummary;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Invoria.Reporting.Infrastructure.Orders.Materialization.StatusSummary;
 
 /// <summary>
-/// Periodically rebuilds reporting materialized rollups (order status by day and order period summaries; default 5 minutes).
+/// Periodically rebuilds reporting materialized rollups (order status by day, order period summaries, and debt summaries; default 5 minutes).
 /// </summary>
 public sealed class ReportedOrderStatusSummaryRollupRefreshHostedService : BackgroundService
 {
@@ -49,6 +50,9 @@ public sealed class ReportedOrderStatusSummaryRollupRefreshHostedService : Backg
 
             var periodRefresher = scope.ServiceProvider.GetRequiredService<IOrderPeriodSummaryRollupRefresher>();
             await periodRefresher.RefreshAsync(cancellationToken);
+
+            var debtRefresher = scope.ServiceProvider.GetRequiredService<IDebtSummaryRollupRefresher>();
+            await debtRefresher.RefreshAsync(cancellationToken);
         }
         catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
