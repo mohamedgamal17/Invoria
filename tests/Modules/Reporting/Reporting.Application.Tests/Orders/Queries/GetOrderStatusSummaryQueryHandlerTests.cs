@@ -1,4 +1,3 @@
-using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.GetOrderStatusSummary;
 using Invoria.Reporting.Domain.Orders;
@@ -7,34 +6,13 @@ using Invoria.Reporting.Infrastructure.EntityFramework;
 using Invoria.Reporting.Domain.Repositories;
 using Invoria.Reporting.Infrastructure.EntityFramework.Repositories;
 using Invoria.Reporting.Infrastructure.Orders.Materialization.StatusSummary;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace Invoria.Reporting.Application.Tests.Orders.Queries;
 
 [TestFixture]
 public sealed class GetOrderStatusSummaryQueryHandlerTests
 {
-    private static ReportingDbContext CreateContext(string databaseName)
-    {
-        var options = new DbContextOptionsBuilder<ReportingDbContext>()
-            .UseInMemoryDatabase(databaseName)
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-
-        var hookEngine = new Mock<IDbHookEngine>();
-        hookEngine
-            .Setup(h => h.RunBeforeSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        hookEngine
-            .Setup(h => h.RunAfterSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        return new ReportingDbContext(options, hookEngine.Object);
-    }
-
     private static ReportedOrder CreateOrder(string id, OrderStatus status, DateTimeOffset createdAt)
     {
         return new ReportedOrder
@@ -61,8 +39,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var may1 = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
         var may2 = DateTimeOffset.Parse("2026-05-02T08:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.AddRange(
             CreateOrder("o1", OrderStatus.Pending, may1),
             CreateOrder("o2", OrderStatus.Pending, may1),
@@ -100,8 +77,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var may1 = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
         var may3 = DateTimeOffset.Parse("2026-05-03T10:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.AddRange(
             CreateOrder("o1", OrderStatus.Pending, may1),
             CreateOrder("o2", OrderStatus.Completed, may3));
@@ -132,8 +108,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
     [Test]
     public async Task Returns_empty_when_rollout_has_no_rows_in_range()
     {
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
 
         var refresher = new ReportedOrderStatusSummaryRollupRefresher(db, NullLogger<ReportedOrderStatusSummaryRollupRefresher>.Instance);
         await refresher.RefreshAsync(CancellationToken.None);
@@ -159,8 +134,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
         var may1 = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
         var may2 = DateTimeOffset.Parse("2026-05-02T08:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.AddRange(
             CreateOrder("o1", OrderStatus.Pending, may1),
             CreateOrder("o2", OrderStatus.Pending, may1),

@@ -1,4 +1,3 @@
-using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Reporting.Application.Orders.Queries.ListOrderPeriodSummary;
 using Invoria.Reporting.Contracts.Orders.Reports;
@@ -8,34 +7,13 @@ using Invoria.Reporting.Infrastructure.EntityFramework;
 using Invoria.Reporting.Domain.Repositories;
 using Invoria.Reporting.Infrastructure.EntityFramework.Repositories;
 using Invoria.Reporting.Infrastructure.Orders.Materialization.OrderPeriodSummary;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace Invoria.Reporting.Application.Tests.Orders.Queries;
 
 [TestFixture]
 public sealed class ListOrderPeriodSummaryQueryHandlerTests
 {
-    private static ReportingDbContext CreateContext(string databaseName)
-    {
-        var options = new DbContextOptionsBuilder<ReportingDbContext>()
-            .UseInMemoryDatabase(databaseName)
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-
-        var hookEngine = new Mock<IDbHookEngine>();
-        hookEngine
-            .Setup(h => h.RunBeforeSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        hookEngine
-            .Setup(h => h.RunAfterSaveAsync(It.IsAny<DbContext>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        return new ReportingDbContext(options, hookEngine.Object);
-    }
-
     private static async Task<ListOrderPeriodSummaryQueryHandler> CreateHandlerWithRollupAsync(ReportingDbContext db)
     {
         var refresher = new OrderPeriodSummaryRollupRefresher(
@@ -78,8 +56,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
         var may1 = DateTimeOffset.Parse("2026-05-01T12:00:00Z");
         var may3 = DateTimeOffset.Parse("2026-05-03T10:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.AddRange(
             CreateOrder("o1", may1, 10m, OrderStatus.Pending),
             CreateOrder("o2", may3, 20m, OrderStatus.Pending));
@@ -112,8 +89,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
     {
         var wed = DateTimeOffset.Parse("2026-05-06T12:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.Add(CreateOrder("o1", wed, 1m, OrderStatus.Pending));
         await db.SaveChangesAsync();
 
@@ -142,8 +118,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
         var may2 = DateTimeOffset.Parse("2026-05-02T10:00:00Z");
         var may3 = DateTimeOffset.Parse("2026-05-03T10:00:00Z");
 
-        var dbName = Guid.NewGuid().ToString();
-        await using var db = CreateContext(dbName);
+        await using var db = await ReportingQueryTestDbContextFactory.CreateAsync();
         db.ReportedOrders.AddRange(
             CreateOrder("a", may1, 1m, OrderStatus.Pending),
             CreateOrder("b", may2, 2m, OrderStatus.Pending),
