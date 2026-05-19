@@ -1,4 +1,4 @@
-using Invoria.Reporting.Domain.Orders;
+using Invoria.Reporting.Domain.Orders.StatusSummary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

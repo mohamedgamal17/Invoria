@@ -1,6 +1,8 @@
 using Invoria.BuildingBlocks.EntityFramework.Contexts;
 using Invoria.BuildingBlocks.EntityFramework.Hooks;
 using Invoria.Reporting.Domain.Orders;
+using Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
+using Invoria.Reporting.Domain.Orders.StatusSummary;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 

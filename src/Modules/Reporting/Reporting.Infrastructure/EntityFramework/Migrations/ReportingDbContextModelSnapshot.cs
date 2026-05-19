@@ -22,7 +22,7 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.OrderPeriodSummary", b =>
+            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.OrderPeriodSummary.OrderPeriodSummary", b =>
                 {
                     b.Property<string>("Granularity")
                         .HasMaxLength(16)
@@ -292,7 +292,7 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.ToTable("ReportedOrderStateTransition", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderStatusByDay", b =>
+            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.StatusSummary.ReportedOrderStatusByDay", b =>
                 {
                     b.Property<DateOnly>("DayUtc")
                         .HasColumnType("date");

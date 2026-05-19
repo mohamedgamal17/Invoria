@@ -251,7 +251,7 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.ToTable("ReportedOrderStateTransition", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderStatusByDay", b =>
+            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.StatusSummary.ReportedOrderStatusByDay", b =>
                 {
                     b.Property<DateOnly>("DayUtc")
                         .HasColumnType("date");
