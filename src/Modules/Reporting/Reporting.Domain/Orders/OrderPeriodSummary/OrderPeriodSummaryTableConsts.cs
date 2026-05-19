@@ -1,4 +1,4 @@
-namespace Invoria.Reporting.Domain.Orders;
+namespace Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
 
 public static class OrderPeriodSummaryTableConsts
 {

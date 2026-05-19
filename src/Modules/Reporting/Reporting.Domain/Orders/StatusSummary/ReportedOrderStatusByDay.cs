@@ -1,12 +1,13 @@
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Contracts.Orders;
 
-namespace Invoria.Reporting.Domain.Orders;
+namespace Invoria.Reporting.Domain.Orders.StatusSummary;
 
 /// <summary>
 /// Materialized aggregate: count of reported orders per UTC calendar day of creation and current order status.
-/// Rebuilt periodically from <see cref="ReportedOrder"/>; not an auditable entity.
+/// Rebuilt periodically from <see cref="Invoria.Reporting.Domain.Orders.ReportedOrder"/>; not an auditable entity.
 /// </summary>
-public sealed class ReportedOrderStatusByDay
+public sealed class ReportedOrderStatusByDay : IBaseEntity
 {
     public DateOnly DayUtc { get; set; }
 

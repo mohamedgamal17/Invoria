@@ -1,10 +1,12 @@
-namespace Invoria.Reporting.Domain.Orders;
+using Invoria.BuildingBlocks.Domain.Entities;
+
+namespace Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
 
 /// <summary>
-/// Materialized aggregate: order counts and revenue per calendar period bucket, rebuilt periodically from <see cref="ReportedOrder"/>.
+/// Materialized aggregate: order counts and revenue per calendar period bucket, rebuilt periodically from <see cref="Invoria.Reporting.Domain.Orders.ReportedOrder"/>.
 /// Granularity discriminates Day vs Week vs Month. <see cref="OrderPeriodSummary.DateField"/> is reserved for future clock dimensions; placed-only rollups always store <c>0</c> there.
 /// </summary>
-public sealed class OrderPeriodSummary
+public sealed class OrderPeriodSummary : IBaseEntity
 {
     public string Granularity { get; set; } = null!;
 
