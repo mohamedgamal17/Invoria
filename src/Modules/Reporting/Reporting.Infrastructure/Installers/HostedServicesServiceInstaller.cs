@@ -13,9 +13,7 @@ public sealed class HostedServicesServiceInstaller : IServiceInstaller
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IReportedOrderStatusSummaryRollupRefresher, ReportedOrderStatusSummaryRollupRefresher>();
-        services.AddScoped<IReportedOrderStatusSummaryRollupReader, ReportedOrderStatusSummaryRollupReader>();
         services.AddScoped<IOrderPeriodSummaryRollupRefresher, OrderPeriodSummaryRollupRefresher>();
-        services.AddScoped<IOrderPeriodSummaryRollupReader, OrderPeriodSummaryRollupReader>();
         services.AddHostedService<ReportedOrderStatusSummaryRollupRefreshHostedService>();
     }
 }
