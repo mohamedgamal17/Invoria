@@ -88,7 +88,7 @@ The sections below list only modules, layers, classes, and relationships that ex
   - `Invoria.Inventory.Application.Tests`, `Invoria.Inventory.Endpoints.Tests` (where present)
   - `Invoria.Ordering.Application.Tests`, `Invoria.Ordering.Endpoints.Tests` (where present)
   - `Invoria.Procurement.Application.Tests`, `Invoria.Procurement.Endpoints.Tests` (where present)
-  - `Invoria.Reporting.Application.Tests`, `Invoria.Reporting.Domain.Tests` (where present)
+  - `Invoria.Reporting.Application.Tests`, `Invoria.Reporting.Domain.Tests`, `Invoria.Reporting.Endpoints.Tests` (where present)
 
 ### High-Level Module Dependencies
 
