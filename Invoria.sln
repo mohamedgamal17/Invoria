@@ -135,13 +135,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Reporting.Infrastru
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Reporting", "Reporting", "{440DF63E-566E-4A8C-AFDA-B41AD68A81FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Reporting.Domain.Tests", "tests\Modules\Reporting\Reporting.Domain.Tests\Invoria.Reporting.Domain.Tests.csproj", "{A0FC075B-DA47-4780-AB8A-AEBDB5A6FF7C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Reporting.Domain.Tests", "tests\Modules\Reporting\Reporting.Domain.Tests\Invoria.Reporting.Domain.Tests.csproj", "{A0FC075B-DA47-4780-AB8A-AEBDB5A6FF7C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Reporting.Application.Tests", "tests\Modules\Reporting\Reporting.Application.Tests\Invoria.Reporting.Application.Tests.csproj", "{93B0C4CE-6022-4B0A-9DED-A2A1115D27FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Reporting.Application.Tests", "tests\Modules\Reporting\Reporting.Application.Tests\Invoria.Reporting.Application.Tests.csproj", "{93B0C4CE-6022-4B0A-9DED-A2A1115D27FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Reporting", "Reporting", "{CB49A926-EDC2-4F4D-925E-C5042ACE8D50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Reporting.Endpoints.Tests", "tests\Modules\Reporting\Reporting.Endpoints.Tests\Invoria.Reporting.Endpoints.Tests.csproj", "{3F4108EB-2579-4042-AF8C-5DA1EC8EACF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Reporting.Endpoints.Tests", "tests\Modules\Reporting\Reporting.Endpoints.Tests\Invoria.Reporting.Endpoints.Tests.csproj", "{3F4108EB-2579-4042-AF8C-5DA1EC8EACF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -848,7 +848,7 @@ Global
 		{440DF63E-566E-4A8C-AFDA-B41AD68A81FA} = {3216E1E0-7019-4319-B813-369DAD98A347}
 		{A0FC075B-DA47-4780-AB8A-AEBDB5A6FF7C} = {440DF63E-566E-4A8C-AFDA-B41AD68A81FA}
 		{93B0C4CE-6022-4B0A-9DED-A2A1115D27FC} = {440DF63E-566E-4A8C-AFDA-B41AD68A81FA}
-		{3F4108EB-2579-4042-AF8C-5DA1EC8EACF1} = {CB49A926-EDC2-4F4D-925E-C5042ACE8D50}
+		{3F4108EB-2579-4042-AF8C-5DA1EC8EACF1} = {440DF63E-566E-4A8C-AFDA-B41AD68A81FA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12DAB194-1672-4BA8-94A8-A5F83D36912D}
