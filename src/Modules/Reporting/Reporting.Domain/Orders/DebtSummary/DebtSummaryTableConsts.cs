@@ -7,6 +7,4 @@ public static class DebtSummaryTableConsts
     public const int IdMaxLength = 256;
 
     public const int CustomerIdMaxLength = 256;
-
-    public const string GlobalSummaryId = "global";
 }

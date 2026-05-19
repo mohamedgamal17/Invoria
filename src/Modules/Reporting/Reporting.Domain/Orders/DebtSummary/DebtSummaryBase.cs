@@ -4,8 +4,8 @@ using Invoria.Ordering.Contracts.Orders;
 namespace Invoria.Reporting.Domain.Orders.DebtSummary;
 
 /// <summary>
-/// Materialized debt rollup shared shape, rebuilt periodically from <see cref="ReportedOrder"/>
-/// rows where <see cref="OrderPaymentType.Debt"/>.
+/// Materialized debt rollup shared shape, rebuilt periodically from completed <see cref="ReportedOrder"/>
+/// rows with outstanding balance.
 /// </summary>
 public abstract class DebtSummaryBase : IBaseEntity
 {

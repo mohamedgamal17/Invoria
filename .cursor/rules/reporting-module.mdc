@@ -24,20 +24,22 @@ Apply when editing `src/Modules/Reporting/**` or `tests/Modules/Reporting/**`. F
 - Each report type has its own subfolder with entity + table consts; namespace matches folder:
   - `Orders/OrderPeriodSummary/` — `OrderPeriodSummary`, `OrderPeriodSummaryTableConsts`
   - `Orders/StatusSummary/` — `ReportedOrderStatusByDay`, `ReportedOrderStatusByDayTableConsts`
+  - `Orders/DebtSummary/` — `DebtSummaryBase`, `DebtGlobalSummary`, `DebtCustomerSummary`, `DebtSummaryTableConsts`
 - Materialized rollup entities implement marker `IBaseEntity` (no string `Id`; composite keys configured in EF).
 
 ## Materialization (Infrastructure)
 
-- Path: `Infrastructure/Orders/Materialization/OrderPeriodSummary/` and `.../StatusSummary/`.
+- Path: `Infrastructure/Orders/Materialization/OrderPeriodSummary/`, `.../StatusSummary/`, and `.../DebtSummary/`.
 - Interface in Application: `Reporting.Application.Orders.Materialization.{ReportType}.I*RollupRefresher`.
 - Implementation in Infrastructure; register in `HostedServicesServiceInstaller`.
-- Chunk DTOs as records in Infrastructure (`PeriodChunkAggregate`, `StatusChunkAggregate`). **Do not** add separate `*RollupAggregation` static classes — keep chunk fetch/aggregate logic as **private methods** on the refresher.
+- Chunk DTOs as records in Infrastructure (`PeriodChunkAggregate`, `StatusChunkAggregate`, `DebtCustomerChunkAggregate`). **Do not** add separate `*RollupAggregation` static classes — keep chunk fetch/aggregate logic as **private methods** on the refresher.
+- Debt summary source: completed `ReportedOrder` with `AmountOutstanding > 0` (not `PaymentType.Debt`). **Global**: one server-side `GroupBy` aggregate over the full eligible set, one `DebtGlobalSummary` row (no chunking). **Customer**: chunked `Skip`/`Take` + client `GroupBy(CustomerId)`. No fixed global summary id — query via `OfType<DebtGlobalSummary>()`.
 
-### Rollup refresh rules (both refreshers)
+### Rollup refresh rules (all refreshers)
 
 - `MaxChunkSize = 50`.
 - Full rebuild inside **one transaction** (`BeginTransactionAsync` / commit / rollback on failure).
-- Clear rollup table once at start: `ExecuteDeleteAsync` on SQL; `RemoveRange` + `SaveChanges` on InMemory when tests need it.
+- Clear rollup table once at start with `ExecuteDeleteAsync` only (no InMemory provider branching in refresher code).
 - Loop: `OrderBy(Id).Skip/Take(50)` → project minimal columns → **client-side** `GroupBy` (never EF `GroupBy` after paging on SQL Server).
 - Per-chunk upsert + `SaveChangesAsync`; merge counts across chunks (period key or `(DayUtc, OrderStatus)`).
 - Period summary: process each granularity in `ReportedOrderPeriodBucketing.AllGranularities`; `PlacedDateField = 0` for placed/created clock.
@@ -79,13 +81,12 @@ Infrastructure folder name collides with domain type `OrderPeriodSummary`. In re
 
 - Base: `ReportingTestFixture` (`TestFixture` + `ReportingTestModuleInstaller` + `RunModulesBootstrapperAsync`).
 - Feature fixture: resolve `ReportingDbContext` and `I*RollupRefresher` from Autofac `Scope` in `BeforeAnyTestRunAsync`.
-- LocalDB: `appsettings.json` with `ReportingInvoriaApplicationTests` catalog; copy to output.
+- **SQL Server LocalDB** via `appsettings.json` (`ReportingInvoriaApplicationTests` catalog); copy to output.
 - `AfterAnyTestTearDown`: delete `ReportedOrders` and relevant rollup rows to isolate tests on shared DB.
 
-### Query / consumer tests (InMemory where not migrated)
+### Query handler tests (rollup-dependent)
 
-- Manual `ReportingDbContext` + Moq `IDbHookEngine`.
-- `.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))` when calling refreshers.
+- Use [`ReportingQueryTestDbContextFactory`](tests/Modules/Reporting/Reporting.Application.Tests/Orders/Queries/ReportingQueryTestDbContextFactory.cs): SQL Server LocalDB with a unique catalog per test, `MigrateAsync`, then invoke the relevant `I*RollupRefresher` before exercising the handler.
 - Wire handlers with `new ReportingRepository<T>(db)` — not rollup readers.
 
 ## Do not
