@@ -66,8 +66,6 @@ public class ApprovePurchaseOrderEndpointTests : ProcurementTestFixture
             SupplierId = supplierId!,
             TaxAmount = 0m,
             DiscountAmount = 0m,
-            OrderDate = DateTime.UtcNow.Date,
-            ExpectedDeliveryDate = DateTime.UtcNow.Date.AddDays(7),
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
@@ -112,8 +110,6 @@ public class ApprovePurchaseOrderEndpointTests : ProcurementTestFixture
             SupplierId = supplierId!,
             TaxAmount = 0m,
             DiscountAmount = 0m,
-            OrderDate = DateTime.UtcNow.Date,
-            ExpectedDeliveryDate = DateTime.UtcNow.Date.AddDays(7),
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest

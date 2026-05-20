@@ -12,8 +12,6 @@ public sealed class UpdatePurchaseOrderRequest
     public string SupplierId { get; set; } = default!;
     public decimal TaxAmount { get; set; }
     public decimal DiscountAmount { get; set; }
-    public DateTime? OrderDate { get; set; }
-    public DateTime? ExpectedDeliveryDate { get; set; }
     public List<PurchaseOrderItemRequest> PurchaseOrderItems { get; set; } = [];
 }
 

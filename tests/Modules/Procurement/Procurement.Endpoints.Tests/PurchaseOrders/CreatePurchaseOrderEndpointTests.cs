@@ -31,8 +31,6 @@ public class CreatePurchaseOrderEndpointTests : ProcurementTestFixture
             SupplierId = supplierId!,
             TaxAmount = 10m,
             DiscountAmount = 5m,
-            OrderDate = DateTime.UtcNow.Date,
-            ExpectedDeliveryDate = DateTime.UtcNow.Date.AddDays(7),
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
