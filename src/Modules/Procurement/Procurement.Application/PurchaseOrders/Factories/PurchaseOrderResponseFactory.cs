@@ -22,8 +22,6 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
                     Name = view.Supplier.Name
                 },
             State = view.State,
-            OrderDate = view.OrderDate,
-            ExpectedDeliveryDate = view.ExpectedDeliveryDate,
             CompletedDate = view.CompletedDate,
             SubTotal = view.SubTotal,
             TaxAmount = view.TaxAmount,

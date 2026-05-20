@@ -40,8 +40,6 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: newSupplier.Id,
             taxAmount: 5m,
             discountAmount: 2m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(10),
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
@@ -84,8 +82,6 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: newSupplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(2),
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
@@ -120,8 +116,6 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: null,
-            expectedDeliveryDate: null,
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
@@ -146,8 +140,6 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(1),
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
@@ -181,8 +173,6 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3),
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(

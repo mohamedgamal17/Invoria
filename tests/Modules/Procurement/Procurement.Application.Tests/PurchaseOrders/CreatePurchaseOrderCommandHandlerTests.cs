@@ -41,8 +41,6 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 10m,
             discountAmount: 5m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(5),
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(

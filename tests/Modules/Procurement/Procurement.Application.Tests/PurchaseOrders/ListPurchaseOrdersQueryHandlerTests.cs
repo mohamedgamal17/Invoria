@@ -334,9 +334,7 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         var purchaseOrder = new PurchaseOrder(
             id: id ?? Guid.NewGuid().ToString("N"),
             purchaseNumber: purchaseNumber,
-            supplierId: supplierEntity.Id,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(7));
+            supplierId: supplierEntity.Id);
 
         purchaseOrder.AddItem(new PurchaseOrderItem(
             id: Guid.NewGuid().ToString("N"),

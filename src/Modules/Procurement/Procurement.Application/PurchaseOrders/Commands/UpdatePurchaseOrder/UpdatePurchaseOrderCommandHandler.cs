@@ -40,8 +40,6 @@ public sealed class UpdatePurchaseOrderCommandHandler : IApplicatonRequestHandle
         {
             purchaseOrder.UpdateDetails(
                 supplierId: request.SupplierId,
-                orderDate: request.OrderDate,
-                expectedDeliveryDate: request.ExpectedDeliveryDate,
                 taxAmount: request.TaxAmount,
                 discountAmount: request.DiscountAmount);
 
