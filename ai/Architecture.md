@@ -9,7 +9,8 @@ This document describes the current architecture of the Invoria solution based o
 - **Business module**: Ordering (`Invoria.Ordering.*`)
 - **Business module**: Procurement (`Invoria.Procurement.*`) — suppliers, purchase orders, and CQRS
 - **Business module**: Inventory (`Invoria.Inventory.*`) — batches and CQRS; consumes Ordering integration events via Rebus
-- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, Ordering-, and Procurement-focused application and endpoint tests where present
+- **Business module**: Reporting (`Invoria.Reporting.*`) — read models for reported orders and scheduled rollups
+- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, Ordering-, Procurement-, and Reporting-focused application and endpoint tests where present
 
 The sections below list only modules, layers, classes, and relationships that exist in the repository.
 
@@ -72,6 +73,14 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Presentation / Endpoints: `Invoria.Procurement.Endpoints`
   - Contracts: `Invoria.Procurement.Contracts`
 
+- **Reporting Module**
+  - Domain: `Invoria.Reporting.Domain`
+  - Application: `Invoria.Reporting.Application`
+  - Infrastructure: `Invoria.Reporting.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Reporting.Endpoints`
+  - Contracts: `Invoria.Reporting.Contracts`
+  - **Materialized rollups**: `ReportedOrderStatusByDay`, `OrderPeriodSummary` (Day/Week/Month by `Granularity`; placed-date rollups store `DateField = 0` for compatibility with the composite key), and `DebtSummary` (global + per-customer from completed orders with outstanding balance) are rebuilt on a shared ~5 minute hosted refresh loop from `ReportedOrder`. The `ListOrderPeriodSummary` endpoint exposes a paged read of `OrderPeriodSummary` with optional `From`/`To` (default: last 30 UTC days ending today when both omitted), default `GroupedBy` Day, default paging `Skip`/`Length`, and newest period first within the resolved range. Order status aggregates are exposed via `GetOrderStatusSummary`. Debt overview reads use `GetDebtOverview` (single global snapshot), paged `ListCustomerDebtOverview` (per-customer rows ordered by highest outstanding first), and `GetCustomerDebtSummary` (single customer by id).
+
 - **Tests**
   - `Invoria.Application.Tests`
   - `Invoria.Endpoints.Tests`
@@ -79,6 +88,7 @@ The sections below list only modules, layers, classes, and relationships that ex
   - `Invoria.Inventory.Application.Tests`, `Invoria.Inventory.Endpoints.Tests` (where present)
   - `Invoria.Ordering.Application.Tests`, `Invoria.Ordering.Endpoints.Tests` (where present)
   - `Invoria.Procurement.Application.Tests`, `Invoria.Procurement.Endpoints.Tests` (where present)
+  - `Invoria.Reporting.Application.Tests`, `Invoria.Reporting.Domain.Tests`, `Invoria.Reporting.Endpoints.Tests` (where present)
 
 ### High-Level Module Dependencies
 
@@ -131,7 +141,7 @@ flowchart LR
   ordContracts -.->|"referenced for handler types"| invInfra
 ```
 
-Other business modules (CustomerManagement, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
+Other business modules (CustomerManagement, Ordering, Procurement, Inventory, and Reporting) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
 
 ---
 

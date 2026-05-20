@@ -1,11 +1,12 @@
 using Invoria.BuildingBlocks.Domain.Entities;
+using MediatR;
 
 namespace Invoria.BuildingBlocks.Domain.Events;
 
-public abstract class EntityCreatedDomainEvent<TEntity, TId> : DomainEvent
-    where TEntity : IEntity<TId>
+public sealed class EntityCreatedDomainEvent<TEntity, TId> : DomainEvent, INotification
+    where TEntity : class, IEntity<TId>
 {
-    protected EntityCreatedDomainEvent(TEntity entity)
+    public EntityCreatedDomainEvent(TEntity entity)
     {
         Entity = entity;
     }
@@ -13,10 +14,10 @@ public abstract class EntityCreatedDomainEvent<TEntity, TId> : DomainEvent
     public TEntity Entity { get; }
 }
 
-public abstract class EntityUpdatedDomainEvent<TEntity, TId> : DomainEvent
-    where TEntity : IEntity<TId>
+public sealed class EntityUpdatedDomainEvent<TEntity, TId> : DomainEvent, INotification
+    where TEntity : class, IEntity<TId>
 {
-    protected EntityUpdatedDomainEvent(TEntity entity)
+    public EntityUpdatedDomainEvent(TEntity entity)
     {
         Entity = entity;
     }
@@ -24,14 +25,13 @@ public abstract class EntityUpdatedDomainEvent<TEntity, TId> : DomainEvent
     public TEntity Entity { get; }
 }
 
-public abstract class EntityDeletedDomainEvent<TEntity, TId> : DomainEvent
-    where TEntity : IEntity<TId>
+public sealed class EntityDeletedDomainEvent<TEntity, TId> : DomainEvent, INotification
+    where TEntity : class, IEntity<TId>
 {
-    protected EntityDeletedDomainEvent(TEntity entity)
+    public EntityDeletedDomainEvent(TEntity entity)
     {
         Entity = entity;
     }
 
     public TEntity Entity { get; }
 }
-

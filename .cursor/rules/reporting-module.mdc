@@ -1,0 +1,100 @@
+---
+description: Reporting module layout, materialization, queries, endpoints, and tests
+globs: src/Modules/Reporting/**,tests/Modules/Reporting/**
+alwaysApply: false
+---
+
+# Reporting Module Conventions
+
+Apply when editing `src/Modules/Reporting/**` or `tests/Modules/Reporting/**`. Follow workspace `tdd-strategy.mdc` for Red-Green-Refactor.
+
+## Layering
+
+| Layer | Project | Responsibility |
+|-------|---------|----------------|
+| Domain | `Reporting.Domain` | Read models, materialized aggregates, `*TableConsts`, repository interfaces |
+| Application | `Reporting.Application` | CQRS handlers, Rebus consumers, materialization interfaces, bucketing helpers |
+| Infrastructure | `Reporting.Infrastructure` | EF, migrations, rollup implementations, installers, hosted refresh |
+| Contracts | `Reporting.Contracts` | API DTOs and report enums |
+| Endpoints | `Reporting.Endpoints` | Minimal APIs via `EndpointBase` + MediatR |
+
+## Domain layout (`Orders/`)
+
+- `ReportedOrder` and related read-model types (lines, payments, transitions) live at `Orders/` root.
+- Each report type has its own subfolder with entity + table consts; namespace matches folder:
+  - `Orders/OrderPeriodSummary/` — `OrderPeriodSummary`, `OrderPeriodSummaryTableConsts`
+  - `Orders/StatusSummary/` — `ReportedOrderStatusByDay`, `ReportedOrderStatusByDayTableConsts`
+  - `Orders/DebtSummary/` — `DebtSummaryBase`, `DebtGlobalSummary`, `DebtCustomerSummary`, `DebtSummaryTableConsts`
+- Materialized rollup entities implement marker `IBaseEntity` (no string `Id`; composite keys configured in EF).
+
+## Materialization (Infrastructure)
+
+- Path: `Infrastructure/Orders/Materialization/OrderPeriodSummary/`, `.../StatusSummary/`, and `.../DebtSummary/`.
+- Interface in Application: `Reporting.Application.Orders.Materialization.{ReportType}.I*RollupRefresher`.
+- Implementation in Infrastructure; register in `HostedServicesServiceInstaller`.
+- Chunk DTOs as records in Infrastructure (`PeriodChunkAggregate`, `StatusChunkAggregate`, `DebtCustomerChunkAggregate`). **Do not** add separate `*RollupAggregation` static classes — keep chunk fetch/aggregate logic as **private methods** on the refresher.
+- Debt summary source: completed `ReportedOrder` with `AmountOutstanding > 0` (not `PaymentType.Debt`). **Global**: one server-side `GroupBy` aggregate over the full eligible set, one `DebtGlobalSummary` row (no chunking). **Customer**: chunked `Skip`/`Take` + client `GroupBy(CustomerId)`. No fixed global summary id — query via `OfType<DebtGlobalSummary>()`.
+
+### Rollup refresh rules (all refreshers)
+
+- `MaxChunkSize = 50`.
+- Full rebuild inside **one transaction** (`BeginTransactionAsync` / commit / rollback on failure).
+- Clear rollup table once at start with `ExecuteDeleteAsync` only (no InMemory provider branching in refresher code).
+- Loop: `OrderBy(Id).Skip/Take(50)` → project minimal columns → **client-side** `GroupBy` (never EF `GroupBy` after paging on SQL Server).
+- Per-chunk upsert + `SaveChangesAsync`; merge counts across chunks (period key or `(DayUtc, OrderStatus)`).
+- Period summary: process each granularity in `ReportedOrderPeriodBucketing.AllGranularities`; `PlacedDateField = 0` for placed/created clock.
+- UTC: use `UtcDateTime` / `DateOnly.FromDateTime(...UtcDateTime)`; bucketing helper stays in Application (`ReportedOrderPeriodBucketing`).
+
+### Namespace clash (OrderPeriodSummary)
+
+Infrastructure folder name collides with domain type `OrderPeriodSummary`. In refresher code use alias `OrderPeriodSummaryEntity` and fully qualified names in XML `cref` docs.
+
+## Read path (queries)
+
+- **No rollup readers.** Query materialized tables via `IReportingRepository<T>` in handlers.
+- Handlers: `sealed`, `IApplicatonRequestHandler<,>`, return `Result<T>`, inject `IReportingRepository<T>`.
+- Use `_repository.AsQuerable().AsNoTracking()` (project spelling) and project to Contracts DTOs in LINQ.
+- `ListOrderPeriodSummary`: filter `Granularity` + `DateField == 0`, period overlap on `PeriodStart`/`PeriodEnd`, `OrderByDescending` by period, `ToPaged`.
+- `GetOrderStatusSummary`: optional inclusive `DayUtc` range when both bounds set; else all rows; `GroupBy(OrderStatus)` + `Sum(Count)` for API aggregation.
+- `GetDebtOverview`: `IReportingRepository<DebtSummaryBase>`, `OfType<DebtGlobalSummary>()`, `SingleOrDefault`; when not materialized return zeroed `DebtOverviewDto`; else map to `DebtOverviewDto` (includes `CollectionRate`).
+- `ListCustomerDebtOverview`: `OfType<DebtCustomerSummary>()`, `OrderByDescending(TotalOutstanding)` then `CustomerId`, project to `CustomerDebtOverviewDto`, `ToPaged`.
+- `GetCustomerDebtSummary`: `OfType<DebtCustomerSummary>()`, filter by `CustomerId`, `SingleOrDefault`; when customer has no debt row return zeroed `CustomerDebtOverviewDto` with requested `CustomerId`; else map from row.
+
+## Write path (integration)
+
+- Consumers: `IHandleMessages<T>` (Rebus), `IReportingRepository<ReportedOrder>`, idempotent by order id, map from Ordering contracts.
+- `IReportedOrderRepository` when order-specific repository methods are needed; otherwise generic `IReportingRepository<ReportedOrder>`.
+
+## Endpoints
+
+- `sealed` class extending `EndpointBase<TRequest, TResponse>`.
+- `Group<ReportingRoutingGroup>()`, `IMediator.Send`, map request → query, `SendResultAsync`.
+- FluentValidation in `Endpoints/Orders/Requests/*Validator.cs`.
+- OpenAPI summaries: UTC semantics, optional date defaults, explicit note when customer/status filters do not apply.
+
+## EF and DI
+
+- `ReportingDbContext`; one `IEntityTypeConfiguration<>` per entity under `EntityFramework/Configuration/`.
+- `services.AddTransient(typeof(IReportingRepository<>), typeof(ReportingRepository<>))` in `EntityFrameworkServiceInstaller`.
+- `ReportingModuleInstaller` + `ReportingModuleBootStrapper` (migrate pending migrations; subscribe Rebus only if `IBus` registered).
+
+## Tests (`Reporting.Application.Tests`)
+
+### Rollup refresher integration tests
+
+- Base: `ReportingTestFixture` (`TestFixture` + `ReportingTestModuleInstaller` + `RunModulesBootstrapperAsync`).
+- Feature fixture: resolve `ReportingDbContext` and `I*RollupRefresher` from Autofac `Scope` in `BeforeAnyTestRunAsync`.
+- **SQL Server LocalDB** via `appsettings.json` (`ReportingInvoriaApplicationTests` catalog); copy to output.
+- `AfterAnyTestTearDown`: delete `ReportedOrders` and relevant rollup rows to isolate tests on shared DB.
+
+### Query handler tests (rollup-dependent)
+
+- Use [`ReportingQueryTestDbContextFactory`](tests/Modules/Reporting/Reporting.Application.Tests/Orders/Queries/ReportingQueryTestDbContextFactory.cs): SQL Server LocalDB with a unique catalog per test, `MigrateAsync`, then invoke the relevant `I*RollupRefresher` before exercising the handler.
+- Wire handlers with `new ReportingRepository<T>(db)` — not rollup readers.
+
+## Do not
+
+- Reintroduce `I*RollupReader` types.
+- Add server-translated `GroupBy` after `Skip`/`Take` on SQL Server.
+- Move materialized entities out of their report subfolders without updating EF migrations/snapshot CLR names.
+- Bypass transaction wrapper for full rollup refresh without explicit reason.
