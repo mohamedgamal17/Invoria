@@ -1,5 +1,7 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.BuildingBlocks.Domain.Exceptions;
+using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders.Events;
 
@@ -13,11 +15,17 @@ namespace Invoria.Ordering.Domain.Orders
         public List<OrderFailureDetails> FailureDetails { get; private set; }
         public List<OrderStateTransitionHistory> StateTransitionHistory { get; private set; }
         public List<OrderPayment> Payments { get; private set; }
+        public IReadOnlyList<OrderReturnItem> ReturnItems => _returnItems;
         public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
         public FullfillmentStatus FullfillmentStatus { get; set; }
 
+        private readonly List<OrderReturnItem> _returnItems = new();
+
         public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
+
+        public decimal NetOfTotalOrderAmount => Items.Sum(i =>
+            i.Price * Math.Max(0, i.Quantity - ReturnedQuantity(i.Id)));
 
         public decimal AmountPaid { get; private set; }
 
@@ -437,19 +445,128 @@ namespace Invoria.Ordering.Domain.Orders
             AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
         }
 
-        public void Complete()
+        /// <summary>
+        /// Marks the order as shipped after it has been dispatched to the customer.
+        /// Idempotent when <see cref="OrderStatus"/> is already <see cref="OrderStatus.Shipped"/>.
+        /// </summary>
+        public void MarkShipped()
         {
+            if (Status == OrderStatus.Shipped && FullfillmentStatus == FullfillmentStatus.Dispatched)
+            {
+                return;
+            }
+
             var fromStatus = Status;
             var fromFullfillmentStatus = FullfillmentStatus;
 
             if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Dispatched)
             {
                 throw new InvalidOperationException(
-                    "Order can only be completed when it is Accepted and fulfillment is Dispatched.");
+                    "Order can only be marked shipped when it is Accepted and fulfillment is Dispatched.");
+            }
+
+            Status = OrderStatus.Shipped;
+            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
+        }
+
+        /// <summary>
+        /// Replaces the full customer return list for a shipped order in one atomic batch.
+        /// Duplicate lines in the request are grouped by order line id and quantities are summed.
+        /// An empty list clears all returns. When all lines are fully returned, <see cref="Complete"/> cancels the order.
+        /// </summary>
+        public Result RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
+        {
+            Guard.Against.Null(returnItems);
+
+            var errors = ValidateReturnItems(returnItems);
+            if (errors.Count > 0)
+            {
+                return Result.Failure(new BusinessValidationException(errors));
+            }
+
+            var normalizedItems = NormalizeReturnItems(returnItems);
+            _returnItems.Clear();
+            foreach (var returnItem in normalizedItems)
+            {
+                _returnItems.Add(returnItem);
+            }
+
+            return Result.Success();
+        }
+
+        private List<string> ValidateReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
+        {
+            var errors = new List<string>();
+
+            if (Status != OrderStatus.Shipped)
+            {
+                errors.Add("Return items can only be recorded when the order is Shipped.");
+            }
+
+            var quantitiesByLine = returnItems
+                .GroupBy(r => r.OrderItemId)
+                .ToDictionary(g => g.Key, g => g.Sum(r => r.Quantity));
+
+            foreach (var (orderItemId, batchQuantity) in quantitiesByLine)
+            {
+                var line = Items.SingleOrDefault(i => i.Id == orderItemId);
+                if (line is null)
+                {
+                    errors.Add($"Return item references unknown order line '{orderItemId}'.");
+                    continue;
+                }
+
+                if (batchQuantity > line.Quantity)
+                {
+                    errors.Add(
+                        $"Return quantity for order line '{orderItemId}' cannot exceed ordered quantity.");
+                }
+            }
+
+            return errors;
+        }
+
+        private static List<OrderReturnItem> NormalizeReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
+        {
+            return returnItems
+                .GroupBy(r => r.OrderItemId)
+                .Select(g => new OrderReturnItem(g.Key, g.Sum(r => r.Quantity)))
+                .ToList();
+        }
+
+        public void Complete()
+        {
+            var fromStatus = Status;
+            var fromFullfillmentStatus = FullfillmentStatus;
+
+            if (Status != OrderStatus.Shipped || FullfillmentStatus != FullfillmentStatus.Dispatched)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be completed when it is Shipped and fulfillment is Dispatched.");
+            }
+
+            if (AllItemsFullyReturned())
+            {
+                Status = OrderStatus.Cancelled;
+                AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: "All order items returned");
+                return;
             }
 
             Status = OrderStatus.Completed;
             AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
+        }
+
+        private int ReturnedQuantity(string orderItemId)
+        {
+            return _returnItems
+                .Where(r => r.OrderItemId == orderItemId)
+                .Sum(r => r.Quantity);
+        }
+
+        private bool AllItemsFullyReturned()
+        {
+            return Items.Count > 0
+                && Items.All(i => ReturnedQuantity(i.Id) >= i.Quantity);
         }
 
         private void AppendStateTransitionHistory(
