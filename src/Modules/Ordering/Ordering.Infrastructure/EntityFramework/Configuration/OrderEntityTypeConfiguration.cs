@@ -58,6 +58,8 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.Ignore(x => x.ReturnItems);
+
             builder.Navigation(x => x.FailureDetails).AutoInclude();
             builder.Navigation(x => x.StateTransitionHistory).AutoInclude();
 
