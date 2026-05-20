@@ -6,12 +6,14 @@ namespace Invoria.Ordering.Contracts.Orders
 
         Accepted = 10,
 
-        Completed = 15,
+        Shipped = 15,
 
-        Cancelled = 20,
+        Completed = 20,
 
-        Reopened = 25,
+        Cancelled = 25,
 
-        Refused = 30
+        Reopened = 30,
+
+        Refused = 35
     }
 }
