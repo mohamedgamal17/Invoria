@@ -31,6 +31,7 @@ public class OrderPaymentDomainTests
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
         order.Status.Should().Be(OrderStatus.Completed);
     }

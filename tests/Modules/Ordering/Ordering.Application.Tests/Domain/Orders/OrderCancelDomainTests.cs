@@ -69,6 +69,7 @@ public class OrderCancelDomainTests
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
 
         var act = () => order.Cancel();

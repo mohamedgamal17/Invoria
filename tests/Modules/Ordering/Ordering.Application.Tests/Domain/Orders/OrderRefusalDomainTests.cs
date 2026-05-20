@@ -93,6 +93,7 @@ public class OrderRefusalDomainTests
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
         order.ClearDomainEvents();
 

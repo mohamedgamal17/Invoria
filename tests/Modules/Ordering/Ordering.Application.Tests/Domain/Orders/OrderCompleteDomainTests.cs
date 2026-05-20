@@ -31,10 +31,29 @@ public class OrderCompleteDomainTests
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
 
         order.Complete();
 
         order.Status.Should().Be(OrderStatus.Completed);
         order.FullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
+    }
+
+    [Test]
+    public void Complete_cancels_when_all_order_lines_are_fully_returned()
+    {
+        var order = new Order("N-C3", "cust");
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order, "order-complete-full-return");
+        order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
+        typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order.Items[0], "line-1");
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.MarkShipped();
+        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
+
+        order.Complete();
+
+        order.Status.Should().Be(OrderStatus.Cancelled);
     }
 }
