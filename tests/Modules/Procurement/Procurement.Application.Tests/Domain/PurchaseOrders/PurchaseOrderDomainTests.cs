@@ -10,7 +10,7 @@ public class PurchaseOrderDomainTests
     public void Constructor_rejects_empty_purchase_number()
     {
         Assert.Throws<ArgumentException>(() =>
-            new PurchaseOrder("order-1", "", "supplier-1", null, null));
+            new PurchaseOrder("order-1", "", "supplier-1"));
     }
 
     [Test]
@@ -154,9 +154,7 @@ public class PurchaseOrderDomainTests
         return new PurchaseOrder(
             NewId(),
             "2026-00001",
-            NewId(),
-            DateTime.UtcNow,
-            null);
+            NewId());
     }
 
     private static PurchaseOrderItem NewLine(string purchaseOrderId, int quantity, decimal unitPrice)
