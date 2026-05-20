@@ -156,21 +156,3 @@ Run a module-specific test project example:
 ```bash
 dotnet test tests/Modules/Inventory/Inventory.Application.Tests/Invoria.Inventory.Application.Tests.csproj
 ```
-
-## 🗂️ Repository Structure
-
-```text
-Invoria/
-|- src/
-|  |- Invoria.Api/
-|  |- BuildingBlocks/
-|  `- Modules/
-|     |- Catalog/
-|     |- CustomerManagement/
-|     |- Ordering/
-|     |- Inventory/
-|     `- Procurement/
-|- tests/
-|- ai/
-`- Invoria.sln
-```
