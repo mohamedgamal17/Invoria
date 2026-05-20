@@ -23,10 +23,24 @@ public static class ExceptionToProblemDetailsMapper
             Instance = instance,
             CorrelationId = correlationId,
             ErrorCode = errorCode,
-            ErrorKey = errorKey
+            ErrorKey = errorKey,
+            Errors = BuildErrors(exception)
         };
 
         return problem;
+    }
+
+    private static Dictionary<string, string[]> BuildErrors(Exception exception)
+    {
+        if (exception is BusinessValidationException validationException)
+        {
+            return new Dictionary<string, string[]>
+            {
+                ["messages"] = validationException.Messages.ToArray()
+            };
+        }
+
+        return new Dictionary<string, string[]>();
     }
 
     private static (int StatusCode, string Title, string ErrorCode, string? ErrorKey) MapDomainException(ApplicationExceptionBase ex)
@@ -36,6 +50,7 @@ public static class ExceptionToProblemDetailsMapper
             NotFoundException => (404, "Resource not found.", NotFoundException.DefaultCode, null),
             ConflictException => (409, "Conflict.", ConflictException.DefaultCode, null),
             BusinessLogicException => (422, "Business rule violated.", BusinessLogicException.DefaultCode, null),
+            BusinessValidationException => (422, "Business validation failed.", BusinessValidationException.DefaultCode, null),
             _ => (500, "An unexpected error occurred.", ex.Code, null)
         };
     }
