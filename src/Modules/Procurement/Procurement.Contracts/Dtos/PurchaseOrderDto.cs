@@ -9,8 +9,6 @@ public sealed class PurchaseOrderDto : AuditedEntityDto
     public string SupplierId { get; set; } = default!;
     public PurchaseOrderSupplierSummaryDto? Supplier { get; set; }
     public PurchaseState State { get; set; }
-    public DateTime? OrderDate { get; set; }
-    public DateTime? ExpectedDeliveryDate { get; set; }
     public DateTime? CompletedDate { get; set; }
     public decimal SubTotal { get; set; }
     public decimal TaxAmount { get; set; }

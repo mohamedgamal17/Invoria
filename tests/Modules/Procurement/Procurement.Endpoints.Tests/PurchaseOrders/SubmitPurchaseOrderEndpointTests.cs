@@ -93,8 +93,6 @@ public class SubmitPurchaseOrderEndpointTests : ProcurementTestFixture
             SupplierId = supplierId!,
             TaxAmount = 0m,
             DiscountAmount = 0m,
-            OrderDate = DateTime.UtcNow.Date,
-            ExpectedDeliveryDate = DateTime.UtcNow.Date.AddDays(7),
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
@@ -130,9 +128,7 @@ public class SubmitPurchaseOrderEndpointTests : ProcurementTestFixture
         var purchaseOrder = new PurchaseOrder(
             id: Guid.NewGuid().ToString("N"),
             purchaseNumber: "PO-" + Guid.NewGuid().ToString("N")[..8],
-            supplierId: supplier.Id,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(7));
+            supplierId: supplier.Id);
         await purchaseOrderRepository.Add(purchaseOrder);
 
         return purchaseOrder.Id;

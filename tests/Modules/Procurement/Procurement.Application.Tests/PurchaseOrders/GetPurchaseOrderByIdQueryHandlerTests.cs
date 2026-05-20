@@ -100,9 +100,7 @@ public class GetPurchaseOrderByIdQueryHandlerTests : ProcurementTestFixture
         var purchaseOrder = new PurchaseOrder(
             id: Guid.NewGuid().ToString("N"),
             purchaseNumber: purchaseNumber,
-            supplierId: supplier.Id,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(7));
+            supplierId: supplier.Id);
 
         purchaseOrder.AddItem(new PurchaseOrderItem(
             id: Guid.NewGuid().ToString("N"),

@@ -80,9 +80,7 @@ public class SubmitPurchaseOrderCommandHandlerTests : ProcurementTestFixture
         var purchaseOrder = new PurchaseOrder(
             id: Guid.NewGuid().ToString("N"),
             purchaseNumber: "PO-" + Guid.NewGuid().ToString("N")[..8],
-            supplierId: supplier.Id,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3));
+            supplierId: supplier.Id);
         await PurchaseOrderRepository.Add(purchaseOrder);
 
         var command = new SubmitPurchaseOrderCommand(purchaseOrder.Id);
@@ -106,8 +104,6 @@ public class SubmitPurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3),
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(

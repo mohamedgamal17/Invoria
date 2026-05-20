@@ -18,10 +18,6 @@ public class PurchaseOrder : AuditedAggregateRoot
 
     public PurchaseState State { get; private set; }
 
-    public DateTime? OrderDate { get; private set; }
-
-    public DateTime? ExpectedDeliveryDate { get; private set; }
-
     public DateTime? CompletedDate { get; private set; }
 
     public decimal SubTotal { get; private set; }
@@ -45,9 +41,7 @@ public class PurchaseOrder : AuditedAggregateRoot
     public PurchaseOrder(
         string id,
         string purchaseNumber,
-        string supplierId,
-        DateTime? orderDate,
-        DateTime? expectedDeliveryDate)
+        string supplierId)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -69,8 +63,6 @@ public class PurchaseOrder : AuditedAggregateRoot
         Id = id;
         PurchaseNumber = purchaseNumber;
         SupplierId = supplierId;
-        OrderDate = orderDate;
-        ExpectedDeliveryDate = expectedDeliveryDate;
         State = PurchaseState.Draft;
         CreatedAt = DateTimeOffset.UtcNow;
         RecalculateFinancials();
@@ -110,8 +102,6 @@ public class PurchaseOrder : AuditedAggregateRoot
 
     public void UpdateDetails(
         string supplierId,
-        DateTime? orderDate,
-        DateTime? expectedDeliveryDate,
         decimal taxAmount,
         decimal discountAmount)
     {
@@ -133,8 +123,6 @@ public class PurchaseOrder : AuditedAggregateRoot
         }
 
         SupplierId = supplierId;
-        OrderDate = orderDate;
-        ExpectedDeliveryDate = expectedDeliveryDate;
         TaxAmount = taxAmount;
         DiscountAmount = discountAmount;
         RecalculateFinancials();

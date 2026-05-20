@@ -114,8 +114,6 @@ public class CancelPurchaseOrderCommandHandlerTests : ProcurementTestFixture
             supplierId: supplier.Id,
             taxAmount: 0m,
             discountAmount: 0m,
-            orderDate: DateTime.UtcNow.Date,
-            expectedDeliveryDate: DateTime.UtcNow.Date.AddDays(3),
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(

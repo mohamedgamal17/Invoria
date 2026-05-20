@@ -38,9 +38,7 @@ public sealed class CreatePurchaseOrderCommandHandler : IApplicatonRequestHandle
         var purchaseOrder = new PurchaseOrder(
             id: Guid.NewGuid().ToString("N"),
             purchaseNumber: purchaseOrderNumber,
-            supplierId: request.SupplierId,
-            orderDate: request.OrderDate,
-            expectedDeliveryDate: request.ExpectedDeliveryDate);
+            supplierId: request.SupplierId);
 
         purchaseOrder.SetHeaderFinancials(request.TaxAmount, request.DiscountAmount);
 

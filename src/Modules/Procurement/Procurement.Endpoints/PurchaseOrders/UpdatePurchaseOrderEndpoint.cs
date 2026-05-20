@@ -52,8 +52,6 @@ public sealed class UpdatePurchaseOrderEndpoint : EndpointBase<UpdatePurchaseOrd
             supplierId: req.SupplierId,
             taxAmount: req.TaxAmount,
             discountAmount: req.DiscountAmount,
-            orderDate: req.OrderDate,
-            expectedDeliveryDate: req.ExpectedDeliveryDate,
             purchaseOrderItems: itemCommands);
 
         var result = await _mediator.Send(command, ct);

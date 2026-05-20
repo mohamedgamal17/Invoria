@@ -25,8 +25,6 @@ public sealed class PurchaseOrderEntityTypeConfiguration : IEntityTypeConfigurat
 
         builder.Property(x => x.State);
 
-        builder.Property(x => x.OrderDate);
-        builder.Property(x => x.ExpectedDeliveryDate);
         builder.Property(x => x.CompletedDate);
 
         builder.Property(x => x.SubTotal).HasPrecision(18, 2);
