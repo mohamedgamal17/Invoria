@@ -5,6 +5,7 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Invoria.Ordering.Endpoints.Tests.Orders;
 
 [TestFixture]
-public class CompleteOrderEndpointTests : OrderingTestFixture
+public class ShipOrderEndpointTests : OrderingTestFixture
 {
     [Test]
-    public async Task Should_complete_order_after_accept_allocation_and_dispatch()
+    public async Task Should_ship_after_accept_allocation_and_dispatch()
     {
         var productId = Guid.NewGuid().ToString();
         var customerId = Guid.NewGuid().ToString();
@@ -44,28 +45,26 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         await mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = created.Id,
-            CustomerId = created.CustomerId
+            CustomerId = customerId
         });
 
         var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
         dispatchResponse.EnsureSuccessStatusCode();
 
-        var shipResponse = await Client.PostAsync($"/orders/{created.Id}/ship", emptyJson);
-        shipResponse.EnsureSuccessStatusCode();
-
-        var completeResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/complete",
+        var shipResponse = await Client.PostAsync(
+            $"/orders/{created.Id}/ship",
             emptyJson);
 
-        completeResponse.IsSuccessStatusCode.Should().BeTrue();
-        completeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var completeEnvelope = await completeResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
-        completeEnvelope.Should().NotBeNull();
-        completeEnvelope!.Result!.Id.Should().Be(created.Id);
+        shipResponse.IsSuccessStatusCode.Should().BeTrue();
+        shipResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var shipEnvelope = await shipResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
+        shipEnvelope.Should().NotBeNull();
+        shipEnvelope!.Result!.Id.Should().Be(created.Id);
+        shipEnvelope.Result!.Status.Should().Be(OrderStatus.Shipped);
     }
 
     [Test]
-    public async Task Should_fail_when_order_cannot_be_completed()
+    public async Task Should_fail_when_order_cannot_be_shipped()
     {
         var createRequest = new CreateOrderRequest
         {
@@ -81,34 +80,9 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var createEnvelope = await createResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
         var created = createEnvelope!.Result!;
 
-        var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
-        var completeResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/complete",
-            emptyJson);
-
-        completeResponse.IsSuccessStatusCode.Should().BeFalse();
-        completeResponse.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-    }
-
-    [Test]
-    public async Task Should_fail_when_accepted_but_not_dispatched()
-    {
-        var createRequest = new CreateOrderRequest
-        {
-            CustomerId = Guid.NewGuid().ToString(),
-            Items =
-            [
-                new CreateOrderLineItemRequest { ProductId = Guid.NewGuid().ToString(), Quantity = 1, Price = 1m }
-            ]
-        };
-
-        var createResponse = await Client.PostAsJsonAsync("/orders", createRequest);
-        createResponse.EnsureSuccessStatusCode();
-        var createEnvelope = await createResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
-        var created = createEnvelope!.Result!;
-
-        var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
-        var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
+        var acceptResponse = await Client.PostAsync(
+            $"/orders/{created.Id}/accept",
+            new StringContent("{}", Encoding.UTF8, "application/json"));
         acceptResponse.EnsureSuccessStatusCode();
 
         var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
@@ -118,11 +92,11 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
             CustomerId = created.CustomerId
         });
 
-        var completeResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/complete",
-            emptyJson);
+        var shipResponse = await Client.PostAsync(
+            $"/orders/{created.Id}/ship",
+            new StringContent("{}", Encoding.UTF8, "application/json"));
 
-        completeResponse.IsSuccessStatusCode.Should().BeFalse();
-        completeResponse.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        shipResponse.IsSuccessStatusCode.Should().BeFalse();
+        shipResponse.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
     }
 }
