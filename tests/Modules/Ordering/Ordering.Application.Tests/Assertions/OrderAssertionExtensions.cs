@@ -62,6 +62,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
 
         public static void AssertOrderItemDto(this OrderItemDto dto, OrderItem item)
         {
+            dto.Id.Should().Be(item.Id);
             dto.ProductId.Should().Be(item.ProductId);
             dto.Quantity.Should().Be(item.Quantity);
             dto.Price.Should().Be(item.Price);
