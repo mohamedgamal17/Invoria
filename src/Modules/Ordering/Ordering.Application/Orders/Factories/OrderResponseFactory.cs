@@ -152,6 +152,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 Items = view.Items
                     .Select(item => new OrderItemDto
                     {
+                        Id = item.Id,
                         ProductId = item.ProductId,
                         Quantity = item.Quantity,
                         Price = item.Price,

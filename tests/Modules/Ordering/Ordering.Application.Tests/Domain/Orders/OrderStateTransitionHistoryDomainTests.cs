@@ -15,9 +15,10 @@ public class OrderStateTransitionHistoryDomainTests
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
 
-        order.StateTransitionHistory.Should().HaveCount(4);
+        order.StateTransitionHistory.Should().HaveCount(5);
         var history = order.StateTransitionHistory.ToList();
 
         var accepted = history[0];
@@ -37,8 +38,14 @@ public class OrderStateTransitionHistoryDomainTests
         dispatched.FromFullfillmentStatus.Should().Be(FullfillmentStatus.Allocated);
         dispatched.ToFullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
 
-        var completed = history[3];
-        completed.FromStatus.Should().Be(OrderStatus.Accepted);
+        var shipped = history[3];
+        shipped.FromStatus.Should().Be(OrderStatus.Accepted);
+        shipped.ToStatus.Should().Be(OrderStatus.Shipped);
+        shipped.FromFullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
+        shipped.ToFullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
+
+        var completed = history[4];
+        completed.FromStatus.Should().Be(OrderStatus.Shipped);
         completed.ToStatus.Should().Be(OrderStatus.Completed);
         completed.FromFullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
         completed.ToFullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
