@@ -24,6 +24,13 @@ public class ListOrdersQuery : PagingParams, IQuery<PagingDto<OrderDto>>
     public bool IncludeOrderItems { get; set; }
 
     /// <summary>
+    /// When true, return lines (with product enrichment) and order pricing totals are loaded. Default is false.
+    /// Order lines are loaded from the database for totals and return mapping but omitted from the DTO unless
+    /// <see cref="IncludeOrderItems"/> is also true.
+    /// </summary>
+    public bool IncludeReturnItems { get; set; }
+
+    /// <summary>
     /// When set, only orders matching this payment type are returned.
     /// </summary>
     public OrderPaymentType? PaymentType { get; set; }

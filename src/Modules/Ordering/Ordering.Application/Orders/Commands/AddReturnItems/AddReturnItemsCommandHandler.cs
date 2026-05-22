@@ -28,6 +28,7 @@ public class AddReturnItemsCommandHandler : IApplicatonRequestHandler<AddReturnI
             .AsQuerable()
             .Include(o => o.Items)
             .Include(o => o.Payments)
+            .Include(o => o.ReturnItems)
             .SingleOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
 
         if (order == null)

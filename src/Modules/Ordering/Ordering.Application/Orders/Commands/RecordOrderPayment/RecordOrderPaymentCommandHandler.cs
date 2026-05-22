@@ -28,6 +28,7 @@ public class RecordOrderPaymentCommandHandler : IApplicatonRequestHandler<Record
             .AsQuerable()
             .Include(o => o.Items)
             .Include(o => o.Payments)
+            .Include(o => o.ReturnItems)
             .SingleOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken);
 
         if (order == null)
