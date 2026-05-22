@@ -205,15 +205,39 @@ public class OrderPaymentDomainTests
     }
 
     [Test]
-    public void After_RecordPayment_persisted_summary_matches_total_minus_paid()
+    public void After_RecordPayment_persisted_summary_matches_net_minus_paid()
     {
         var order = CreateOrderWithItems(OrderPaymentType.Debt, new OrderItem("p", 2, 15m));
         CompleteViaFulfillment(order);
         order.RecordPayment(10m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow);
 
-        order.AmountOutstanding.Should().Be(order.TotalOrderAmount - order.AmountPaid);
+        order.AmountOutstanding.Should().Be(order.NetOfTotalOrderAmount - order.AmountPaid);
         order.AmountPaid.Should().Be(10m);
         order.TotalOrderAmount.Should().Be(30m);
+    }
+
+    [Test]
+    public void Immediate_RecordPayment_succeeds_when_amount_equals_net_after_returns()
+    {
+        var order = CreateOrderWithItems(
+            OrderPaymentType.Immediate,
+            new OrderItem("p", 2, 50m));
+        SetEntityId(order.Items[0], "line-1");
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.MarkShipped();
+        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
+        order.NetOfTotalOrderAmount.Should().Be(50m);
+        order.Complete();
+
+        order.Invoking(o => o.RecordPayment(100m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().Throw<InvalidOperationException>();
+
+        order.Invoking(o => o.RecordPayment(50m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
+            .Should().NotThrow();
+
+        order.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);
     }
 
     [Test]

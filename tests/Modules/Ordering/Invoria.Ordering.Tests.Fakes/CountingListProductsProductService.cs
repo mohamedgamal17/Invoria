@@ -9,7 +9,13 @@ public sealed class CountingListProductsProductService : IProductService
 {
     public int ListProductsByIdsCallCount { get; private set; }
 
-    public void ResetCounters() => ListProductsByIdsCallCount = 0;
+    public IReadOnlyList<string> LastRequestedProductIds { get; private set; } = [];
+
+    public void ResetCounters()
+    {
+        ListProductsByIdsCallCount = 0;
+        LastRequestedProductIds = [];
+    }
 
     public Task<Result<ProductDto>> GetProductByIdAsync(string id, CancellationToken cancellationToken = default)
     {
@@ -23,7 +29,12 @@ public sealed class CountingListProductsProductService : IProductService
     {
         ListProductsByIdsCallCount++;
 
-        var list = ids
+        LastRequestedProductIds = ids
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        var list = LastRequestedProductIds
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .Distinct()
             .Select(id => new ProductDto

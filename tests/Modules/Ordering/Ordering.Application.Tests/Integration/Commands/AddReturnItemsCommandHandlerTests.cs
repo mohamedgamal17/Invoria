@@ -6,6 +6,8 @@ using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
 using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
+using Invoria.Ordering.Application.Orders.Queries.GetOrderById;
+using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -82,6 +84,31 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
         result.Value!.Id.Should().Be(order.Id);
+        result.Value.ReturnItems.Should().ContainSingle();
+        result.Value.ReturnItems[0].OrderItemId.Should().Be(lineId);
+        result.Value.ReturnItems[0].Quantity.Should().Be(1);
+        result.Value.NetOfTotalOrderAmount.Should().BeLessThan(result.Value.TotalOrderAmount);
+    }
+
+    [Test]
+    public async Task Should_persist_returns_and_reload_via_GetOrderById()
+    {
+        var order = await PersistOneRandomOrderInNewScopeAsync();
+        await PrepareShippedOrderAsync(order);
+        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+
+        var recordResult = await Mediator.Send(
+            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
+        recordResult.ShouldBeSuccess();
+
+        var getResult = await Mediator.Send(new GetOrderByIdQuery { Id = order.Id });
+
+        getResult.ShouldBeSuccess();
+        getResult.Value!.ReturnItems.Should().ContainSingle();
+        getResult.Value.ReturnItems[0].OrderItemId.Should().Be(lineId);
+        getResult.Value.ReturnItems[0].Quantity.Should().Be(1);
+        getResult.Value.ReturnsTotal.Should().BeGreaterThan(0);
+        getResult.Value.NetOfTotalOrderAmount.Should().Be(getResult.Value.TotalOrderAmount - getResult.Value.ReturnsTotal);
     }
 
     [Test]
