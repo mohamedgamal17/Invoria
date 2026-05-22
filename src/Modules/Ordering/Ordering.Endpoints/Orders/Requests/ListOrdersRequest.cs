@@ -13,8 +13,13 @@ public class ListOrdersRequest : PagingParams
     [QueryParam]
     public string? CustomerId { get; set; }
 
+    /// <summary>When true, line items and catalog product data are included. Default is false.</summary>
     [QueryParam]
     public bool IncludeOrderItems { get; set; }
+
+    /// <summary>When true, return lines and pricing totals are included. Default is false.</summary>
+    [QueryParam]
+    public bool IncludeReturnItems { get; set; }
 
     [QueryParam]
     public OrderPaymentType? PaymentType { get; set; }
