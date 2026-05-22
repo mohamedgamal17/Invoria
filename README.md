@@ -26,21 +26,6 @@ Core ERP areas supported today:
 
 For how modules are wired (layers, messaging, persistence), see [`ai/Architecture.md`](ai/Architecture.md).
 
-## 🏛️ Architecture
-
-Invoria follows a **modular clean architecture** structure:
-
-- **Host/API** (`Invoria.Api`): composition root, module installation, endpoint and middleware wiring.
-- **BuildingBlocks** (`Invoria.BuildingBlocks.*`): shared abstractions for core, domain, application, EF, and infrastructure.
-- **Modules** (`Invoria.<Module>.*`): each module is split into Domain, Application, Infrastructure, Endpoints, and Contracts.
-
-### Layer Responsibilities
-
-- **Domain**: aggregates/entities, business rules, domain abstractions.
-- **Application**: use cases, CQRS commands/queries, handlers, factories.
-- **Infrastructure**: EF Core persistence, service installers, external integration plumbing.
-- **Endpoints**: HTTP transport concerns, validation, request/response orchestration.
-- **Contracts**: DTOs and integration event contracts shared across boundaries.
 
 ## 🛠️ Tech Stack and Dependencies
 
