@@ -15,12 +15,10 @@ namespace Invoria.Ordering.Domain.Orders
         public List<OrderFailureDetails> FailureDetails { get; private set; }
         public List<OrderStateTransitionHistory> StateTransitionHistory { get; private set; }
         public List<OrderPayment> Payments { get; private set; }
-        public IReadOnlyList<OrderReturnItem> ReturnItems => _returnItems;
+        public List<OrderReturnItem> ReturnItems { get; private set; } = new();
         public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
         public FullfillmentStatus FullfillmentStatus { get; set; }
-
-        private readonly List<OrderReturnItem> _returnItems = new();
 
         public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
 
@@ -66,7 +64,7 @@ namespace Invoria.Ordering.Domain.Orders
                     "Payments can only be recorded after the order is completed.");
             }
 
-            if (TotalOrderAmount <= 0m)
+            if (NetOfTotalOrderAmount <= 0m)
             {
                 throw new InvalidOperationException(
                     "Cannot record payments when the order has no positive total amount.");
@@ -78,7 +76,7 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             var paidSoFar = Payments.Sum(p => p.PaidAmount);
-            var outstandingBefore = Math.Max(0m, TotalOrderAmount - paidSoFar);
+            var outstandingBefore = Math.Max(0m, NetOfTotalOrderAmount - paidSoFar);
 
             if (outstandingBefore <= 0m)
             {
@@ -93,7 +91,7 @@ namespace Invoria.Ordering.Domain.Orders
                         "Immediate payment orders accept only a single full payment.");
                 }
 
-                if (paidAmount != TotalOrderAmount)
+                if (paidAmount != NetOfTotalOrderAmount)
                 {
                     throw new InvalidOperationException(
                         "Immediate payment orders require a single payment equal to the total order amount.");
@@ -135,9 +133,9 @@ namespace Invoria.Ordering.Domain.Orders
         private void RefreshPaymentSummary()
         {
             AmountPaid = Payments.Sum(p => p.PaidAmount);
-            AmountOutstanding = Math.Max(0m, TotalOrderAmount - AmountPaid);
+            AmountOutstanding = Math.Max(0m, NetOfTotalOrderAmount - AmountPaid);
 
-            if (TotalOrderAmount == 0m)
+            if (NetOfTotalOrderAmount == 0m)
             {
                 PaymentStatus = OrderPaymentStatus.Unpaid;
                 return;
@@ -149,7 +147,7 @@ namespace Invoria.Ordering.Domain.Orders
                 return;
             }
 
-            if (AmountPaid >= TotalOrderAmount)
+            if (AmountPaid >= NetOfTotalOrderAmount)
             {
                 PaymentStatus = OrderPaymentStatus.Paid;
                 return;
@@ -485,11 +483,13 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             var normalizedItems = NormalizeReturnItems(returnItems);
-            _returnItems.Clear();
+            ReturnItems.Clear();
             foreach (var returnItem in normalizedItems)
             {
-                _returnItems.Add(returnItem);
+                ReturnItems.Add(returnItem);
             }
+
+            RefreshPaymentSummary();
 
             return Result.Success();
         }
@@ -558,7 +558,7 @@ namespace Invoria.Ordering.Domain.Orders
 
         private int ReturnedQuantity(string orderItemId)
         {
-            return _returnItems
+            return ReturnItems
                 .Where(r => r.OrderItemId == orderItemId)
                 .Sum(r => r.Quantity);
         }

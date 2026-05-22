@@ -1,5 +1,12 @@
+using Autofac;
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
+using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
+using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
+using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
+using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
+using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Contracts.Orders;
@@ -7,6 +14,7 @@ using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +24,9 @@ namespace Invoria.Ordering.Application.Tests.Integration.Queries;
 public class ListOrdersQueryHandlerTests : OrderTestFixture
 {
     private IOrderingRepository<Order> OrderRepository =>
-        ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
+        Scope.Resolve<IOrderingRepository<Order>>();
+
+    private IMediator TestMediator => Scope.Resolve<IMediator>();
 
     protected override async Task BeforeAnyTestRunAsync()
     {
@@ -25,8 +35,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
     private async Task ClearOrdersAsync()
     {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var orders = await db.Set<Order>().ToListAsync();
         db.RemoveRange(orders);
         await db.SaveChangesAsync();
@@ -37,7 +46,38 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
+    }
+
+    private async Task<string> PrepareShippedOrderWithReturnAsync(Order order)
+    {
+        await TestMediator.Send(new AcceptOrderCommand(order.Id));
+        await TestMediator.Send(new RecordOrderAllocationSucceededCommand
+        {
+            OrderId = order.Id,
+            CustomerId = order.CustomerId
+        });
+        await TestMediator.Send(new DispatchOrderCommand(order.Id));
+        await TestMediator.Send(new ShipOrderCommand(order.Id));
+
+        var lineId = await GetFirstOrderLineIdAsync(Scope.Resolve<OrderingDbContext>(), order.Id);
+        var recordResult = await TestMediator.Send(
+            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
+        recordResult.ShouldBeSuccess();
+
+        return lineId;
+    }
+
+    private static async Task<string> GetFirstOrderLineIdAsync(
+        OrderingDbContext db,
+        string orderId)
+    {
+        return await db.Set<Order>()
+            .Where(o => o.Id == orderId)
+            .SelectMany(o => o.Items)
+            .Select(i => i.Id)
+            .FirstAsync();
     }
 
     [Test]
@@ -45,7 +85,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     {
         var query = new ListOrdersQuery { Skip = 0, Length = 10 };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
@@ -59,7 +99,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
         var query = new ListOrdersQuery { Skip = 0, Length = 10 };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
@@ -73,7 +113,61 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             dto.AssertOrderCustomer(expectedCustomer: null);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.Items.Should().BeEmpty();
+            dto.ReturnItems.Should().BeEmpty();
+            dto.TotalOrderAmount.Should().Be(0);
+            dto.NetOfTotalOrderAmount.Should().Be(0);
+            dto.ReturnsTotal.Should().Be(0);
         }
+    }
+
+    [Test]
+    public async Task Should_return_line_items_without_returns_when_include_order_items_only()
+    {
+        var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
+        var order = persisted.Single();
+        await PrepareShippedOrderWithReturnAsync(order);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            IncludeOrderItems = true,
+            IncludeReturnItems = false
+        };
+
+        var result = await TestMediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var dto = result.Value!.Data.Single(d => d.Id == order.Id);
+        dto.Items.Should().HaveCount(order.Items.Count);
+        dto.ReturnItems.Should().BeEmpty();
+        dto.TotalOrderAmount.Should().Be(0);
+        dto.NetOfTotalOrderAmount.Should().Be(0);
+    }
+
+    [Test]
+    public async Task Should_return_returns_and_pricing_without_line_items_when_include_return_items_only()
+    {
+        var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
+        var order = persisted.Single();
+        var lineId = await PrepareShippedOrderWithReturnAsync(order);
+
+        var query = new ListOrdersQuery
+        {
+            Skip = 0,
+            Length = 10,
+            IncludeReturnItems = true
+        };
+
+        var result = await TestMediator.Send(query);
+
+        result.ShouldBeSuccess();
+        var dto = result.Value!.Data.Single(d => d.Id == order.Id);
+        dto.Items.Should().BeEmpty();
+        dto.ReturnItems.Should().ContainSingle();
+        dto.ReturnItems[0].OrderItemId.Should().Be(lineId);
+        dto.NetOfTotalOrderAmount.Should().BeLessThan(dto.TotalOrderAmount);
+        dto.ReturnsTotal.Should().BeGreaterThan(0);
     }
 
     [Test]
@@ -83,7 +177,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
         var query = new ListOrdersQuery { Skip = 0, Length = 3 };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var expectedIds = persisted
@@ -100,7 +194,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
         var query = new ListOrdersQuery { Skip = 0, Length = 10, IncludeOrderItems = true };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
@@ -142,7 +236,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderNumber = "ALPHA"
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -162,7 +256,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderNumber = "NO-SUCH-TERM-XYZ"
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -182,7 +276,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderNumber = "   \t  "
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -215,7 +309,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderNumber = "  ALPHA  "
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -244,7 +338,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             CustomerId = targetCustomerId
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -265,7 +359,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             CustomerId = "   \t  "
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -297,7 +391,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             IncludeOrderItems = true
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -330,7 +424,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderNumber = "12"
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -355,7 +449,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
         var query = new ListOrdersQuery { Skip = 0, Length = 10, IncludeOrderItems = true };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var dto = result.Value!.Data.Single(d => d.Id == order.Id);
@@ -387,7 +481,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             Status = OrderStatus.Pending
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -416,7 +510,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             FullfillmentStatus = FullfillmentStatus.Pending
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -444,7 +538,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             PaymentType = OrderPaymentType.Debt
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -482,7 +576,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             PaymentStatus = OrderPaymentStatus.Partial
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;
@@ -518,7 +612,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             PaymentStatus = OrderPaymentStatus.Partial
         };
 
-        var result = await Mediator.Send(query);
+        var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
         var page = result.Value!;

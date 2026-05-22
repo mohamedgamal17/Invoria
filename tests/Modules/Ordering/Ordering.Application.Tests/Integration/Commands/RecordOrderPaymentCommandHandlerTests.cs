@@ -6,6 +6,7 @@ using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
 using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderPayment;
+using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Contracts.Orders;
@@ -44,7 +45,7 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         await db.SaveChangesAsync();
     }
 
-    private static async Task<decimal> GetTotalOrderAmountFromDbAsync(
+    private static async Task<decimal> GetPayableOrderAmountFromDbAsync(
         IServiceProvider serviceProvider,
         string orderId)
     {
@@ -53,8 +54,9 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         var order = await db.Set<Order>()
             .AsNoTracking()
             .Include(o => o.Items)
+            .Include(o => o.ReturnItems)
             .SingleAsync(o => o.Id == orderId);
-        return order.Items.Sum(i => i.Price * i.Quantity);
+        return order.NetOfTotalOrderAmount;
     }
 
     private static async Task SetPaymentTypeDebtAsync(IServiceProvider serviceProvider, string orderId)
@@ -75,17 +77,18 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         await Mediator.Send(new AcceptOrderCommand(order.Id));
         await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
         await Mediator.Send(new DispatchOrderCommand(order.Id));
+        await Mediator.Send(new ShipOrderCommand(order.Id));
         await Mediator.Send(new CompleteOrderCommand(order.Id));
 
-        var total = await GetTotalOrderAmountFromDbAsync(ServiceProvider, order.Id);
-        total.Should().BeGreaterThan(1m);
+        var payable = await GetPayableOrderAmountFromDbAsync(ServiceProvider, order.Id);
+        payable.Should().BeGreaterThan(1m);
 
         var result = await Mediator.Send(
             new RecordOrderPaymentCommand(order.Id, paidAmount: 1m, OrderPaymentMethod.Cash));
 
         result.ShouldBeSuccess();
         result.Value!.AmountPaid.Should().Be(1m);
-        result.Value.AmountOutstanding.Should().Be(total - 1m);
+        result.Value.AmountOutstanding.Should().Be(payable - 1m);
         result.Value.PaymentStatus.Should().Be(OrderPaymentStatus.Partial);
         result.Value.Payments.Should().ContainSingle();
     }
@@ -98,12 +101,13 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         await Mediator.Send(new AcceptOrderCommand(order.Id));
         await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
         await Mediator.Send(new DispatchOrderCommand(order.Id));
+        await Mediator.Send(new ShipOrderCommand(order.Id));
         await Mediator.Send(new CompleteOrderCommand(order.Id));
 
-        var total = await GetTotalOrderAmountFromDbAsync(ServiceProvider, order.Id);
+        var payable = await GetPayableOrderAmountFromDbAsync(ServiceProvider, order.Id);
 
         var result = await Mediator.Send(
-            new RecordOrderPaymentCommand(order.Id, total, OrderPaymentMethod.BankTransfer));
+            new RecordOrderPaymentCommand(order.Id, payable, OrderPaymentMethod.BankTransfer));
 
         result.ShouldBeSuccess();
         result.Value!.PaymentStatus.Should().Be(OrderPaymentStatus.Paid);

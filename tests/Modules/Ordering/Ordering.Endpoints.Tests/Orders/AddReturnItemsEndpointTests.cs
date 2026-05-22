@@ -81,6 +81,11 @@ public class AddReturnItemsEndpointTests : OrderingTestFixture
         var envelope = await response.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
         envelope.Should().NotBeNull();
         envelope!.Result!.Id.Should().Be(created.Id);
+        envelope.Result.ReturnItems.Should().ContainSingle();
+        envelope.Result.ReturnItems[0].OrderItemId.Should().Be(lineId);
+        envelope.Result.ReturnItems[0].Quantity.Should().Be(1);
+        envelope.Result.NetOfTotalOrderAmount.Should().BeLessThan(envelope.Result.TotalOrderAmount);
+        envelope.Result.ReturnsTotal.Should().BeGreaterThan(0);
     }
 
     [Test]

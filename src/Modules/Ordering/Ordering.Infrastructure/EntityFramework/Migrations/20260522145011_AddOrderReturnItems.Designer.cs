@@ -4,6 +4,7 @@ using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
 {
     [DbContext(typeof(OrderingDbContext))]
-    partial class OrderingDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260522145011_AddOrderReturnItems")]
+    partial class AddOrderReturnItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -297,7 +300,7 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderReturnItem", b =>
                 {
                     b.HasOne("Invoria.Ordering.Domain.Orders.Order", null)
-                        .WithMany("ReturnItems")
+                        .WithMany("_returnItems")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -322,7 +325,7 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
 
                     b.Navigation("StateTransitionHistory");
 
-                    b.Navigation("ReturnItems");
+                    b.Navigation("_returnItems");
                 });
 #pragma warning restore 612, 618
         }

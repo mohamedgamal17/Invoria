@@ -28,6 +28,7 @@ public class CompleteOrderCommandHandler : IApplicatonRequestHandler<CompleteOrd
             .AsQuerable()
             .Include(o => o.Items)
             .Include(o => o.Payments)
+            .Include(o => o.ReturnItems)
             .SingleOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
 
         if (order == null)

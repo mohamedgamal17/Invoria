@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
@@ -86,6 +87,73 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         dto.Items[0].ProductId.Should().Be(productId);
         dto.Items[0].Quantity.Should().Be(3);
         dto.Items[0].Price.Should().Be(12.5m);
+    }
+
+    [Test]
+    public async Task Should_map_include_return_items_query_parameter()
+    {
+        var productId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var createRequest = new CreateOrderRequest
+        {
+            CustomerId = customerId,
+            Items =
+            [
+                new CreateOrderLineItemRequest { ProductId = productId, Quantity = 2, Price = 10m }
+            ]
+        };
+
+        var createResponse = await Client.PostAsJsonAsync("/orders", createRequest);
+        createResponse.IsSuccessStatusCode.Should().BeTrue();
+        var createdOrder = (await createResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>())!.Result!;
+
+        var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
+        (await Client.PostAsync($"/orders/{createdOrder.Id}/accept", emptyJson)).EnsureSuccessStatusCode();
+
+        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
+        await mediator.Send(new RecordOrderAllocationSucceededCommand
+        {
+            OrderId = createdOrder.Id,
+            CustomerId = createdOrder.CustomerId
+        });
+
+        (await Client.PostAsync($"/orders/{createdOrder.Id}/dispatch", emptyJson)).EnsureSuccessStatusCode();
+        (await Client.PostAsync($"/orders/{createdOrder.Id}/ship", emptyJson)).EnsureSuccessStatusCode();
+
+        var getResponse = await Client.GetAsync($"/orders/{createdOrder.Id}");
+        getResponse.EnsureSuccessStatusCode();
+        var lineId = (await getResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>())!.Result!.Items.Single().Id;
+
+        var returnRequest = new AddReturnItemsRequest
+        {
+            Id = createdOrder.Id,
+            Items = [new AddReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
+        };
+        (await Client.PutAsJsonAsync($"/orders/{createdOrder.Id}/return-items", returnRequest))
+            .EnsureSuccessStatusCode();
+
+        var listQuery = new
+        {
+            Skip = 0,
+            Length = 100,
+            IncludeReturnItems = true,
+            OrderNumber = createdOrder.OrderNumber
+        };
+        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
+
+        var response = await Client.GetAsync(uri);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
+        envelope.Should().NotBeNull();
+        envelope!.IsSuccess.Should().BeTrue();
+
+        var dto = envelope.Result!.Data.Single(x => x.Id == createdOrder.Id);
+        dto.Items.Should().BeEmpty();
+        dto.ReturnItems.Should().ContainSingle();
+        dto.ReturnItems[0].OrderItemId.Should().Be(lineId);
+        dto.NetOfTotalOrderAmount.Should().BeLessThan(dto.TotalOrderAmount);
     }
 
     [Test]

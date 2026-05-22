@@ -270,4 +270,16 @@ public class OrderReturnItemsDomainTests
         order.Status.Should().Be(OrderStatus.Completed);
         order.NetOfTotalOrderAmount.Should().Be(10m);
     }
+
+    [Test]
+    public void RecordReturnItems_refreshes_AmountOutstanding_to_net_total()
+    {
+        var order = CreateShippedOrderWithItems(("line-1", "p1", 3, 10m));
+        order.AmountOutstanding.Should().Be(30m);
+
+        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
+
+        order.AmountOutstanding.Should().Be(20m);
+        order.AmountOutstanding.Should().Be(order.NetOfTotalOrderAmount);
+    }
 }

@@ -16,6 +16,10 @@ namespace Invoria.Ordering.Contracts.Dtos
         public decimal AmountOutstanding { get; set; }
         public OrderPaymentStatus PaymentStatus { get; set; }
         public List<OrderItemDto> Items { get; set; } = new();
+        public List<OrderReturnItemDto> ReturnItems { get; set; } = new();
+        public decimal TotalOrderAmount { get; set; }
+        public decimal NetOfTotalOrderAmount { get; set; }
+        public decimal ReturnsTotal { get; set; }
         public List<OrderFailureDetailsDto> FailureDetails { get; set; } = new();
         public List<OrderStateTransitionHistoryDto> StateTransitionHistory { get; set; } = new();
         public List<OrderPaymentDto> Payments { get; set; } = new();

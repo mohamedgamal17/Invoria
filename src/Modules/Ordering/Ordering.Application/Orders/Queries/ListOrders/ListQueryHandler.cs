@@ -63,11 +63,19 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
 
         query = query.OrderByDescending(o => o.Id);
 
+        if (request.IncludeOrderItems || request.IncludeReturnItems)
+        {
+            query = query.Include(o => o.Items);
+        }
+
         if (request.IncludeOrderItems)
         {
-            query = query
-                .Include(o => o.Items)
-                .Include(o => o.Payments);
+            query = query.Include(o => o.Payments);
+        }
+
+        if (request.IncludeReturnItems)
+        {
+            query = query.Include(o => o.ReturnItems);
         }
 
         var paged = await query.ToPaged(request.Skip, request.Length);
@@ -75,6 +83,7 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
         var response = await _orderResponseFactory.PreparePagingDto(
             paged,
             request.IncludeOrderItems,
+            request.IncludeReturnItems,
             cancellationToken);
 
         return response;

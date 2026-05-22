@@ -31,7 +31,9 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
         Summary(s =>
         {
             s.Summary = "List orders";
-            s.Description = "Returns a paged list of orders with optional filters.";
+            s.Description =
+                "Returns a paged list of orders with optional filters. "
+                + "Use includeOrderItems and includeReturnItems (both default false) to control line and return payload size.";
             s.Responses[StatusCodes.Status200OK] =
                 InvoriaOpenApiResponseDescriptions.Ok200 + " Returns paged order data.";
             s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
@@ -50,6 +52,7 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
             OrderNumber = req.OrderNumber,
             CustomerId = req.CustomerId,
             IncludeOrderItems = req.IncludeOrderItems,
+            IncludeReturnItems = req.IncludeReturnItems,
             PaymentType = req.PaymentType,
             PaymentStatus = req.PaymentStatus,
             Status = req.Status,

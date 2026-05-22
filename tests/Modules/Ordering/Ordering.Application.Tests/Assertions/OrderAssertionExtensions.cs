@@ -28,6 +28,8 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.PaymentStatus.Should().Be(order.PaymentStatus);
             dto.Payments.Should().HaveCount(order.Payments.Count);
             dto.AssertOrderCustomer(expectedCustomer);
+            dto.AssertOrderPricing(order);
+            dto.ReturnItems.Should().HaveCount(order.ReturnItems.Count);
             dto.Items.Should().HaveCount(order.Items.Count);
             dto.FailureDetails.Should().HaveCount(order.FailureDetails.Count);
             dto.StateTransitionHistory.Should().HaveCount(order.StateTransitionHistory.Count);
@@ -35,6 +37,18 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             {
                 var line = dto.Items.Single(i => i.ProductId == item.ProductId);
                 line.AssertOrderItemDto(item);
+            }
+
+            var itemsById = order.Items.ToDictionary(i => i.Id);
+            foreach (var returnItem in order.ReturnItems)
+            {
+                var line = itemsById[returnItem.OrderItemId];
+                var returnDto = dto.ReturnItems.Single(r => r.OrderItemId == returnItem.OrderItemId);
+                returnDto.Quantity.Should().Be(returnItem.Quantity);
+                returnDto.ProductId.Should().Be(line.ProductId);
+                returnDto.OrderedQuantity.Should().Be(line.Quantity);
+                returnDto.UnitPrice.Should().Be(line.Price);
+                returnDto.LineReturnTotal.Should().Be(line.Price * returnItem.Quantity);
             }
 
             for (int i = 0; i < order.StateTransitionHistory.Count; i++)
@@ -134,6 +148,14 @@ namespace Invoria.Ordering.Application.Tests.Assertions
                 var expected = resolveExpectedProduct(command.Items[i].ProductId);
                 dto.Items[i].AssertOrderItemDto(command.Items[i], expected);
             }
+        }
+
+        public static void AssertOrderPricing(this OrderDto dto, Order order)
+        {
+            dto.TotalOrderAmount.Should().Be(order.TotalOrderAmount);
+            dto.NetOfTotalOrderAmount.Should().Be(order.NetOfTotalOrderAmount);
+            dto.ReturnsTotal.Should().Be(order.TotalOrderAmount - order.NetOfTotalOrderAmount);
+            dto.AmountOutstanding.Should().Be(order.AmountOutstanding);
         }
 
         public static void AssertOrderCustomer(this OrderDto dto, CustomerDto? expectedCustomer)

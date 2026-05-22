@@ -9,6 +9,8 @@ using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.Extensions.DependencyInjection;
 
+using Entity = Invoria.BuildingBlocks.Domain.Entities.Entity<string>;
+
 namespace Invoria.Ordering.Application.Tests.Integration.Factories;
 
 [TestFixture]
@@ -105,7 +107,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
             Info = new PagingInfoDto { Length = 2, Skip = 0, TotalCount = 2 }
         };
 
-        var pagedDto = await Factory.PreparePagingDto(paging);
+        var pagedDto = await Factory.PreparePagingDto(paging, includeOrderItems: true);
 
         ProductCounter.ListProductsByIdsCallCount.Should().Be(1);
         CustomerCounter.ListCustomersByIdsCallCount.Should().Be(1);
@@ -168,6 +170,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         order.Accept();
         order.MarkInventoryAllocated();
         order.MarkDispatched();
+        order.MarkShipped();
         order.Complete();
         order.RecordPayment(25m, OrderPaymentMethod.Cheque, DateTimeOffset.Parse("2026-06-01T10:00:00Z"));
 
@@ -182,6 +185,88 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         dto.Payments[0].PaymentMethod.Should().Be(OrderPaymentMethod.Cheque);
         dto.Payments[0].OrderId.Should().Be(order.Id);
     }
+
+    [Test]
+    public async Task PreparePagingDto_summary_with_returns_should_load_order_line_products()
+    {
+        var returnedProductId = Guid.NewGuid().ToString();
+        var otherProductId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+        var returnedLineId = "line-returned";
+        var otherLineId = "line-other";
+
+        var order = new Order("RET-SUM", customerId);
+        order.UpdateItems(
+        [
+            new OrderItem(returnedProductId, 2, 10m),
+            new OrderItem(otherProductId, 1, 5m)
+        ]);
+        SetEntityId(order.Items[0], returnedLineId);
+        SetEntityId(order.Items[1], otherLineId);
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.MarkShipped();
+        order.RecordReturnItems([new OrderReturnItem(returnedLineId, 1)]).IsSuccess.Should().BeTrue();
+
+        var paging = new PagingDto<Order>
+        {
+            Data = new List<Order> { order },
+            Info = new PagingInfoDto { Length = 1, Skip = 0, TotalCount = 1 }
+        };
+
+        var paged = await Factory.PreparePagingDto(paging, includeOrderItems: false, includeReturnItems: true);
+
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(1);
+        ProductCounter.LastRequestedProductIds.Should().Equal([returnedProductId, otherProductId]);
+
+        var dto = paged.Data.Single();
+        dto.Items.Should().BeEmpty();
+        dto.ReturnItems.Should().ContainSingle();
+        dto.ReturnItems[0].ProductId.Should().Be(returnedProductId);
+        dto.ReturnItems[0].Product!.Id.Should().Be(returnedProductId);
+        dto.ReturnItems[0].Product!.Name.Should().Be(SyntheticListProductService.NameForId(returnedProductId));
+    }
+
+    [Test]
+    public async Task PreparePagingDto_with_line_items_without_returns_should_load_all_line_products()
+    {
+        var returnedProductId = Guid.NewGuid().ToString();
+        var otherProductId = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var order = new Order("RET-NOLOAD", customerId);
+        order.UpdateItems(
+        [
+            new OrderItem(returnedProductId, 2, 10m),
+            new OrderItem(otherProductId, 1, 5m)
+        ]);
+        SetEntityId(order.Items[0], "line-returned");
+        SetEntityId(order.Items[1], "line-other");
+        order.Accept();
+        order.MarkInventoryAllocated();
+        order.MarkDispatched();
+        order.MarkShipped();
+        order.RecordReturnItems([new OrderReturnItem("line-returned", 1)]).IsSuccess.Should().BeTrue();
+
+        var paging = new PagingDto<Order>
+        {
+            Data = new List<Order> { order },
+            Info = new PagingInfoDto { Length = 1, Skip = 0, TotalCount = 1 }
+        };
+
+        var paged = await Factory.PreparePagingDto(
+            paging,
+            includeOrderItems: true,
+            includeReturnItems: false);
+
+        ProductCounter.ListProductsByIdsCallCount.Should().Be(1);
+        ProductCounter.LastRequestedProductIds.Should().BeEquivalentTo([returnedProductId, otherProductId]);
+        paged.Data.Single().ReturnItems.Should().BeEmpty();
+    }
+
+    private static void SetEntityId(Entity entity, string id) =>
+        typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(entity, id);
 
     [Test]
     public async Task PreparePagingDto_summary_should_include_payment_scalars_with_empty_payment_lines()
@@ -204,5 +289,33 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         d.AmountPaid.Should().Be(0);
         d.AmountOutstanding.Should().Be(20m);
         d.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
+    }
+
+    [Test]
+    public async Task PreparePagingDto_with_items_without_returns_omits_return_lines_and_pricing()
+    {
+        var pid = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+        var order = new Order("NO-RET", customerId);
+        order.UpdateItems(new List<OrderItem> { new(pid, 2, 10m) });
+
+        var paging = new PagingDto<Order>
+        {
+            Data = new List<Order> { order },
+            Info = new PagingInfoDto { Length = 1, Skip = 0, TotalCount = 1 }
+        };
+
+        var paged = await Factory.PreparePagingDto(
+            paging,
+            includeOrderItems: true,
+            includeReturnItems: false);
+
+        var d = paged.Data.Single();
+        d.Items.Should().ContainSingle();
+        d.Items[0].Product!.Id.Should().Be(pid);
+        d.ReturnItems.Should().BeEmpty();
+        d.TotalOrderAmount.Should().Be(0);
+        d.NetOfTotalOrderAmount.Should().Be(0);
+        d.ReturnsTotal.Should().Be(0);
     }
 }
