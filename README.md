@@ -4,9 +4,12 @@
 ![Status](https://img.shields.io/badge/status-under_development-orange)
 ![Architecture](https://img.shields.io/badge/architecture-modular_clean-blue)
 
-**Invoria** is a modular .NET 8 **ERP backend** for running core business operations in one place: products and catalog, customers, sales orders, inventory, procurement, and reporting.
+**Invoria** is a production-ready ERP (Enterprise Resource Planning) backend API
+designed to centralize and streamline core business processes.
 
-It is built as independent business modules with clean architecture, shared building blocks, and messaging between domains (see [`ai/Architecture.md`](ai/Architecture.md) for technical detail).
+Whether you're tracking thousands of inventory items, processing high-volume orders,
+managing supplier relationships, or generating financial reports. Invoria handles it all
+through a clean, consistent, and well-documented API surface.
 
 ## 🚧 Development Status
 
@@ -27,6 +30,22 @@ Core ERP areas supported today:
 For how modules are wired (layers, messaging, persistence), see [`ai/Architecture.md`](ai/Architecture.md).
 
 
+## 🏗️ Architecture
+
+Invoria is engineered on a foundation of **Modular Clean Architecture** combined with
+**CQRS** (Command Query Responsibility Segregation) and **MediatR** — a design philosophy
+that ensures every layer of the system has a single, well-defined responsibility.
+
+---
+
+### 🧱 Modular Clean Architecture
+
+The codebase is organized into self-contained **vertical modules**, each representing a
+bounded domain context (e.g., Inventory, Orders, Catalog, Customers , ....). Every module is
+fully independent and exposes its functionality through well-defined contracts — making
+the system easy to scale, test, and maintain without cross-module coupling.
+
+---
 ## 🛠️ Tech Stack and Dependencies
 
 - **Runtime**: .NET 8 (`net8.0`)
