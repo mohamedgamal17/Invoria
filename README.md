@@ -63,7 +63,6 @@ Install the following before running locally:
 
 - .NET 8 SDK
 - SQL Server LocalDB or SQL Server instance
-- Git
 
 ## ⚙️ Configuration
 
