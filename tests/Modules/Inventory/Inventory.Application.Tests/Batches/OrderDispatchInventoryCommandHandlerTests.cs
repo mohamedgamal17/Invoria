@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Application.Batches.Commands.DispatchOrder;
+using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Invoria.Ordering.Contracts.Events;

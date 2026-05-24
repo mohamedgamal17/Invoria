@@ -1,7 +1,7 @@
 using FluentAssertions;
-using Invoria.Inventory.Domain.Batches;
+using Invoria.Inventory.Domain.Allocations;
 
-namespace Invoria.Inventory.Application.Tests.Domain.Batches;
+namespace Invoria.Inventory.Application.Tests.Domain.Allocations;
 
 [TestFixture]
 public class BatchAllocationTests
