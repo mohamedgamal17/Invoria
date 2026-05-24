@@ -28,7 +28,7 @@ public sealed class AllocationEntityTypeConfiguration : IEntityTypeConfiguration
             .HasField("_lines")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasIndex(x => x.OrderId).IsUnique();
+        builder.HasIndex(x => x.OrderId);
 
         builder.HasMany<AllocationLine>(x => x.Lines)
             .WithOne()
