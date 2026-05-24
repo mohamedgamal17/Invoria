@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Inventory.Domain.Allocations.Events;
 
 namespace Invoria.Inventory.Domain.Allocations;
 
@@ -17,7 +18,7 @@ public class Allocation : AuditedAggregateRoot
     {
     }
 
-    public static Allocation CreateForOrder(
+    private Allocation(
         string orderId,
         IEnumerable<(string OrderItemId, string ProductId, int QuantityRequested)> lines)
     {
@@ -27,24 +28,31 @@ public class Allocation : AuditedAggregateRoot
         var lineInputs = lines?.ToList() ?? [];
         Guard.Against.NullOrEmpty(lineInputs);
 
-        var allocation = new Allocation
-        {
-            Id = Guid.NewGuid().ToString(),
-            OrderId = orderId,
-            Status = AllocationStatus.Pending
-        };
+        Id = Guid.NewGuid().ToString();
+        OrderId = orderId;
+        Status = AllocationStatus.Pending;
 
         foreach (var (orderItemId, productId, quantityRequested) in lineInputs)
         {
             var lineId = Guid.NewGuid().ToString();
-            allocation._lines.Add(new AllocationLine(
+            _lines.Add(new AllocationLine(
                 lineId,
-                allocation.Id!,
+                Id!,
                 orderItemId,
                 productId,
                 quantityRequested));
         }
 
-        return allocation;
+        InitiatePendingAllocation();
+    }
+
+    public static Allocation CreateForOrder(
+        string orderId,
+        IEnumerable<(string OrderItemId, string ProductId, int QuantityRequested)> lines) =>
+        new(orderId, lines);
+
+    private void InitiatePendingAllocation()
+    {
+        AddDomainEvent(AllocationInitiatedDomainEvent.ForPendingAllocation(this));
     }
 }
