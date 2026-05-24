@@ -1,7 +1,10 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Inventory.Contracts.Events;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Bus;
+
 namespace Invoria.Inventory.Infrastructure
 {
     public class InventoryModuleBootStrapper : IModuleBootstrapper
@@ -14,6 +17,13 @@ namespace Invoria.Inventory.Infrastructure
             if (pendingMigrations.Any())
             {
                 await dbContext.Database.MigrateAsync();
+            }
+
+            var bus = serviceProvider.GetService<IBus>();
+
+            if (bus is not null)
+            {
+                await bus.Subscribe<RequestAllocationIntegrationEvent>();
             }
         }
     }
