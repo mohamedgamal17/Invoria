@@ -1,6 +1,7 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Inventory.Domain;
+using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Microsoft.EntityFrameworkCore;
 
