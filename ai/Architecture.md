@@ -226,7 +226,9 @@ flowchart LR
 
 - **Representative types**
   - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
-  - **`BatchAllocation`**: child entity under a batch; links an `OrderItemId` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`, and includes standard audited fields (`CreatedAt`, `CreatedBy`, `LastModifiedAt`, `LastModifiedBy`).
+  - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Dispatched`), with child **`AllocationLine`** rows per order item.
+  - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
+  - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -234,10 +236,20 @@ flowchart LR
   - `src/Modules/Inventory/Inventory.Application`
 
 - **Integration consumers (Rebus)**
-  - **`AllocateOrderIntegrationConsumer`**
-    - File: `Batches/Consumers/AllocateOrderIntegrationConsumer.cs`
-    - Implements `Rebus.Handlers.IHandleMessages<Invoria.Ordering.Contracts.Events.AllocateOrderIntegrationEvent>`.
-    - Placeholder handler for order-allocation integration messages (extend with domain/application logic when requirements are defined).
+  - **`AllocateOrderIntegrationEventConsumer`**
+    - File: `Batches/Consumers/AllocateOrderIntegrationEventConsumer.cs`
+    - Handles `AllocateOrderIntegrationEvent` from Ordering; sends `AllocateOrderCommand` to create an `Allocation` aggregate.
+
+- **Domain event handlers**
+  - **`AllocationInitiatedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationInitiatedDomainEventHandler.cs`
+    - Handles `AllocationInitiatedDomainEvent` after save and publishes `RequestAllocationIntegrationEvent` (batch reservation is a separate consumer).
+
+- **Order allocation flow**
+  1. Ordering publishes `AllocateOrderIntegrationEvent` when an order is accepted.
+  2. Inventory creates `Allocation` (`Pending`) via `AllocateOrderCommand`.
+  3. `AllocationInitiatedDomainEvent` is dispatched after save.
+  4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent` for the next step (reserve stock from batches).
 
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
@@ -261,6 +273,7 @@ flowchart LR
 - **Bootstrap**
   - **`InventoryModuleBootStrapper`**
     - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
+    - Subscribes to `RequestAllocationIntegrationEvent` for in-process Rebus handlers.
 
 - **`InventoryModuleInstaller`**
   - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
@@ -278,6 +291,11 @@ flowchart LR
   - `src/Modules/Inventory/Inventory.Contracts`
 
 - DTOs such as `BatchDto` support API and application boundaries.
+- **Integration events**
+  - **`RequestAllocationIntegrationEvent`**
+    - File: `Events/RequestAllocationIntegrationEvent.cs`
+    - Payload: `AllocationId` only.
+    - Published by Inventory after an allocation aggregate is created; consumed within Inventory (future batch reservation handler).
 
 ---
 
