@@ -1,4 +1,4 @@
-namespace Invoria.Inventory.Domain.Batches;
+namespace Invoria.Inventory.Domain.Allocations;
 
 public static class BatchAllocationTableConsts
 {
@@ -9,4 +9,6 @@ public static class BatchAllocationTableConsts
     public const int OrderItemIdMaxLength = 256;
 
     public const int BatchIdMaxLength = 256;
+
+    public const int AllocationLineIdMaxLength = 256;
 }

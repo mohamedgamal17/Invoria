@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Inventory.Domain.Allocations;
 
 namespace Invoria.Inventory.Domain.Batches;
 
