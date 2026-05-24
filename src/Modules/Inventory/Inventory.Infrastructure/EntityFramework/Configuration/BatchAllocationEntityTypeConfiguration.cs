@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
+using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -25,6 +26,9 @@ public class BatchAllocationEntityTypeConfiguration : IEntityTypeConfiguration<B
         builder.Property(x => x.QuantityAllocated);
 
         builder.Property(x => x.AllocatedAt);
+
+        builder.Property(x => x.AllocationLineId)
+            .HasMaxLength(BatchAllocationTableConsts.AllocationLineIdMaxLength);
 
         builder.MapAudited();
 
