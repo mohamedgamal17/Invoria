@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.Inventory.Domain.Allocations;
+using Invoria.Inventory.Domain.Allocations.Events;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Allocations;
 
@@ -26,6 +27,20 @@ public class AllocationTests
         allocation.Lines.Should().ContainSingle(l =>
             l.OrderItemId == "order-item-2" && l.ProductId == "product-2" && l.QuantityRequested == 5);
         allocation.Lines.Should().OnlyContain(l => l.Status == AllocationLineStatus.Pending);
+    }
+
+    [Test]
+    public void CreateForOrder_should_raise_AllocationInitiatedDomainEvent()
+    {
+        var orderId = "order-1";
+        var lineInputs = new[] { ("order-item-1", "product-1", 3) };
+
+        var allocation = Allocation.CreateForOrder(orderId, lineInputs);
+
+        allocation.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<AllocationInitiatedDomainEvent>();
+        var ev = (AllocationInitiatedDomainEvent)allocation.DomainEvents.Single();
+        ev.AllocationId.Should().Be(allocation.Id);
+        ev.Status.Should().Be(AllocationStatus.Pending);
     }
 
     [Test]
