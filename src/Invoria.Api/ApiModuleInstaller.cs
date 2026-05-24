@@ -68,7 +68,9 @@ namespace Invoria.Api
                     .Serialization(s => s.UseSystemTextJson())
                     .Subscriptions(s => s.StoreInSqlServer(connectionString, "RebusSubscriptions", true, true, false))
                     .Transport(t => t.UseSqlServer(transportOptions, inputQueueName))
-                    .Routing(r => r.TypeBased().MapAssemblyOf<Ordering.Contracts.AssemblyReference>(inputQueueName)));
+                    .Routing(r => r.TypeBased()
+                        .MapAssemblyOf<Ordering.Contracts.AssemblyReference>(inputQueueName)
+                        .MapAssemblyOf<Inventory.Contracts.AssemblyReference>(inputQueueName)));
         }
 
         private void ConfigureSwagger(IServiceCollection services)
