@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.EntityFramework.Contexts;
 using Invoria.BuildingBlocks.EntityFramework.Hooks;
+using Invoria.BuildingBlocks.EntityFramework.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -35,6 +36,13 @@ public static class ServiceCollectionExtensions
             configure(options);
         });
 
+        return services;
+    }
+
+    public static IServiceCollection AddInvoriaUnitOfWork<TContext>(this IServiceCollection services)
+        where TContext : DbContext
+    {
+        services.AddScoped<EfUnitOfWork<TContext>>();
         return services;
     }
 }
