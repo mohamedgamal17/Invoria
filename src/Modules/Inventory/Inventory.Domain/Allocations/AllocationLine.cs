@@ -47,4 +47,67 @@ public class AllocationLine : AuditedEntity
         Status = AllocationLineStatus.Pending;
         BatchAllocations = new HashSet<BatchAllocation>();
     }
+
+    public int QuantityAllocated => BatchAllocations.Sum(a => a.QuantityAllocated);
+
+    public bool IsFullyAllocated => QuantityAllocated == QuantityRequested;
+
+    public void RecordBatchAllocation(BatchAllocation batchAllocation)
+    {
+        Guard.Against.Null(batchAllocation);
+
+        if (Status != AllocationLineStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} must be in {AllocationLineStatus.Pending} state to record batch allocations.");
+        }
+
+        batchAllocation.AttachToLine(this);
+        BatchAllocations.Add(batchAllocation);
+    }
+
+    public void MarkAsAllocated()
+    {
+        if (Status != AllocationLineStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} must be in {AllocationLineStatus.Pending} state to mark as allocated.");
+        }
+
+        if (!IsFullyAllocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} is not fully allocated: {QuantityAllocated} of {QuantityRequested}.");
+        }
+
+        Status = AllocationLineStatus.Allocated;
+    }
+
+    public void MarkAsFailed()
+    {
+        if (Status != AllocationLineStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} must be in {AllocationLineStatus.Pending} state to mark as failed.");
+        }
+
+        if (IsFullyAllocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} is fully allocated and cannot be marked as failed.");
+        }
+
+        Status = AllocationLineStatus.Failed;
+    }
+
+    public void MarkAsReleased()
+    {
+        if (Status != AllocationLineStatus.Allocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} must be in {AllocationLineStatus.Allocated} state to mark as released.");
+        }
+
+        Status = AllocationLineStatus.Released;
+    }
 }

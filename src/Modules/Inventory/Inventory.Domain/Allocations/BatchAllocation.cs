@@ -32,4 +32,19 @@ public class BatchAllocation : AuditedEntity
         QuantityAllocated = quantityAllocated;
         AllocatedAt = allocatedAt;
     }
+
+    public void AttachToLine(AllocationLine line)
+    {
+        Guard.Against.Null(line);
+        Guard.Against.NullOrWhiteSpace(line.Id);
+
+        if (!string.Equals(OrderItemId, line.OrderItemId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                "Batch allocation order item must match the allocation line order item.");
+        }
+
+        AllocationLineId = line.Id;
+        AllocationLine = line;
+    }
 }

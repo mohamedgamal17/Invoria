@@ -55,4 +55,62 @@ public class Allocation : AuditedAggregateRoot
     {
         AddDomainEvent(AllocationInitiatedDomainEvent.ForPendingAllocation(this));
     }
+
+    public void MarkAsAllocated()
+    {
+        if (Status != AllocationStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} must be in {AllocationStatus.Pending} state to mark as allocated.");
+        }
+
+        if (_lines.Any(l => !l.IsFullyAllocated))
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} cannot be marked as allocated until all lines are fully allocated.");
+        }
+
+        foreach (var line in _lines.Where(l => l.Status == AllocationLineStatus.Pending))
+        {
+            line.MarkAsAllocated();
+        }
+
+        Status = AllocationStatus.Allocated;
+    }
+
+    public bool TryMarkAsAllocated()
+    {
+        if (Status != AllocationStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} must be in {AllocationStatus.Pending} state to mark as allocated.");
+        }
+
+        if (_lines.Any(l => l.Status == AllocationLineStatus.Pending))
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} cannot be marked as allocated while any line is still pending.");
+        }
+
+        if (!_lines.All(l => l.Status == AllocationLineStatus.Allocated))
+        {
+            return false;
+        }
+
+        Status = AllocationStatus.Allocated;
+        AddDomainEvent(AllocationCompletedDomainEvent.ForAllocation(this));
+        return true;
+    }
+
+    public void MarkAsFailed()
+    {
+        if (Status != AllocationStatus.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} must be in {AllocationStatus.Pending} state to mark as failed.");
+        }
+
+        Status = AllocationStatus.Failed;
+        AddDomainEvent(AllocationFailedDomainEvent.ForAllocation(this));
+    }
 }
