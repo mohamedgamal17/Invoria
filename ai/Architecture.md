@@ -239,17 +239,25 @@ flowchart LR
   - **`AllocateOrderIntegrationEventConsumer`**
     - File: `Batches/Consumers/AllocateOrderIntegrationEventConsumer.cs`
     - Handles `AllocateOrderIntegrationEvent` from Ordering; sends `AllocateOrderCommand` to create an `Allocation` aggregate.
+  - **`RequestAllocationIntegrationEventConsumer`**
+    - File: `Allocations/Consumers/RequestAllocationIntegrationEventConsumer.cs`
+    - Handles `RequestAllocationIntegrationEvent`; sends `RequestAllocationCommand` to reserve stock from batches (FIFO) and mark the allocation as `Allocated`.
 
 - **Domain event handlers**
   - **`AllocationInitiatedDomainEventHandler`**
     - File: `Allocations/Handlers/AllocationInitiatedDomainEventHandler.cs`
-    - Handles `AllocationInitiatedDomainEvent` after save and publishes `RequestAllocationIntegrationEvent` (batch reservation is a separate consumer).
+    - Handles `AllocationInitiatedDomainEvent` after save and publishes `RequestAllocationIntegrationEvent`.
 
 - **Order allocation flow**
   1. Ordering publishes `AllocateOrderIntegrationEvent` when an order is accepted.
   2. Inventory creates `Allocation` (`Pending`) via `AllocateOrderCommand`.
   3. `AllocationInitiatedDomainEvent` is dispatched after save.
-  4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent` for the next step (reserve stock from batches).
+  4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent`.
+  5. `RequestAllocationIntegrationEventConsumer` runs `RequestAllocationCommand`; **`RequestAllocationCommandHandler`** loads the allocation and pending lines, reserves stock from active batches in FIFO order (`CreatedAt` ascending), links `BatchAllocation` rows to lines, marks lines `Allocated` or `Failed`, and sets the aggregate to `Allocated` or `Failed` (with stock release on failure) inside a single transaction via **`IInventoryUnitOfWork`**.
+
+- **Request allocation (application)**
+  - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; transactional FIFO logic in the handler using **`IInventoryRepository<Allocation>`**, **`IInventoryRepository<Batch>`**, and **`IInventoryUnitOfWork`**.
+  - **`IInventoryUnitOfWork`** / **`InventoryUnitOfWork`** — module unit-of-work port (`Inventory.Domain`) backed by **`EfUnitOfWork<InventoryDbContext>`**; registered from `EntityFrameworkServiceInstaller` with `AddInvoriaUnitOfWork`.
 
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
@@ -295,7 +303,7 @@ flowchart LR
   - **`RequestAllocationIntegrationEvent`**
     - File: `Events/RequestAllocationIntegrationEvent.cs`
     - Payload: `AllocationId` only.
-    - Published by Inventory after an allocation aggregate is created; consumed within Inventory (future batch reservation handler).
+    - Published by Inventory after an allocation aggregate is created; consumed by `RequestAllocationIntegrationEventConsumer`.
 
 ---
 
@@ -445,6 +453,8 @@ The `Invoria.BuildingBlocks.*` projects provide shared abstractions and infrastr
     - Marker/contract implemented by entities managed by repositories.
   - **`IRepository<T>`**
     - Generic repository abstraction; extended by module-specific repositories like `ICatalogRepository<T>`.
+  - **`IUnitOfWork`** / **`IUnitOfWorkTransaction`**
+    - Transaction boundary and explicit `SaveChanges` for multi-entity workflows; extended per module (e.g. `IInventoryUnitOfWork`).
   - **`Result<T>`**
     - Operation result type representing success/failure with payload or errors.
     - Used as the return type from application command handlers.
@@ -475,6 +485,8 @@ The `Invoria.BuildingBlocks.*` projects provide shared abstractions and infrastr
   - **`EFCoreRepository<TEntity, TContext>`**
     - Generic EF Core repository implementation.
     - Extended by `CatalogRepository<TEntity>` for the Catalog module.
+  - **`EfUnitOfWork<TContext>`**
+    - EF-backed `IUnitOfWork` implementation; register via `AddInvoriaUnitOfWork<TContext>()` alongside the module DbContext.
   - **`IDbHookEngine`**
     - Hook engine for cross-cutting behaviors during EF operations (e.g., auditing, domain events).
     - Injected into `CatalogDbContext`.
