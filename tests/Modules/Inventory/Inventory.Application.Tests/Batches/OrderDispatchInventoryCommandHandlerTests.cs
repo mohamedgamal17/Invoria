@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Invoria.Inventory.Application.Allocations.Commands.RequestAllocation;
 using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Application.Batches.Commands.DispatchOrder;
@@ -37,6 +38,7 @@ public class OrderDispatchInventoryCommandHandlerTests : BatchTestFixture
 
         var allocateResult = await Mediator.Send(AllocateOrderCommand.FromEvent(allocateEvt));
         allocateResult.IsSuccess.Should().BeTrue();
+        await ReserveStockForOrderAsync(orderId);
 
         var dispatchCmd = new OrderDispatchedIntegrationEvent
         {
@@ -88,6 +90,7 @@ public class OrderDispatchInventoryCommandHandlerTests : BatchTestFixture
         };
 
         await Mediator.Send(AllocateOrderCommand.FromEvent(allocateEvt));
+        await ReserveStockForOrderAsync(orderId);
 
         var dispatchCmd = new OrderDispatchedIntegrationEvent
         {
@@ -130,6 +133,7 @@ public class OrderDispatchInventoryCommandHandlerTests : BatchTestFixture
         };
 
         await Mediator.Send(AllocateOrderCommand.FromEvent(allocateEvt));
+        await ReserveStockForOrderAsync(orderId);
 
         var dispatchCmd = new OrderDispatchedIntegrationEvent
         {
@@ -151,5 +155,19 @@ public class OrderDispatchInventoryCommandHandlerTests : BatchTestFixture
         var batches = await db.Set<Batch>().Where(b => b.ProductId == productId).ToListAsync();
         batches.Should().AllSatisfy(b => b.ReservedQuantity.Should().Be(0));
         (await db.Set<BatchAllocation>().CountAsync(a => a.OrderItemId == orderItemId)).Should().Be(2);
+    }
+
+    private async Task ReserveStockForOrderAsync(string orderId)
+    {
+        await using var scope = ServiceProvider.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+        var allocationId = await db.Set<Allocation>()
+            .Where(a => a.OrderId == orderId)
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => a.Id)
+            .FirstAsync();
+
+        var result = await Mediator.Send(new RequestAllocationCommand { AllocationId = allocationId! });
+        result.IsSuccess.Should().BeTrue();
     }
 }
