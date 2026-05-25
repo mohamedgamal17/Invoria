@@ -113,4 +113,20 @@ public class Allocation : AuditedAggregateRoot
         Status = AllocationStatus.Failed;
         AddDomainEvent(AllocationFailedDomainEvent.ForAllocation(this));
     }
+
+    public void MarkAsReleased()
+    {
+        if (Status != AllocationStatus.Allocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} must be in {AllocationStatus.Allocated} state to mark as released.");
+        }
+
+        foreach (var line in _lines)
+        {
+            line.MarkAsReleased();
+        }
+
+        Status = AllocationStatus.Released;
+    }
 }
