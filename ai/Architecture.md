@@ -229,6 +229,8 @@ flowchart LR
   - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Dispatched`), with child **`AllocationLine`** rows per order item.
   - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
+  - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
+  - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -247,6 +249,12 @@ flowchart LR
   - **`AllocationInitiatedDomainEventHandler`**
     - File: `Allocations/Handlers/AllocationInitiatedDomainEventHandler.cs`
     - Handles `AllocationInitiatedDomainEvent` after save and publishes `RequestAllocationIntegrationEvent`.
+  - **`AllocationCompletedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationCompletedDomainEventHandler.cs`
+    - Handles `AllocationCompletedDomainEvent` after save and publishes `AllocationSucceededIntegrationEvent`.
+  - **`AllocationFailedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationFailedDomainEventHandler.cs`
+    - Handles `AllocationFailedDomainEvent` after save and publishes `AllocationFailedIntegrationEvent`.
 
 - **Order allocation flow**
   1. Ordering publishes `AllocateOrderIntegrationEvent` when an order is accepted.
@@ -254,6 +262,8 @@ flowchart LR
   3. `AllocationInitiatedDomainEvent` is dispatched after save.
   4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent`.
   5. `RequestAllocationIntegrationEventConsumer` runs `RequestAllocationCommand`; **`RequestAllocationCommandHandler`** loads the allocation and pending lines, reserves stock from active batches in FIFO order (`CreatedAt` ascending), links `BatchAllocation` rows to lines, marks lines `Allocated` or `Failed`, and sets the aggregate to `Allocated` or `Failed` (with stock release on failure) inside a single transaction via **`IInventoryUnitOfWork`**.
+  6. On success, `AllocationCompletedDomainEvent` is dispatched after save; **`AllocationCompletedDomainEventHandler`** publishes `AllocationSucceededIntegrationEvent` (`AllocationId`, `OrderId`).
+  7. On failure, `AllocationFailedDomainEvent` is dispatched after save; **`AllocationFailedDomainEventHandler`** publishes `AllocationFailedIntegrationEvent` (`AllocationId`, `OrderId`).
 
 - **Request allocation (application)**
   - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; transactional FIFO logic in the handler using **`IInventoryRepository<Allocation>`**, **`IInventoryRepository<Batch>`**, and **`IInventoryUnitOfWork`**.
@@ -304,6 +314,14 @@ flowchart LR
     - File: `Events/RequestAllocationIntegrationEvent.cs`
     - Payload: `AllocationId` only.
     - Published by Inventory after an allocation aggregate is created; consumed by `RequestAllocationIntegrationEventConsumer`.
+  - **`AllocationSucceededIntegrationEvent`**
+    - File: `Events/AllocationSucceededIntegrationEvent.cs`
+    - Payload: `AllocationId`, `OrderId`.
+    - Published by Inventory when batch reservation completes for all lines.
+  - **`AllocationFailedIntegrationEvent`**
+    - File: `Events/AllocationFailedIntegrationEvent.cs`
+    - Payload: `AllocationId`, `OrderId`.
+    - Published by Inventory when batch reservation cannot fully satisfy the allocation.
 
 ---
 
