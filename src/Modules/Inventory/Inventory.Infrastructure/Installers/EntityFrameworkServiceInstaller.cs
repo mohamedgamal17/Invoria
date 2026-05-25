@@ -19,6 +19,9 @@ namespace Invoria.Inventory.Infrastructure.Installers
                     sqlCfg.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             });
 
+            services.AddInvoriaUnitOfWork<InventoryDbContext>();
+            services.AddScoped<IInventoryUnitOfWork, InventoryUnitOfWork>();
+
             services.AddTransient(typeof(IInventoryRepository<>), typeof(InventoryRepository<>));
         }
     }
