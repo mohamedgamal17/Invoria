@@ -35,7 +35,7 @@ public sealed class AllocationLineEntityTypeConfiguration : IEntityTypeConfigura
         builder.HasIndex(x => x.OrderItemId);
 
         builder.HasMany(x => x.BatchAllocations)
-            .WithOne(x => x.AllocationLine)
+            .WithOne()
             .HasForeignKey(x => x.AllocationLineId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);

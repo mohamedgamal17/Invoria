@@ -32,7 +32,7 @@ public class BatchAllocationEntityTypeConfiguration : IEntityTypeConfiguration<B
 
         builder.MapAudited();
 
-        builder.HasOne(x => x.Batch)
+        builder.HasOne<Batch>()
             .WithMany()
             .HasForeignKey(x => x.BatchId)
             .OnDelete(DeleteBehavior.Cascade);
