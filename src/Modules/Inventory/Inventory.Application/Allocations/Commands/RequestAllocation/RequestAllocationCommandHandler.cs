@@ -2,6 +2,7 @@ using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Inventory.Domain;
 using Invoria.Inventory.Domain.Allocations;
+using Invoria.Inventory.Domain.Allocations.Services;
 using Invoria.Inventory.Domain.Batches;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,15 +14,18 @@ public sealed class RequestAllocationCommandHandler
     private readonly IInventoryUnitOfWork _unitOfWork;
     private readonly IInventoryRepository<Allocation> _allocationRepository;
     private readonly IInventoryRepository<Batch> _batchRepository;
+    private readonly IAllocationDomainService _allocationDomainService;
 
     public RequestAllocationCommandHandler(
         IInventoryUnitOfWork unitOfWork,
         IInventoryRepository<Allocation> allocationRepository,
-        IInventoryRepository<Batch> batchRepository)
+        IInventoryRepository<Batch> batchRepository,
+        IAllocationDomainService allocationDomainService)
     {
         _unitOfWork = unitOfWork;
         _allocationRepository = allocationRepository;
         _batchRepository = batchRepository;
+        _allocationDomainService = allocationDomainService;
     }
 
     public async Task<Result<Empty>> Handle(
@@ -34,82 +38,12 @@ public sealed class RequestAllocationCommandHandler
 
         try
         {
-            var allocation = await _allocationRepository.AsQuerable()
-                .Include(a => a.Lines)
-                .ThenInclude(l => l.BatchAllocations)
-                .SingleAsync(a => a.Id == allocationId, cancellationToken);
+            var allocation = await _allocationRepository.Single(
+                a => a.Id == allocationId,
+                cancellationToken);
 
-            var lines = allocation.Lines
-                .Where(l => l.Status == AllocationLineStatus.Pending)
-                .ToList();
-
-            if (lines.Count == 0)
-            {
-                await transaction.CommitAsync(cancellationToken);
-                return Result.Success(Empty.Value);
-            }
-
-            var batchesByProduct = await LoadFifoBatchesByProductAsync(lines, cancellationToken);
-            var batchesById = ToBatchesById(batchesByProduct);
-            var allocatedAt = DateTimeOffset.UtcNow;
-
-            foreach (var line in lines)
-            {
-                if (!batchesByProduct.TryGetValue(line.ProductId, out var batches))
-                {
-                    line.MarkAsFailed();
-                    continue;
-                }
-
-                var remaining = line.QuantityRequested;
-
-                foreach (var batch in batches)
-                {
-                    if (remaining <= 0)
-                    {
-                        break;
-                    }
-
-                    var take = Math.Min(remaining, batch.Quantity);
-                    if (take <= 0)
-                    {
-                        continue;
-                    }
-
-                    var batchAllocation = batch.AllocateForOrder(line.OrderItemId, take, allocatedAt);
-                    line.RecordBatchAllocation(batchAllocation);
-                    remaining -= take;
-                }
-
-                if (line.IsFullyAllocated)
-                {
-                    line.MarkAsAllocated();
-                }
-                else
-                {
-                    line.MarkAsFailed();
-                }
-            }
-
-            if (!allocation.TryMarkAsAllocated())
-            {
-                allocation.MarkAsFailed();
-
-                foreach (var line in allocation.Lines)
-                {
-                    if (line.BatchAllocations.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    ReleaseLineStock(line, batchesById);
-
-                    if (line.Status != AllocationLineStatus.Failed)
-                    {
-                        line.MarkAsReleased();
-                    }
-                }
-            }
+            var batchesByProduct = await LoadFifoBatchesByProductAsync(allocation, cancellationToken);
+            _allocationDomainService.Allocate(allocation, batchesByProduct);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -124,28 +58,12 @@ public sealed class RequestAllocationCommandHandler
         }
     }
 
-    private static void ReleaseLineStock(AllocationLine line, IReadOnlyDictionary<string, Batch> batchesById)
-    {
-        foreach (var batchAllocation in line.BatchAllocations)
-        {
-            batchesById[batchAllocation.BatchId].RestoreAllocatedQuantity(batchAllocation.QuantityAllocated);
-        }
-    }
-
-    private static Dictionary<string, Batch> ToBatchesById(
-        IReadOnlyDictionary<string, List<Batch>> batchesByProduct) =>
-        batchesByProduct.Values
-            .SelectMany(b => b)
-            .ToDictionary(b => b.Id!);
-
     private async Task<Dictionary<string, List<Batch>>> LoadFifoBatchesByProductAsync(
-        IReadOnlyList<AllocationLine> lines,
+        Allocation allocation,
         CancellationToken cancellationToken)
     {
-        var productIds = lines.Select(l => l.ProductId).Distinct().ToList();
-
         var batches = await _batchRepository.AsQuerable()
-            .Where(b => productIds.Contains(b.ProductId) && b.State == BatchState.Active)
+            .Where(b => allocation.Lines.Select(l => l.ProductId).Contains(b.ProductId) && b.State == BatchState.Active)
             .OrderBy(b => b.CreatedAt)
             .ThenBy(b => b.Id)
             .ToListAsync(cancellationToken);
