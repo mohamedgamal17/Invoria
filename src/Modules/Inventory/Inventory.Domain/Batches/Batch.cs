@@ -106,23 +106,6 @@ public class Batch : AuditedAggregateRoot
     }
 
     /// <summary>
-    /// Releases reserved stock when the corresponding order line is dispatched (shipped).
-    /// Does not change on-hand <see cref="Quantity"/>; that was reduced at allocation time.
-    /// </summary>
-    public void ReleaseReservedForDispatch(int amount)
-    {
-        Guard.Against.NegativeOrZero(amount);
-
-        if (ReservedQuantity < amount)
-        {
-            throw new InvalidOperationException(
-                "Cannot release more reserved quantity than is currently reserved on this batch.");
-        }
-
-        ReservedQuantity -= amount;
-    }
-
-    /// <summary>
     /// Returns previously allocated stock to available quantity (inverse of <see cref="AllocateForOrder"/>).
     /// </summary>
     public void RestoreAllocatedQuantity(int amount)
