@@ -228,7 +228,7 @@ flowchart LR
   - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
   - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Dispatched`), with child **`AllocationLine`** rows per order item.
   - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
-  - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation across allocation lines and batches.
+  - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation and release across allocation lines and batches.
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
   - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
   - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
@@ -268,9 +268,12 @@ flowchart LR
 
 - **Request allocation**
   - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; loads allocation and batches, invokes the domain service, persists via **`IInventoryUnitOfWork`** (no allocation algorithm in the handler).
-  - **`IAllocationDomainService`** / **`AllocationDomainService`** — `Allocations/Services/` in Domain; pending-line filtering, FIFO reservation, and failure rollback across `Allocation` and `Batch` aggregates (implements **`IDomainService`** from BuildingBlocks).
+  - **`IAllocationDomainService`** / **`AllocationDomainService`** — `Allocations/Services/` in Domain; **`Allocate`** (FIFO reservation and failure rollback) and **`Release`** (restore reserved stock and mark allocation released) across `Allocation` and `Batch` aggregates (implements **`IDomainService`** from BuildingBlocks).
   - **`DomainServiceInstaller`** — `Infrastructure/Installers/`; registers domain services (e.g. **`IAllocationDomainService`**).
   - **`IInventoryUnitOfWork`** / **`InventoryUnitOfWork`** — module unit-of-work port (`Inventory.Domain`) backed by **`EfUnitOfWork<InventoryDbContext>`**; registered from `EntityFrameworkServiceInstaller` with `AddInvoriaUnitOfWork`.
+
+- **Release allocation**
+  - **`ReleaseAllocationCommand`** / **`ReleaseAllocationCommandHandler`** — `Allocations/Commands/ReleaseAllocation/`; loads allocation and referenced batches, delegates to **`IAllocationDomainService.Release`**, persists via **`IInventoryUnitOfWork`**.
 
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
