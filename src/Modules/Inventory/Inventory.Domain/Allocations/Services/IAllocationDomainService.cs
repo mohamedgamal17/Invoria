@@ -8,4 +8,8 @@ public interface IAllocationDomainService : IDomainService
     void Allocate(
         Allocation allocation,
         IReadOnlyDictionary<string, List<Batch>> batchesByProduct);
+
+    void Release(
+        Allocation allocation,
+        IReadOnlyDictionary<string, Batch> batchesById);
 }

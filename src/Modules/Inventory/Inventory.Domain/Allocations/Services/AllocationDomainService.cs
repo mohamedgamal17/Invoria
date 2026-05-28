@@ -70,7 +70,31 @@ public sealed class AllocationDomainService : IAllocationDomainService
         }
     }
 
-    private static void ReleaseLineStock(AllocationLine line, IReadOnlyDictionary<string, Batch> batchesById)
+    public void Release(
+        Allocation allocation,
+        IReadOnlyDictionary<string, Batch> batchesById)
+    {
+        if (allocation.Status == AllocationStatus.Released)
+        {
+            return;
+        }
+
+        var batchAllocationsToRelease = allocation.Lines
+            .Where(l => l.Status == AllocationLineStatus.Allocated)
+            .SelectMany(l => l.BatchAllocations)
+            .GroupBy(a => a.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var group in batchAllocationsToRelease.GroupBy(a => a.BatchId))
+        {
+            batchesById[group.Key].RestoreAllocatedQuantity(group.Sum(a => a.QuantityAllocated));
+        }
+
+        allocation.MarkAsReleased();
+    }
+
+    private void ReleaseLineStock(AllocationLine line, IReadOnlyDictionary<string, Batch> batchesById)
     {
         foreach (var batchAllocation in line.BatchAllocations)
         {
@@ -78,7 +102,7 @@ public sealed class AllocationDomainService : IAllocationDomainService
         }
     }
 
-    private static Dictionary<string, Batch> ToBatchesById(
+    private Dictionary<string, Batch> ToBatchesById(
         IReadOnlyDictionary<string, List<Batch>> batchesByProduct) =>
         batchesByProduct.Values
             .SelectMany(b => b)
