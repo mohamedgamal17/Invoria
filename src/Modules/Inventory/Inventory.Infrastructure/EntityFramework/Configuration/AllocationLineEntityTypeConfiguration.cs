@@ -39,5 +39,7 @@ public sealed class AllocationLineEntityTypeConfiguration : IEntityTypeConfigura
             .HasForeignKey(x => x.AllocationLineId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(x => x.BatchAllocations).AutoInclude();
     }
 }

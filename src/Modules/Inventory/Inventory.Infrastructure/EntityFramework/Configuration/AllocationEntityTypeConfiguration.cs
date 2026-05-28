@@ -26,7 +26,8 @@ public sealed class AllocationEntityTypeConfiguration : IEntityTypeConfiguration
         builder
             .Navigation(a => a.Lines)
             .HasField("_lines")
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+            .UsePropertyAccessMode(PropertyAccessMode.Field)
+            .AutoInclude();
 
         builder.HasIndex(x => x.OrderId);
 
