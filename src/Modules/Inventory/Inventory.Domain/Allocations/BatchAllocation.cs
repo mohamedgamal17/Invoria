@@ -1,6 +1,5 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.Inventory.Domain.Batches;
 
 namespace Invoria.Inventory.Domain.Allocations;
 
@@ -11,9 +10,6 @@ public class BatchAllocation : AuditedEntity
     public int QuantityAllocated { get; private set; }
     public DateTimeOffset AllocatedAt { get; private set; }
     public string? AllocationLineId { get; private set; }
-
-    public Batch? Batch { get; private set; }
-    public AllocationLine? AllocationLine { get; private set; }
 
     private BatchAllocation()
     {
@@ -45,6 +41,5 @@ public class BatchAllocation : AuditedEntity
         }
 
         AllocationLineId = line.Id;
-        AllocationLine = line;
     }
 }
