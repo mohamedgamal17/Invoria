@@ -228,6 +228,7 @@ flowchart LR
   - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
   - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Dispatched`), with child **`AllocationLine`** rows per order item.
   - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
+  - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation across allocation lines and batches.
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
   - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
   - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
@@ -261,12 +262,14 @@ flowchart LR
   2. Inventory creates `Allocation` (`Pending`) via `AllocateOrderCommand`.
   3. `AllocationInitiatedDomainEvent` is dispatched after save.
   4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent`.
-  5. `RequestAllocationIntegrationEventConsumer` runs `RequestAllocationCommand`; **`RequestAllocationCommandHandler`** loads the allocation and pending lines, reserves stock from active batches in FIFO order (`CreatedAt` ascending), links `BatchAllocation` rows to lines, marks lines `Allocated` or `Failed`, and sets the aggregate to `Allocated` or `Failed` (with stock release on failure) inside a single transaction via **`IInventoryUnitOfWork`**.
+  5. `RequestAllocationIntegrationEventConsumer` runs `RequestAllocationCommand`; **`RequestAllocationCommandHandler`** loads the allocation (lines and batch allocations via EF `AutoInclude`), loads active batches for pending lines (FIFO by `CreatedAt` ascending), delegates reservation to **`IAllocationDomainService`** / **`AllocationDomainService`** (pending-line filtering and FIFO consumption), and persists inside a single transaction via **`IInventoryUnitOfWork`**.
   6. On success, `AllocationCompletedDomainEvent` is dispatched after save; **`AllocationCompletedDomainEventHandler`** publishes `AllocationSucceededIntegrationEvent` (`AllocationId`, `OrderId`).
   7. On failure, `AllocationFailedDomainEvent` is dispatched after save; **`AllocationFailedDomainEventHandler`** publishes `AllocationFailedIntegrationEvent` (`AllocationId`, `OrderId`).
 
-- **Request allocation (application)**
-  - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; transactional FIFO logic in the handler using **`IInventoryRepository<Allocation>`**, **`IInventoryRepository<Batch>`**, and **`IInventoryUnitOfWork`**.
+- **Request allocation**
+  - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; loads allocation and batches, invokes the domain service, persists via **`IInventoryUnitOfWork`** (no allocation algorithm in the handler).
+  - **`IAllocationDomainService`** / **`AllocationDomainService`** — `Allocations/Services/` in Domain; pending-line filtering, FIFO reservation, and failure rollback across `Allocation` and `Batch` aggregates (implements **`IDomainService`** from BuildingBlocks).
+  - **`DomainServiceInstaller`** — `Infrastructure/Installers/`; registers domain services (e.g. **`IAllocationDomainService`**).
   - **`IInventoryUnitOfWork`** / **`InventoryUnitOfWork`** — module unit-of-work port (`Inventory.Domain`) backed by **`EfUnitOfWork<InventoryDbContext>`**; registered from `EntityFrameworkServiceInstaller` with `AddInvoriaUnitOfWork`.
 
 - **CQRS**
