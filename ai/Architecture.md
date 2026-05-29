@@ -226,7 +226,7 @@ flowchart LR
 
 - **Representative types**
   - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
-  - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Dispatched`), with child **`AllocationLine`** rows per order item.
+  - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Released`), with child **`AllocationLine`** rows per order item.
   - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
   - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation and release across allocation lines and batches.
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
@@ -275,6 +275,14 @@ flowchart LR
 - **Release allocation**
   - **`ReleaseAllocationCommand`** / **`ReleaseAllocationCommandHandler`** — `Allocations/Commands/ReleaseAllocation/`; loads allocation and referenced batches, delegates to **`IAllocationDomainService.Release`**, persists via **`IInventoryUnitOfWork`**.
 
+- **Fulfillment**
+  - **`Fulfillment`** aggregate (`Pending` → `InProgress` → `Completed`); created from an **`Allocated`** allocation.
+  - **`IFulfillmentDomainService`** / **`FulfillmentDomainService`** — `Fulfillments/Services/` in Domain; **`CreateFulfillment`** and **`Dispatch`** (commit reserved batch stock, complete fulfillment).
+  - **`CreateFulfillmentCommand`** — direct MediatR command; creates fulfillment from allocation.
+  - **`RequestDispatchFulfillmentCommand`** — direct MediatR command; moves fulfillment to **`InProgress`**; **`RequestDispatchDomainEventHandler`** publishes **`DispatchFulfillmentIntegrationEvent`**.
+  - **`DispatchFulfillmentCommand`** — system command only (no HTTP endpoint); **`DispatchFulfillmentIntegrationEventConsumer`** handles **`DispatchFulfillmentIntegrationEvent`**; handler loads fulfillment, allocation, and batches, delegates to **`IFulfillmentDomainService.Dispatch`**; **`FulfillmentCompletedDomainEventHandler`** publishes **`FulfillmentCompletedIntegrationEvent`**.
+  - **`Batch.DispatchReservedQuantity`** — commits reserved stock on dispatch (inverse of **`RestoreAllocatedQuantity`**; does not restore available quantity).
+
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
 
@@ -297,7 +305,7 @@ flowchart LR
 - **Bootstrap**
   - **`InventoryModuleBootStrapper`**
     - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
-    - Subscribes to `RequestAllocationIntegrationEvent` for in-process Rebus handlers.
+    - Subscribes to `RequestAllocationIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, and `DispatchFulfillmentIntegrationEvent` for in-process Rebus handlers.
 
 - **`InventoryModuleInstaller`**
   - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
