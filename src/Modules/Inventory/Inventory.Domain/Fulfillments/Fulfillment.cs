@@ -82,7 +82,13 @@ public class Fulfillment : AuditedAggregateRoot
         Status = FulfillmentStatus.InProgress;
     }
 
-    public void MarkCompleted()
+    public void Complete()
+    {
+        MarkCompleted();
+        AddDomainEvent(FulfillmentCompletedDomainEvent.ForFulfillment(this));
+    }
+
+    private void MarkCompleted()
     {
         if (Status != FulfillmentStatus.InProgress)
         {

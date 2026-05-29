@@ -66,6 +66,15 @@ public class AllocationLine : AuditedEntity
         BatchAllocations.Add(batchAllocation);
     }
 
+    public void SetBatchAllocations(IEnumerable<BatchAllocation> batchAllocations)
+    {
+        BatchAllocations.Clear();
+        foreach (var batchAllocation in batchAllocations)
+        {
+            BatchAllocations.Add(batchAllocation);
+        }
+    }
+
     public void MarkAsAllocated()
     {
         if (Status != AllocationLineStatus.Pending)
