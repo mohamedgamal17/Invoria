@@ -67,6 +67,37 @@ public class FulfillmentTests
             .WithMessage("*Pending*");
     }
 
+    [Test]
+    public void Complete_should_set_status_to_Completed_and_raise_FulfillmentCompletedDomainEvent()
+    {
+        var allocation = CreateFullyAllocatedAllocation("order-1");
+        var fulfillment = Fulfillment.CreateFromAllocation(allocation);
+        fulfillment.ClearDomainEvents();
+        fulfillment.RequestDispatch();
+        fulfillment.ClearDomainEvents();
+
+        fulfillment.Complete();
+
+        fulfillment.Status.Should().Be(FulfillmentStatus.Completed);
+        fulfillment.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<FulfillmentCompletedDomainEvent>();
+        var ev = (FulfillmentCompletedDomainEvent)fulfillment.DomainEvents.Single();
+        ev.FulfillmentId.Should().Be(fulfillment.Id);
+        ev.OrderId.Should().Be("order-1");
+        ev.AllocationId.Should().Be(allocation.Id);
+    }
+
+    [Test]
+    public void Complete_should_throw_when_not_InProgress()
+    {
+        var allocation = CreateFullyAllocatedAllocation("order-1");
+        var fulfillment = Fulfillment.CreateFromAllocation(allocation);
+
+        var act = () => fulfillment.Complete();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*InProgress*");
+    }
+
     private static Allocation CreateFullyAllocatedAllocation(string orderId)
     {
         var allocation = Allocation.CreateForOrder(orderId, [("oi-1", "p-1", 2)]);

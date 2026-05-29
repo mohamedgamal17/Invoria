@@ -1,6 +1,8 @@
 using FluentAssertions;
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Allocations.Events;
+using Invoria.Inventory.Domain.Batches;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Allocations;
 
@@ -73,5 +75,19 @@ public class AllocationTests
         var act = () => Allocation.CreateForOrder("order-1", Array.Empty<(string, string, int)>());
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    private static Allocation CreateFullyAllocatedAllocation()
+    {
+        var allocation = Allocation.CreateForOrder("order-1", [("oi-1", "p-1", 2)]);
+        allocation.ClearDomainEvents();
+        var line = allocation.Lines.Single();
+        var batch = new Batch("p-1", 10, 10m);
+        typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, "batch-1");
+        line.RecordBatchAllocation(batch.AllocateForOrder("oi-1", 2, DateTimeOffset.UtcNow));
+        line.MarkAsAllocated();
+        allocation.TryMarkAsAllocated();
+        allocation.ClearDomainEvents();
+        return allocation;
     }
 }
