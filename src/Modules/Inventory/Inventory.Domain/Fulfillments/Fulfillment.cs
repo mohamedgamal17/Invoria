@@ -65,7 +65,13 @@ public class Fulfillment : AuditedAggregateRoot
     public static Fulfillment CreateFromAllocation(Allocation allocation) =>
         new(allocation);
 
-    public void MarkInProgress()
+    public void RequestDispatch()
+    {
+        MarkInProgress();
+        AddDomainEvent(RequestDispatchDomainEvent.ForFulfillment(this));
+    }
+
+    private void MarkInProgress()
     {
         if (Status != FulfillmentStatus.Pending)
         {
