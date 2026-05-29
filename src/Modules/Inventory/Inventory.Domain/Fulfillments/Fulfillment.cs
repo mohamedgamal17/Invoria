@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Domain.Allocations;
+using Invoria.Inventory.Domain.Fulfillments.Events;
 
 namespace Invoria.Inventory.Domain.Fulfillments;
 
@@ -44,13 +45,21 @@ public class Fulfillment : AuditedAggregateRoot
 
         foreach (var line in lines)
         {
+            if (line.Status != AllocationLineStatus.Allocated)
+            {
+                throw new InvalidOperationException(
+                    $"Allocation line {line.Id} must be in {AllocationLineStatus.Allocated} state to create a fulfillment.");
+            }
+
             _items.Add(new FulfillmentItem(
                 Guid.NewGuid().ToString(),
                 Id!,
                 line.ProductId,
                 line.Id!,
-                line.QuantityAllocated));
+                line.QuantityRequested));
         }
+
+        AddDomainEvent(FulfillmentCreatedDomainEvent.ForFulfillment(this));
     }
 
     public static Fulfillment CreateFromAllocation(Allocation allocation) =>
