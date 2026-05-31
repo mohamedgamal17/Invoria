@@ -106,22 +106,6 @@ public class Batch : AuditedAggregateRoot
     }
 
     /// <summary>
-    /// Commits reserved stock for dispatch (stock leaves inventory; does not restore available quantity).
-    /// </summary>
-    public void DispatchReservedQuantity(int amount)
-    {
-        Guard.Against.NegativeOrZero(amount);
-
-        if (ReservedQuantity < amount)
-        {
-            throw new InvalidOperationException(
-                "Cannot dispatch more quantity than is currently reserved on this batch.");
-        }
-
-        ReservedQuantity -= amount;
-    }
-
-    /// <summary>
     /// Returns previously allocated stock to available quantity (inverse of <see cref="AllocateForOrder"/>).
     /// </summary>
     public void RestoreAllocatedQuantity(int amount)
