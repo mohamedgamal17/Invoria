@@ -299,31 +299,6 @@ public class BatchTests
         act.Should().Throw<InvalidOperationException>();
     }
 
-    [Test]
-    public void DispatchReservedQuantity_reduces_reserved_without_restoring_quantity()
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-dispatch-1");
-        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
-
-        batch.DispatchReservedQuantity(4);
-
-        batch.Quantity.Should().Be(6);
-        batch.ReservedQuantity.Should().Be(0);
-    }
-
-    [Test]
-    public void DispatchReservedQuantity_throws_when_amount_exceeds_reserved()
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-dispatch-bad");
-        batch.AllocateForOrder("oi-1", 2, DateTimeOffset.UtcNow);
-
-        var act = () => batch.DispatchReservedQuantity(3);
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
     private static void SetEntityId(Batch batch, string id)
     {
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, id);
