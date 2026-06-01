@@ -1,5 +1,4 @@
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
-using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -23,9 +22,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
 
             builder.Property(x => x.Status);
 
-            builder.Property(x => x.FullfillmentStatus)
-                .HasDefaultValue(FullfillmentStatus.Pending);
-
             builder.Property(x => x.PaymentType)
                 .IsRequired();
 
@@ -43,16 +39,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
                 .HasForeignKey("OrderId")
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(x => x.FailureDetails)
-                .WithOne()
-                .HasForeignKey("OrderId")
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(x => x.StateTransitionHistory)
-                .WithOne()
-                .HasForeignKey(x => x.OrderId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             builder.HasMany(x => x.Payments)
                 .WithOne(x => x.Order)
                 .HasForeignKey(x => x.OrderId)
@@ -62,9 +48,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
                 .WithOne()
                 .HasForeignKey("OrderId")
                 .OnDelete(DeleteBehavior.Cascade);
-
-            builder.Navigation(x => x.FailureDetails).AutoInclude();
-            builder.Navigation(x => x.StateTransitionHistory).AutoInclude();
 
             builder.MapAudited();
 
