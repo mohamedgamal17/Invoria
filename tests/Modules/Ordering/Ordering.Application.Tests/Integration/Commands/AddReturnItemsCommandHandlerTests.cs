@@ -1,14 +1,12 @@
+using Autofac;
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
-using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
 using Invoria.Ordering.Application.Orders.Queries.GetOrderById;
 using Invoria.Ordering.Application.Tests.Assertions;
-using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
@@ -22,11 +20,9 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 [TestFixture]
 public class AddReturnItemsCommandHandlerTests : OrderTestFixture
 {
-    private async Task<Order> PersistOneRandomOrderInNewScopeAsync()
+    private async Task<Order> PersistOneRandomOrderAsync()
     {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        return (await OrderTestData.PersistRandomOrdersAsync(repo, 1)).Single();
+        return (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
     }
 
     protected override async Task BeforeAnyTestRunAsync()
@@ -38,8 +34,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
 
     private async Task ClearOrdersAsync()
     {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var orders = await db.Set<Order>().ToListAsync();
         db.RemoveRange(orders);
         await db.SaveChangesAsync();
@@ -53,16 +48,12 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
             OrderId = order.Id,
             CustomerId = order.CustomerId
         });
-        await Mediator.Send(new DispatchOrderCommand(order.Id));
-        await Mediator.Send(new ShipOrderCommand(order.Id));
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
     }
 
-    private static async Task<string> GetFirstOrderLineIdAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
+    private async Task<string> GetFirstOrderLineIdAsync(string orderId)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         return await db.Set<Order>()
             .Where(o => o.Id == orderId)
             .SelectMany(o => o.Items)
@@ -73,9 +64,9 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_record_return_items_when_shipped()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = await PersistOneRandomOrderAsync();
         await PrepareShippedOrderAsync(order);
-        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+        var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var command = new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]);
 
@@ -93,9 +84,9 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_persist_returns_and_reload_via_GetOrderById()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = await PersistOneRandomOrderAsync();
         await PrepareShippedOrderAsync(order);
-        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+        var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var recordResult = await Mediator.Send(
             new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
@@ -114,8 +105,8 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_order_not_shipped()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
-        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+        var order = await PersistOneRandomOrderAsync();
+        var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var result = await Mediator.Send(
             new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
@@ -126,7 +117,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_unknown_order_line()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = await PersistOneRandomOrderAsync();
         await PrepareShippedOrderAsync(order);
 
         var result = await Mediator.Send(
@@ -138,12 +129,11 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_return_quantity_exceeds_ordered()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = await PersistOneRandomOrderAsync();
         await PrepareShippedOrderAsync(order);
-        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+        var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var lineQuantity = await db.Set<Order>()
             .Where(o => o.Id == order.Id)
             .SelectMany(o => o.Items)
@@ -169,9 +159,9 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_clear_returns_when_items_empty()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = await PersistOneRandomOrderAsync();
         await PrepareShippedOrderAsync(order);
-        var lineId = await GetFirstOrderLineIdAsync(ServiceProvider, order.Id);
+        var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var recordResult = await Mediator.Send(
             new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));

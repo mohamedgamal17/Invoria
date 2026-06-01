@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />

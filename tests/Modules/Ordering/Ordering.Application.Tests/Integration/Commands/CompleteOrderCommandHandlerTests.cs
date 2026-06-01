@@ -1,12 +1,10 @@
+using Autofac;
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
-using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
-using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
@@ -20,13 +18,6 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 [TestFixture]
 public class CompleteOrderCommandHandlerTests : OrderTestFixture
 {
-    private async Task<Order> PersistOneRandomOrderInNewScopeAsync()
-    {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        return (await OrderTestData.PersistRandomOrdersAsync(repo, 1)).Single();
-    }
-
     protected override async Task BeforeAnyTestRunAsync()
     {
         await ClearOrdersAsync();
@@ -36,20 +27,15 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
 
     private async Task ClearOrdersAsync()
     {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var orders = await db.Set<Order>().ToListAsync();
         db.RemoveRange(orders);
         await db.SaveChangesAsync();
     }
 
-    private static async Task SetOrderStatusAsync(
-        IServiceProvider serviceProvider,
-        string orderId,
-        OrderStatus status)
+    private async Task SetOrderStatusAsync(string orderId, OrderStatus status)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var rows = await db.Set<Order>()
             .Where(o => o.Id == orderId)
             .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, status));
@@ -57,12 +43,9 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
         rows.Should().Be(1, $"order id {orderId} should exist for status update");
     }
 
-    private static async Task<OrderStatus> GetOrderStatusFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
+    private async Task<OrderStatus> GetOrderStatusFromDbAsync(string orderId)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         return await db.Set<Order>()
             .Where(o => o.Id == orderId)
             .Select(o => o.Status)
@@ -72,15 +55,14 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_complete_order_when_accepted_and_dispatched()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
         await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = order.Id,
             CustomerId = order.CustomerId
         });
-        await Mediator.Send(new DispatchOrderCommand(order.Id));
-        await Mediator.Send(new ShipOrderCommand(order.Id));
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
 
         var command = new CompleteOrderCommand(order.Id);
 
@@ -90,14 +72,14 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
         result.Value.Should().NotBeNull();
         result.Value!.Id.Should().Be(order.Id);
 
-        var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
+        var status = await GetOrderStatusFromDbAsync(order.Id);
         status.Should().Be(OrderStatus.Completed);
     }
 
     [Test]
     public async Task Should_fail_when_accepted_but_not_dispatched()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
         await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
@@ -117,8 +99,8 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
     [TestCase(OrderStatus.Cancelled)]
     public async Task Should_fail_when_order_is_not_accepted(OrderStatus status)
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, status);
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
+        await SetOrderStatusAsync(order.Id, status);
 
         var command = new CompleteOrderCommand(order.Id);
 

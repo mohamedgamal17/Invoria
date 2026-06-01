@@ -4,9 +4,7 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
-using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Contracts.Orders;
@@ -58,8 +56,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             OrderId = order.Id,
             CustomerId = order.CustomerId
         });
-        await TestMediator.Send(new DispatchOrderCommand(order.Id));
-        await TestMediator.Send(new ShipOrderCommand(order.Id));
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
 
         var lineId = await GetFirstOrderLineIdAsync(Scope.Resolve<OrderingDbContext>(), order.Id);
         var recordResult = await TestMediator.Send(
