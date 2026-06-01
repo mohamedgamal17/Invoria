@@ -21,12 +21,8 @@ namespace Invoria.Ordering.Infrastructure
             if (bus is not null)
             {
                 await bus.Subscribe<AllocateOrderIntegrationEvent>();
-                await bus.Subscribe<OrderAllocationSucceededIntegrationEvent>();
-                await bus.Subscribe<OrderAllocationFailedIntegrationEvent>();
                 await bus.Subscribe<OrderDispatchedIntegrationEvent>();
                 await bus.Subscribe<ReleaseOrderAllocationsIntegrationEvent>();
-                await bus.Subscribe<OrderReopenInventoryReleasedIntegrationEvent>();
-                await bus.Subscribe<OrderRefusalInventoryReleasedIntegrationEvent>();
             }
         }
     }
