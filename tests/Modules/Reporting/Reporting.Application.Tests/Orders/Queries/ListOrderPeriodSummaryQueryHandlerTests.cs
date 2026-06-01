@@ -29,15 +29,13 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
         string id,
         DateTimeOffset createdAt,
         decimal total,
-        OrderStatus status,
-        List<ReportedOrderStateTransition>? transitions = null) =>
+        OrderStatus status) =>
         new()
         {
             Id = id,
             OrderNumber = id,
             CustomerId = "c1",
             OrderStatus = status,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = total,
@@ -46,8 +44,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
             ReplicationVersion = 1,
             SourceLastKnownAt = createdAt,
             CreatedAt = createdAt,
-            Lines = new List<ReportedOrderLine>(),
-            StateTransitions = transitions ?? new List<ReportedOrderStateTransition>()
+            Lines = new List<ReportedOrderLine>()
         };
 
     [Test]

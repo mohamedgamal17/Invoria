@@ -138,27 +138,6 @@ public class OrderResponseFactoryTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task PrepareDto_should_include_state_transition_history()
-    {
-        var order = new Order("HISTORY-1", Guid.NewGuid().ToString());
-        order.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 1, 10m) });
-        order.Accept();
-        order.MarkInventoryAllocated();
-
-        var dto = await Factory.PrepareDto(order);
-
-        dto.StateTransitionHistory.Should().HaveCount(2);
-        dto.StateTransitionHistory[0].FromStatus.Should().Be(OrderStatus.Pending);
-        dto.StateTransitionHistory[0].ToStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[0].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
-        dto.StateTransitionHistory[0].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
-        dto.StateTransitionHistory[1].FromStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[1].ToStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[1].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
-        dto.StateTransitionHistory[1].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocated);
-    }
-
-    [Test]
     public async Task PrepareDto_should_map_payment_aggregate_and_payment_lines_after_record_payment()
     {
         var customerId = Guid.NewGuid().ToString();

@@ -16,7 +16,6 @@ public sealed class ReportedOrderReadModelSmokeTests
             OrderNumber = "ON-9",
             CustomerId = "cust-1",
             OrderStatus = OrderStatus.Completed,
-            FullfillmentStatus = FullfillmentStatus.Dispatched,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Partial,
             TotalOrderAmount = 100m,

@@ -67,7 +67,6 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands
                         e.Order.OrderNumber == result.Value.OrderNumber &&
                         e.Order.CustomerId == result.Value.CustomerId &&
                         e.Order.OrderStatus == result.Value.Status &&
-                        e.Order.FullfillmentStatus == result.Value.FullfillmentStatus &&
                         e.Order.PaymentType == result.Value.PaymentType &&
                         e.Order.PaymentStatus == result.Value.PaymentStatus &&
                         e.Order.TotalOrderAmount == expectedTotal &&

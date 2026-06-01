@@ -255,8 +255,6 @@ public class OrderReturnItemsDomainTests
         order.Complete();
 
         order.Status.Should().Be(OrderStatus.Cancelled);
-        order.StateTransitionHistory.Should().Contain(h =>
-            h.ToStatus == OrderStatus.Cancelled && h.Reason == "All order items returned");
     }
 
     [Test]

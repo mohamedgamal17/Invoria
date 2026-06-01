@@ -23,7 +23,6 @@ public sealed class DebtSummaryRollupRefresherTests : DebtSummaryRollupRefresher
             OrderNumber = id,
             CustomerId = customerId,
             OrderStatus = orderStatus,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = paymentType,
             PaymentStatus = paymentStatus,
             TotalOrderAmount = totalOrderAmount,

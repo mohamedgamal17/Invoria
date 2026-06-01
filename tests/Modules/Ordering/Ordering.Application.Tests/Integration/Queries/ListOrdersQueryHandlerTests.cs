@@ -430,34 +430,6 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_return_failure_details_when_include_order_items_is_true()
-    {
-        var customerId = Guid.NewGuid().ToString();
-        var order = new Order("FAIL-001", customerId);
-        var item = new OrderItem(Guid.NewGuid().ToString(), 4, 10m);
-        order.UpdateItems([item]);
-        order.Accept();
-        order.CancelDueToAllocationFailure("Insufficient stock");
-        order.ReplaceFailureDetails(
-        [
-            new OrderFailureDetails(item.ProductId, 7, 4, 3)
-        ]);
-        await OrderRepository.Add(order, CancellationToken.None);
-
-        var query = new ListOrdersQuery { Skip = 0, Length = 10, IncludeOrderItems = true };
-
-        var result = await TestMediator.Send(query);
-
-        result.ShouldBeSuccess();
-        var dto = result.Value!.Data.Single(d => d.Id == order.Id);
-        dto.FailureDetails.Should().HaveCount(1);
-        dto.FailureDetails[0].ItemId.Should().Be(item.ProductId);
-        dto.FailureDetails[0].QuantityRequested.Should().Be(7);
-        dto.FailureDetails[0].QuantityAvailable.Should().Be(4);
-        dto.FailureDetails[0].Shortage.Should().Be(3);
-    }
-
-    [Test]
     public async Task Should_filter_by_order_status()
     {
         var customerId = Guid.NewGuid().ToString();
@@ -484,35 +456,6 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         var page = result.Value!;
         page.Data.Should().ContainSingle(x => x.Id == pendingOrder.Id);
         page.Data.Should().OnlyContain(x => x.Status == OrderStatus.Pending);
-    }
-
-    [Test]
-    public async Task Should_filter_by_fullfillment_status()
-    {
-        var customerId = Guid.NewGuid().ToString();
-
-        var pendingFulfillmentOrder = new Order("FULFILL-PENDING", customerId);
-        pendingFulfillmentOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 10m)]);
-        await OrderRepository.Add(pendingFulfillmentOrder, CancellationToken.None);
-
-        var allocatingOrder = new Order("FULFILL-ALLOCATING", customerId);
-        allocatingOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
-        allocatingOrder.Accept();
-        await OrderRepository.Add(allocatingOrder, CancellationToken.None);
-
-        var query = new ListOrdersQuery
-        {
-            Skip = 0,
-            Length = 10,
-            FullfillmentStatus = FullfillmentStatus.Pending
-        };
-
-        var result = await TestMediator.Send(query);
-
-        result.ShouldBeSuccess();
-        var page = result.Value!;
-        page.Data.Should().ContainSingle(x => x.Id == pendingFulfillmentOrder.Id);
-        page.Data.Should().OnlyContain(x => x.FullfillmentStatus == FullfillmentStatus.Pending);
     }
 
     [Test]

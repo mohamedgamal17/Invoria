@@ -5,7 +5,10 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Domain;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using Invoria.Ordering.Tests.Fakes;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -47,11 +50,8 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
             CustomerId = created.CustomerId
         });
 
-        var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
-        dispatchResponse.EnsureSuccessStatusCode();
-
-        var shipResponse = await Client.PostAsync($"/orders/{created.Id}/ship", emptyJson);
-        shipResponse.EnsureSuccessStatusCode();
+        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, created.Id);
 
         var completeResponse = await Client.PostAsync(
             $"/orders/{created.Id}/complete",

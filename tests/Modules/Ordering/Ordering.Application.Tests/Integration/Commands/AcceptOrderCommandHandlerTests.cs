@@ -66,32 +66,6 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
             .SingleAsync();
     }
 
-    private static async Task SetFullfillmentStatusAsync(
-        IServiceProvider serviceProvider,
-        string orderId,
-        FullfillmentStatus fullfillmentStatus)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        var rows = await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.FullfillmentStatus, fullfillmentStatus));
-
-        rows.Should().Be(1, $"order id {orderId} should exist for fulfillment update");
-    }
-
-    private static async Task<FullfillmentStatus> GetFullfillmentStatusFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        return await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .Select(o => o.FullfillmentStatus)
-            .SingleAsync();
-    }
-
     private static async Task<Order> LoadOrderWithItemsAsync(IServiceProvider serviceProvider, string orderId)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -147,9 +121,6 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
         status.Should().Be(OrderStatus.Accepted);
 
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocating);
-
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
@@ -175,9 +146,6 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
         status.Should().Be(OrderStatus.Accepted);
 
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocating);
-
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
@@ -187,14 +155,12 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_fullfillment_is_not_pending()
+    public async Task Should_fail_when_already_accepted()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetFullfillmentStatusAsync(ServiceProvider, order.Id, FullfillmentStatus.Allocating);
+        await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var command = new AcceptOrderCommand(order.Id);
-
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(new AcceptOrderCommand(order.Id));
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
     }

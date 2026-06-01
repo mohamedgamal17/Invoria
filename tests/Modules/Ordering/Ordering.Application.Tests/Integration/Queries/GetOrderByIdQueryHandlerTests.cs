@@ -59,33 +59,4 @@ public class GetOrderByIdQueryHandlerTests : OrderTestFixture
         result.Exception.Should().BeOfType<NotFoundException>();
     }
 
-    [Test]
-    public async Task Should_return_order_with_failure_details_when_present()
-    {
-        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
-        order.Accept();
-        var firstItem = order.Items.First();
-        order.CancelDueToAllocationFailure("Insufficient stock");
-        order.ReplaceFailureDetails(
-        [
-            new OrderFailureDetails(
-                firstItem.ProductId,
-                firstItem.Quantity + 2,
-                firstItem.Quantity,
-                2)
-        ]);
-        await OrderRepository.Update(order, CancellationToken.None);
-
-        var query = new GetOrderByIdQuery { Id = order.Id };
-
-        var result = await Mediator.Send(query);
-
-        result.ShouldBeSuccess();
-        var dto = result.Value!;
-        dto.FailureDetails.Should().HaveCount(1);
-        dto.FailureDetails[0].ItemId.Should().Be(firstItem.ProductId);
-        dto.FailureDetails[0].QuantityRequested.Should().Be(firstItem.Quantity + 2);
-        dto.FailureDetails[0].QuantityAvailable.Should().Be(firstItem.Quantity);
-        dto.FailureDetails[0].Shortage.Should().Be(2);
-    }
 }

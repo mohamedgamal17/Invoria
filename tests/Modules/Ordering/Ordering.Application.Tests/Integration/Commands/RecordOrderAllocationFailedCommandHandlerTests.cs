@@ -37,7 +37,7 @@ public class RecordOrderAllocationFailedCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_cancel_order_and_persist_failure_details()
+    public async Task Should_cancel_order_when_allocation_fails()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
@@ -69,16 +69,9 @@ public class RecordOrderAllocationFailedCommandHandlerTests : OrderTestFixture
         await using var scope = ServiceProvider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
         var persisted = await db.Set<Order>()
-            .Include(o => o.FailureDetails)
             .SingleAsync(o => o.Id == order.Id);
 
         persisted.Status.Should().Be(OrderStatus.Cancelled);
-        persisted.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
-        persisted.FailureDetails.Should().HaveCount(1);
-        persisted.FailureDetails[0].ItemId.Should().Be(firstItem.ProductId);
-        persisted.FailureDetails[0].QuantityRequested.Should().Be(firstItem.Quantity + 3);
-        persisted.FailureDetails[0].QuantityAvailable.Should().Be(firstItem.Quantity);
-        persisted.FailureDetails[0].Shortage.Should().Be(3);
     }
 
     [Test]
@@ -119,7 +112,7 @@ public class RecordOrderAllocationFailedCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_order_not_in_accepted_allocating_state()
+    public async Task Should_fail_when_order_not_accepted()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
 

@@ -36,39 +36,23 @@ public class RecordOrderAllocationSucceededCommandHandlerTests : OrderTestFixtur
         await db.SaveChangesAsync();
     }
 
-    private static async Task<FullfillmentStatus> GetFullfillmentStatusFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        return await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .Select(o => o.FullfillmentStatus)
-            .SingleAsync();
-    }
-
     [Test]
-    public async Task Should_set_fulfillment_allocated_when_accepted_and_allocating()
+    public async Task Should_succeed_when_accepted()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var command = new RecordOrderAllocationSucceededCommand
+        var result = await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = order.Id,
             CustomerId = order.CustomerId
-        };
-
-        var result = await Mediator.Send(command);
+        });
 
         result.ShouldBeSuccess();
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocated);
     }
 
     [Test]
-    public async Task Should_succeed_idempotently_when_already_allocated()
+    public async Task Should_succeed_idempotently_when_called_twice()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
@@ -79,27 +63,18 @@ public class RecordOrderAllocationSucceededCommandHandlerTests : OrderTestFixtur
             CustomerId = order.CustomerId
         };
 
-        var first = await Mediator.Send(command);
-        first.ShouldBeSuccess();
-
-        var second = await Mediator.Send(command);
-        second.ShouldBeSuccess();
-
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocated);
+        (await Mediator.Send(command)).ShouldBeSuccess();
+        (await Mediator.Send(command)).ShouldBeSuccess();
     }
 
     [Test]
     public async Task Should_fail_when_order_not_found()
     {
-        var missingId = Guid.NewGuid().ToString();
-        var command = new RecordOrderAllocationSucceededCommand
+        var result = await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
-            OrderId = missingId,
+            OrderId = Guid.NewGuid().ToString(),
             CustomerId = Guid.NewGuid().ToString()
-        };
-
-        var result = await Mediator.Send(command);
+        });
 
         result.ShouldBeFailure(typeof(NotFoundException));
     }
@@ -110,29 +85,25 @@ public class RecordOrderAllocationSucceededCommandHandlerTests : OrderTestFixtur
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var command = new RecordOrderAllocationSucceededCommand
+        var result = await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = order.Id,
             CustomerId = Guid.NewGuid().ToString()
-        };
-
-        var result = await Mediator.Send(command);
+        });
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
     }
 
     [Test]
-    public async Task Should_fail_when_order_not_accepted_allocating()
+    public async Task Should_fail_when_order_not_accepted()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
 
-        var command = new RecordOrderAllocationSucceededCommand
+        var result = await Mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = order.Id,
             CustomerId = order.CustomerId
-        };
-
-        var result = await Mediator.Send(command);
+        });
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
     }

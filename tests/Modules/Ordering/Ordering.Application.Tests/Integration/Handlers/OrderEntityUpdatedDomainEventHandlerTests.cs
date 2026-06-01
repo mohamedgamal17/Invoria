@@ -48,7 +48,6 @@ public sealed class OrderEntityUpdatedDomainEventHandlerTests
                     e.Order.OrderNumber == "ON-1" &&
                     e.Order.CustomerId == "c1" &&
                     e.Order.OrderStatus == OrderStatus.Pending &&
-                    e.Order.FullfillmentStatus == FullfillmentStatus.Pending &&
                     e.Order.PaymentType == OrderPaymentType.Debt &&
                     e.Order.PaymentStatus == OrderPaymentStatus.Unpaid &&
                     e.Order.TotalOrderAmount == 100m &&

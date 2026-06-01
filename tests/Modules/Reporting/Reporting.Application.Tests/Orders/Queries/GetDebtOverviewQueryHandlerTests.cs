@@ -39,7 +39,6 @@ public sealed class GetDebtOverviewQueryHandlerTests
             OrderNumber = id,
             CustomerId = customerId,
             OrderStatus = orderStatus,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = paymentStatus,
             TotalOrderAmount = total,

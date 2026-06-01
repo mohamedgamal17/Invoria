@@ -21,7 +21,6 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
             OrderNumber = id,
             CustomerId = "c1",
             OrderStatus = status,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 1m,

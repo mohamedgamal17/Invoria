@@ -7,7 +7,10 @@ using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Domain;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using Invoria.Ordering.Tests.Fakes;
 using Invoria.Endpoints.Tests.Utilities;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -117,8 +120,8 @@ public class ListOrdersEndpointTests : OrderingTestFixture
             CustomerId = createdOrder.CustomerId
         });
 
-        (await Client.PostAsync($"/orders/{createdOrder.Id}/dispatch", emptyJson)).EnsureSuccessStatusCode();
-        (await Client.PostAsync($"/orders/{createdOrder.Id}/ship", emptyJson)).EnsureSuccessStatusCode();
+        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, createdOrder.Id);
 
         var getResponse = await Client.GetAsync($"/orders/{createdOrder.Id}");
         getResponse.EnsureSuccessStatusCode();
@@ -308,52 +311,6 @@ public class ListOrdersEndpointTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task Should_map_fullfillment_status_filter()
-    {
-        var productId = Guid.NewGuid().ToString();
-        var customerId = Guid.NewGuid().ToString();
-
-        var pendingFulfillmentRequest = new CreateOrderRequest
-        {
-            CustomerId = customerId,
-            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
-        };
-
-        var toAcceptRequest = new CreateOrderRequest
-        {
-            CustomerId = customerId,
-            Items = [new CreateOrderLineItemRequest { ProductId = productId, Quantity = 1, Price = 10m }]
-        };
-
-        var pendingResponse = await Client.PostAsJsonAsync("/orders", pendingFulfillmentRequest);
-        pendingResponse.IsSuccessStatusCode.Should().BeTrue();
-        var pendingEnvelope = await pendingResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
-        var pendingFulfillmentOrder = pendingEnvelope!.Result!;
-
-        var toAcceptResponse = await Client.PostAsJsonAsync("/orders", toAcceptRequest);
-        toAcceptResponse.IsSuccessStatusCode.Should().BeTrue();
-        var toAcceptEnvelope = await toAcceptResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
-        var toAcceptOrder = toAcceptEnvelope!.Result!;
-
-        var acceptResponse = await Client.PostAsJsonAsync($"/orders/{toAcceptOrder.Id}/accept", new { });
-        acceptResponse.IsSuccessStatusCode.Should().BeTrue();
-
-        var listQuery = new { Skip = 0, Length = 100, FullfillmentStatus = FullfillmentStatus.Pending };
-        var uri = "/orders?" + QueryStringHelper.ToQueryString(listQuery);
-
-        var response = await Client.GetAsync(uri);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var envelope = await response.Content.ReadFromJsonAsync<Envelope<PagingDto<OrderDto>>>();
-        envelope.Should().NotBeNull();
-        envelope!.IsSuccess.Should().BeTrue();
-        envelope.Result!.Data.Should().Contain(x => x.Id == pendingFulfillmentOrder.Id);
-        envelope.Result.Data.Should().NotContain(x => x.Id == toAcceptOrder.Id);
-        envelope.Result.Data.Should().OnlyContain(x => x.FullfillmentStatus == FullfillmentStatus.Pending);
-    }
-
-    [Test]
     public async Task Should_map_payment_type_filter()
     {
         var productId = Guid.NewGuid().ToString();
@@ -438,11 +395,10 @@ public class ListOrdersEndpointTests : OrderingTestFixture
             CustomerId = customerId
         });
 
-        var dispatchResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/dispatch", new { Id = partialOrder.Id });
-        dispatchResponse.IsSuccessStatusCode.Should().BeTrue();
+        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, partialOrder.Id);
 
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
-        (await Client.PostAsync($"/orders/{partialOrder.Id}/ship", emptyJson)).EnsureSuccessStatusCode();
 
         var completeResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/complete", new { });
         completeResponse.IsSuccessStatusCode.Should().BeTrue();

@@ -6,7 +6,10 @@ using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Domain;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using Invoria.Ordering.Tests.Fakes;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +21,7 @@ public class RecordOrderPaymentEndpointTests : OrderingTestFixture
     private static decimal SumLines(CreateOrderRequest request) =>
         request.Items.Sum(i => i.Quantity * i.Price);
 
-    /// <summary>HTTP create → accept → allocation succeeded (mediator) → dispatch → complete; returns finalized order.</summary>
+    /// <summary>HTTP create → accept → allocation succeeded (mediator) → dispatch/ship (repository) → complete; returns finalized order.</summary>
     private async Task<OrderDto> CreateAndFullyCompleteOrderAsync(CreateOrderRequest createRequest)
     {
         var createResponse = await Client.PostAsJsonAsync("/orders", createRequest);
@@ -40,11 +43,8 @@ public class RecordOrderPaymentEndpointTests : OrderingTestFixture
             CustomerId = created.CustomerId
         });
 
-        var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
-        dispatchResponse.EnsureSuccessStatusCode();
-
-        var shipResponse = await Client.PostAsync($"/orders/{created.Id}/ship", emptyJson);
-        shipResponse.EnsureSuccessStatusCode();
+        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
+        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, created.Id);
 
         var completeResponse = await Client.PostAsync($"/orders/{created.Id}/complete", emptyJson);
         completeResponse.EnsureSuccessStatusCode();

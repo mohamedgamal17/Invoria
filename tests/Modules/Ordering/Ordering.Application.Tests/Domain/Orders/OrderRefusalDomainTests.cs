@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Domain.Orders.Events;
 
@@ -17,73 +18,18 @@ public class OrderRefusalDomainTests
     }
 
     [Test]
-    public void Refuse_when_allocated_sets_refused_releasing_and_release_event()
+    public void Refuse_when_accepted_sets_refused_and_raises_release_and_refused_events()
     {
         var order = CreateOrderWithItems("ref-alloc");
         order.Accept();
-        order.MarkInventoryAllocated();
         order.ClearDomainEvents();
 
         order.Refuse();
 
         order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Releasing);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusalReleaseRequestedDomainEvent>();
-    }
-
-    [Test]
-    public void Refuse_when_allocating_sets_refused_cancelled_and_refused_event()
-    {
-        var order = CreateOrderWithItems("ref-allocating");
-        order.Accept();
-        order.ClearDomainEvents();
-
-        order.Refuse();
-
-        order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Cancelled);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusedDomainEvent>();
-    }
-
-    [Test]
-    public void Refuse_when_accepted_and_fulfillment_pending_sets_refused_cancelled_and_refused_event()
-    {
-        var order = CreateOrderWithItems("ref-pending");
-        typeof(Order).GetProperty(nameof(Order.Status))!.SetValue(order, OrderStatus.Accepted);
-
-        order.Refuse();
-
-        order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Cancelled);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusedDomainEvent>();
-    }
-
-    [Test]
-    public void Refuse_when_releasing_throws()
-    {
-        var order = CreateOrderWithItems("ref-rel");
-        order.Accept();
-        order.MarkInventoryAllocated();
-        order.Reopen();
-
-        var act = () => order.Refuse();
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Test]
-    public void CompleteRefusalAfterInventoryReleased_sets_cancelled()
-    {
-        var order = CreateOrderWithItems("ref-complete");
-        order.Accept();
-        order.MarkInventoryAllocated();
-        order.Refuse();
-        order.ClearDomainEvents();
-
-        order.CompleteRefusalAfterInventoryReleased();
-
-        order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Cancelled);
+        order.DomainEvents.Should().HaveCount(2);
+        order.DomainEvents.Should().ContainSingle(e => e is OrderRefusalReleaseRequestedDomainEvent);
+        order.DomainEvents.Should().ContainSingle(e => e is OrderRefusedDomainEvent);
     }
 
     [Test]
@@ -100,23 +46,16 @@ public class OrderRefusalDomainTests
         order.Refuse();
 
         order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
         order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusedDomainEvent>();
     }
 
     [Test]
-    public void Refuse_when_dispatched_sets_refused_and_refused_event()
+    public void Refuse_throws_when_pending()
     {
-        var order = CreateOrderWithItems("ref-disp");
-        order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.ClearDomainEvents();
+        var order = CreateOrderWithItems("ref-pending");
 
-        order.Refuse();
+        var act = () => order.Refuse();
 
-        order.Status.Should().Be(OrderStatus.Refused);
-        order.FullfillmentStatus.Should().Be(FullfillmentStatus.Dispatched);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusedDomainEvent>();
+        act.Should().Throw<InvalidOperationException>();
     }
 }
