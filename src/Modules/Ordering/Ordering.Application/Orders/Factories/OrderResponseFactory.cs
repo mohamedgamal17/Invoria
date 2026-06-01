@@ -5,7 +5,6 @@ using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Services;
 using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Orders.Factories
@@ -30,7 +29,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
             if (includeOrderItems)
             {
                 var productIds = paging.Data
-                    .SelectMany(o => ExtractDistinctProductIds(o.Items, o.FailureDetails))
+                    .SelectMany(o => ExtractDistinctProductIds(o.Items))
                     .Where(id => !string.IsNullOrWhiteSpace(id))
                     .Distinct()
                     .ToList();
@@ -65,7 +64,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
             if (includeReturnItems)
             {
                 var productIds = paging.Data
-                    .SelectMany(o => ExtractDistinctProductIds(o.Items, o.FailureDetails))
+                    .SelectMany(o => ExtractDistinctProductIds(o.Items))
                     .Where(id => !string.IsNullOrWhiteSpace(id))
                     .Distinct()
                     .ToList();
@@ -86,15 +85,8 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 };
             }
 
-            var failureProductIds = paging.Data
-                .SelectMany(o => o.FailureDetails)
-                .Select(f => f.ItemId)
-                .Where(id => !string.IsNullOrWhiteSpace(id))
-                .Distinct()
-                .ToList();
-            var failureProductById = await LoadProductsByIdsAsync(failureProductIds, cancellationToken);
             var summaryData = paging.Data
-                .Select(o => MapToSummaryDto(o, summaryCustomerById, failureProductById))
+                .Select(o => MapToSummaryDto(o, summaryCustomerById, new Dictionary<string, ProductDto>()))
                 .ToList();
 
             return new PagingDto<OrderDto>
@@ -116,36 +108,8 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
-                FullfillmentStatus = view.FullfillmentStatus,
                 Payments = new List<OrderPaymentDto>(),
-                Items = new List<OrderItemDto>(),
-                StateTransitionHistory = view.StateTransitionHistory
-                    .Select(transition => new OrderStateTransitionHistoryDto
-                    {
-                        FromStatus = transition.FromStatus,
-                        ToStatus = transition.ToStatus,
-                        FromFullfillmentStatus = transition.FromFullfillmentStatus,
-                        ToFullfillmentStatus = transition.ToFullfillmentStatus,
-                        ChangedAt = transition.ChangedAt,
-                        Reason = transition.Reason
-                    })
-                    .ToList(),
-                FailureDetails = view.FailureDetails
-                    .Select(detail =>
-                    {
-                        var failureDto = new OrderFailureDetailsDto
-                        {
-                            Id = detail.Id,
-                            ItemId = detail.ItemId,
-                            ItemName = productById.GetValueOrDefault(detail.ItemId)?.Name,
-                            QuantityRequested = detail.QuantityRequested,
-                            QuantityAvailable = detail.QuantityAvailable,
-                            Shortage = detail.Shortage
-                        };
-                        MapAudited(detail, failureDto);
-                        return failureDto;
-                    })
-                    .ToList()
+                Items = new List<OrderItemDto>()
             };
 
             ApplyPaymentScalars(view, dto);
@@ -156,7 +120,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
 
         public override async Task<OrderDto> PrepareDto(Order view)
         {
-            var productIds = ExtractDistinctProductIds(view.Items, view.FailureDetails);
+            var productIds = ExtractDistinctProductIds(view.Items);
             var productById = await LoadProductsByIdsAsync(productIds, CancellationToken.None);
 
             var customerIds = string.IsNullOrWhiteSpace(view.CustomerId)
@@ -170,7 +134,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
         public override async Task<List<OrderDto>> PrepareListDto(List<Order> views)
         {
             var productIds = views
-                .SelectMany(o => ExtractDistinctProductIds(o.Items, o.FailureDetails))
+                .SelectMany(o => ExtractDistinctProductIds(o.Items))
                 .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct()
                 .ToList();
@@ -202,7 +166,6 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
-                FullfillmentStatus = view.FullfillmentStatus,
                 Items = view.Items
                     .Select(item => new OrderItemDto
                     {
@@ -211,33 +174,6 @@ namespace Invoria.Ordering.Application.Orders.Factories
                         Quantity = item.Quantity,
                         Price = item.Price,
                         Product = productById.GetValueOrDefault(item.ProductId)
-                    })
-                    .ToList(),
-                StateTransitionHistory = view.StateTransitionHistory
-                    .Select(transition => new OrderStateTransitionHistoryDto
-                    {
-                        FromStatus = transition.FromStatus,
-                        ToStatus = transition.ToStatus,
-                        FromFullfillmentStatus = transition.FromFullfillmentStatus,
-                        ToFullfillmentStatus = transition.ToFullfillmentStatus,
-                        ChangedAt = transition.ChangedAt,
-                        Reason = transition.Reason
-                    })
-                    .ToList(),
-                FailureDetails = view.FailureDetails
-                    .Select(detail =>
-                    {
-                        var dto = new OrderFailureDetailsDto
-                        {
-                            Id = detail.Id,
-                            ItemId = detail.ItemId,
-                            ItemName = productById.GetValueOrDefault(detail.ItemId)?.Name,
-                            QuantityRequested = detail.QuantityRequested,
-                            QuantityAvailable = detail.QuantityAvailable,
-                            Shortage = detail.Shortage
-                        };
-                        MapAudited(detail, dto);
-                        return dto;
                     })
                     .ToList(),
                 Payments = MapPayments(view.Payments),
@@ -313,20 +249,11 @@ namespace Invoria.Ordering.Application.Orders.Factories
             return list;
         }
 
-        private static List<string> ExtractDistinctProductIds(
-            IReadOnlyCollection<OrderItem> items,
-            IReadOnlyCollection<OrderFailureDetails> failureDetails)
+        private static List<string> ExtractDistinctProductIds(IReadOnlyCollection<OrderItem> items)
         {
-            var itemProductIds = items
+            return items
                 .Select(i => i.ProductId)
-                .Where(id => !string.IsNullOrWhiteSpace(id));
-
-            var failedProductIds = failureDetails
-                .Select(f => f.ItemId)
-                .Where(id => !string.IsNullOrWhiteSpace(id));
-
-            return itemProductIds
-                .Concat(failedProductIds)
+                .Where(id => !string.IsNullOrWhiteSpace(id))
                 .Distinct()
                 .ToList();
         }

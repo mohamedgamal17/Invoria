@@ -16,8 +16,6 @@ public class OrderIntegrationPayload
 
     public OrderStatus OrderStatus { get; set; }
 
-    public FullfillmentStatus FullfillmentStatus { get; set; }
-
     public OrderPaymentType PaymentType { get; set; }
 
     public OrderPaymentStatus PaymentStatus { get; set; }

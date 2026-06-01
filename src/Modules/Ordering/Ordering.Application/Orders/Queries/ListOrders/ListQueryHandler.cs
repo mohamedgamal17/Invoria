@@ -56,11 +56,6 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
             query = query.Where(o => o.Status == request.Status.Value);
         }
 
-        if (request.FullfillmentStatus.HasValue)
-        {
-            query = query.Where(o => o.FullfillmentStatus == request.FullfillmentStatus.Value);
-        }
-
         query = query.OrderByDescending(o => o.Id);
 
         if (request.IncludeOrderItems || request.IncludeReturnItems)

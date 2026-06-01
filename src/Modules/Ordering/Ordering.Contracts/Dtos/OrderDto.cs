@@ -10,7 +10,6 @@ namespace Invoria.Ordering.Contracts.Dtos
         public string CustomerId { get; set; } = string.Empty;
         public CustomerDto? Customer { get; set; }
         public OrderStatus Status { get; set; }
-        public FullfillmentStatus FullfillmentStatus { get; set; }
         public OrderPaymentType PaymentType { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal AmountOutstanding { get; set; }
@@ -20,8 +19,6 @@ namespace Invoria.Ordering.Contracts.Dtos
         public decimal TotalOrderAmount { get; set; }
         public decimal NetOfTotalOrderAmount { get; set; }
         public decimal ReturnsTotal { get; set; }
-        public List<OrderFailureDetailsDto> FailureDetails { get; set; } = new();
-        public List<OrderStateTransitionHistoryDto> StateTransitionHistory { get; set; } = new();
         public List<OrderPaymentDto> Payments { get; set; } = new();
     }
 }

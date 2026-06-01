@@ -44,9 +44,4 @@ public class ListOrdersQuery : PagingParams, IQuery<PagingDto<OrderDto>>
     /// When set, only orders in this lifecycle status are returned.
     /// </summary>
     public OrderStatus? Status { get; set; }
-
-    /// <summary>
-    /// When set, only orders matching this fulfillment status are returned.
-    /// </summary>
-    public FullfillmentStatus? FullfillmentStatus { get; set; }
 }

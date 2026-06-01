@@ -31,7 +31,6 @@ public sealed class OrderEntityUpdatedDomainEventHandler : INotificationHandler<
                 OrderNumber = order.OrderNumber,
                 CustomerId = order.CustomerId,
                 OrderStatus = order.Status,
-                FullfillmentStatus = order.FullfillmentStatus,
                 PaymentType = order.PaymentType,
                 PaymentStatus = order.PaymentStatus,
                 TotalOrderAmount = order.TotalOrderAmount,
