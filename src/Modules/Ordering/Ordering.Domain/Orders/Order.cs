@@ -11,14 +11,11 @@ namespace Invoria.Ordering.Domain.Orders
     {
         public string OrderNumber { get;private set; }
         public string CustomerId { get; private set; }
-        public List<OrderItem> Items { get; private set; } 
-        public List<OrderFailureDetails> FailureDetails { get; private set; }
-        public List<OrderStateTransitionHistory> StateTransitionHistory { get; private set; }
+        public List<OrderItem> Items { get; private set; }
         public List<OrderPayment> Payments { get; private set; }
         public List<OrderReturnItem> ReturnItems { get; private set; } = new();
         public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
-        public FullfillmentStatus FullfillmentStatus { get; set; }
 
         public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
 
@@ -31,11 +28,11 @@ namespace Invoria.Ordering.Domain.Orders
 
         public OrderPaymentStatus PaymentStatus { get; private set; }
 
+        private bool _hasBeenDispatched;
+
         private Order()
         {
             Items = new List<OrderItem>();
-            FailureDetails = new List<OrderFailureDetails>();
-            StateTransitionHistory = new List<OrderStateTransitionHistory>();
             Payments = new List<OrderPayment>();
             PaymentStatus = OrderPaymentStatus.Unpaid;
         }
@@ -46,11 +43,8 @@ namespace Invoria.Ordering.Domain.Orders
             CustomerId = customerId;
             PaymentType = paymentType;
             Items = new List<OrderItem>();
-            FailureDetails = new List<OrderFailureDetails>();
-            StateTransitionHistory = new List<OrderStateTransitionHistory>();
             Payments = new List<OrderPayment>();
             Status = OrderStatus.Pending;
-            FullfillmentStatus = FullfillmentStatus.Pending;
             AmountPaid = 0m;
             AmountOutstanding = 0m;
             PaymentStatus = OrderPaymentStatus.Unpaid;
@@ -110,7 +104,6 @@ namespace Invoria.Ordering.Domain.Orders
             RefreshPaymentSummary();
         }
 
-
         public void UpdateItems(List<OrderItem> items)
         {
             Guard.Against.Null(items);
@@ -156,38 +149,19 @@ namespace Invoria.Ordering.Domain.Orders
             PaymentStatus = OrderPaymentStatus.Partial;
         }
 
-        public void ReplaceFailureDetails(List<OrderFailureDetails> failureDetails)
-        {
-            Guard.Against.Null(failureDetails);
-            FailureDetails = failureDetails;
-        }
-
-
         /// <summary>
-        /// Accepts the order for fulfillment allocation when fulfillment is <see cref="FullfillmentStatus.Pending"/>
-        /// or <see cref="FullfillmentStatus.OnHold"/> (for example after <see cref="Reopen"/>).
+        /// Accepts the order for fulfillment allocation when it is <see cref="OrderStatus.Pending"/> or
+        /// <see cref="OrderStatus.Reopened"/>.
         /// </summary>
         public void Accept()
         {
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
             if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
             {
                 throw new InvalidOperationException(
                     "Order can only be accepted when it is Pending or Reopened.");
             }
 
-            if (FullfillmentStatus != FullfillmentStatus.Pending
-                && FullfillmentStatus != FullfillmentStatus.OnHold)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be accepted when fulfillment is Pending or On Hold.");
-            }
-
             Status = OrderStatus.Accepted;
-            FullfillmentStatus = FullfillmentStatus.Allocating;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
             var lines = Items
                 .Select(i => new OrderAcceptedLine(i.Id, i.ProductId, i.Quantity))
                 .ToList();
@@ -195,12 +169,7 @@ namespace Invoria.Ordering.Domain.Orders
         }
 
         /// <summary>
-        /// Reopens an accepted order. When fulfillment is <see cref="FullfillmentStatus.Pending"/>, moves to
-        /// <see cref="FullfillmentStatus.OnHold"/> and <see cref="OrderStatus.Reopened"/> immediately.
-        /// When fulfillment is <see cref="FullfillmentStatus.Allocated"/> or <see cref="FullfillmentStatus.Allocating"/>,
-        /// moves to <see cref="FullfillmentStatus.Releasing"/> and raises <see cref="OrderReopenReleaseRequestedDomainEvent"/>;
-        /// call <see cref="CompleteReopenAfterInventoryReleased"/> after inventory has released allocations (or none yet).
-        /// Cannot reopen after <see cref="FullfillmentStatus.Dispatched"/> because the order has left inventory and is shipping.
+        /// Reopens an accepted order and requests inventory release when allocations may exist.
         /// </summary>
         public void Reopen()
         {
@@ -210,60 +179,15 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be reopened when it is Accepted.");
             }
 
-            switch (FullfillmentStatus)
-            {
-                case FullfillmentStatus.Pending:
-                    var pendingFromStatus = Status;
-                    var pendingFromFullfillmentStatus = FullfillmentStatus;
-                    FullfillmentStatus = FullfillmentStatus.OnHold;
-                    Status = OrderStatus.Reopened;
-                    AppendStateTransitionHistory(pendingFromStatus, pendingFromFullfillmentStatus, reason: null);
-                    return;
-                case FullfillmentStatus.Allocating:
-                case FullfillmentStatus.Allocated:
-                    var allocatedFromStatus = Status;
-                    var allocatedFromFullfillmentStatus = FullfillmentStatus;
-                    FullfillmentStatus = FullfillmentStatus.Releasing;
-                    AppendStateTransitionHistory(allocatedFromStatus, allocatedFromFullfillmentStatus, reason: null);
-                    var lines = Items
-                        .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
-                        .ToList();
-                    AddDomainEvent(new OrderReopenReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, lines));
-                    return;
-                case FullfillmentStatus.Dispatched:
-                    throw new InvalidOperationException(
-                        "Order cannot be reopened after dispatch; fulfillment has left inventory and is shipping to the customer.");
-                default:
-                    throw new InvalidOperationException(
-                        "Order can only be reopened when fulfillment is Pending, allocating, or allocated for release.");
-            }
-        }
-
-        /// <summary>
-        /// Completes reopen after <see cref="FullfillmentStatus.Releasing"/> and inventory release; sets
-        /// <see cref="FullfillmentStatus.OnHold"/> and <see cref="OrderStatus.Reopened"/>.
-        /// </summary>
-        public void CompleteReopenAfterInventoryReleased()
-        {
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Releasing)
-            {
-                throw new InvalidOperationException(
-                    "Order can only complete reopen after inventory release when it is Accepted and releasing inventory.");
-            }
-
-            FullfillmentStatus = FullfillmentStatus.OnHold;
+            var lines = Items
+                .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
+                .ToList();
+            AddDomainEvent(new OrderReopenReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, lines));
             Status = OrderStatus.Reopened;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
         }
 
         public void Cancel()
         {
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
             if (Status != OrderStatus.Pending
                 && Status != OrderStatus.Accepted
                 && Status != OrderStatus.Reopened)
@@ -272,16 +196,7 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be cancelled when the order is Pending, Accepted, or Reopened.");
             }
 
-            if (FullfillmentStatus != FullfillmentStatus.Pending
-                && FullfillmentStatus != FullfillmentStatus.OnHold
-                && FullfillmentStatus != FullfillmentStatus.Allocated)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be cancelled when fulfillment is Pending, On Hold, or Allocated.");
-            }
-
             Status = OrderStatus.Cancelled;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
         }
 
         /// <summary>
@@ -290,66 +205,52 @@ namespace Invoria.Ordering.Domain.Orders
         public void CancelDueToAllocationFailure(string reason)
         {
             Guard.Against.NullOrWhiteSpace(reason);
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
 
-            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocating)
+            if (Status != OrderStatus.Accepted)
             {
                 throw new InvalidOperationException(
-                    "Order can only be cancelled due to allocation failure when it is Accepted and allocating inventory.");
+                    "Order can only be cancelled due to allocation failure when it is Accepted.");
             }
 
             Status = OrderStatus.Cancelled;
-            FullfillmentStatus = FullfillmentStatus.Pending;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason);
         }
 
         /// <summary>
-        /// Confirms inventory allocation succeeded after the order was accepted.
-        /// Idempotent when fulfillment is already <see cref="FullfillmentStatus.Allocated"/>.
+        /// Confirms inventory allocation succeeded after the order was accepted. Idempotent while <see cref="OrderStatus.Accepted"/>.
         /// </summary>
         public void MarkInventoryAllocated()
         {
-            if (FullfillmentStatus == FullfillmentStatus.Allocated)
+            if (Status == OrderStatus.Accepted)
             {
                 return;
             }
 
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocating)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be marked inventory allocated when it is Accepted and allocating inventory.");
-            }
-
-            FullfillmentStatus = FullfillmentStatus.Allocated;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
+            throw new InvalidOperationException(
+                "Order can only be marked inventory allocated when it is Accepted.");
         }
 
         /// <summary>
-        /// Marks the order as dispatched after inventory is allocated.
-        /// Idempotent when fulfillment is already <see cref="FullfillmentStatus.Dispatched"/>.
+        /// Marks the order as dispatched after inventory is allocated. Idempotent while still <see cref="OrderStatus.Accepted"/>.
         /// </summary>
         public void MarkDispatched()
         {
-            if (FullfillmentStatus == FullfillmentStatus.Dispatched)
+            if (Status == OrderStatus.Shipped || Status == OrderStatus.Completed)
             {
                 return;
             }
 
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Allocated)
+            if (Status != OrderStatus.Accepted)
             {
                 throw new InvalidOperationException(
-                    "Order can only be marked dispatched when it is Accepted and inventory is allocated.");
+                    "Order can only be marked dispatched when it is Accepted.");
             }
 
-            FullfillmentStatus = FullfillmentStatus.Dispatched;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
+            if (_hasBeenDispatched)
+            {
+                return;
+            }
+
+            _hasBeenDispatched = true;
 
             var lines = Items
                 .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
@@ -359,11 +260,7 @@ namespace Invoria.Ordering.Domain.Orders
         }
 
         /// <summary>
-        /// Refuses the order. When fulfillment is <see cref="FullfillmentStatus.Allocated"/>, moves to
-        /// <see cref="FullfillmentStatus.Releasing"/> and raises <see cref="OrderRefusalReleaseRequestedDomainEvent"/>.
-        /// Otherwise when accepted (no allocated stock to release, or dispatched), sets terminal fulfillment or
-        /// leaves dispatch as-is and raises <see cref="OrderRefusedDomainEvent"/>. Completed orders only raise
-        /// <see cref="OrderRefusedDomainEvent"/>.
+        /// Refuses the order when it is <see cref="OrderStatus.Accepted"/> or <see cref="OrderStatus.Completed"/>.
         /// </summary>
         public void Refuse()
         {
@@ -373,74 +270,16 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be refused when it is Accepted or Completed.");
             }
 
-            if (Status == OrderStatus.Completed)
+            if (Status == OrderStatus.Accepted)
             {
-                var completedFromStatus = Status;
-                var completedFromFullfillmentStatus = FullfillmentStatus;
-                Status = OrderStatus.Refused;
-                AppendStateTransitionHistory(completedFromStatus, completedFromFullfillmentStatus, reason: null);
-                AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
-                return;
+                var refusalLines = Items
+                    .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
+                    .ToList();
+                AddDomainEvent(new OrderRefusalReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, refusalLines));
             }
 
-            switch (FullfillmentStatus)
-            {
-                case FullfillmentStatus.Allocated:
-                    var allocatedFromStatus = Status;
-                    var allocatedFromFullfillmentStatus = FullfillmentStatus;
-                    Status = OrderStatus.Refused;
-                    FullfillmentStatus = FullfillmentStatus.Releasing;
-                    AppendStateTransitionHistory(allocatedFromStatus, allocatedFromFullfillmentStatus, reason: null);
-                    var refusalLines = Items
-                        .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
-                        .ToList();
-                    AddDomainEvent(new OrderRefusalReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, refusalLines));
-                    return;
-                case FullfillmentStatus.Releasing:
-                    throw new InvalidOperationException(
-                        "Order cannot be refused while inventory allocations are being released; complete or cancel the reopen flow first.");
-                case FullfillmentStatus.Dispatched:
-                    var dispatchedFromStatus = Status;
-                    var dispatchedFromFullfillmentStatus = FullfillmentStatus;
-                    Status = OrderStatus.Refused;
-                    AppendStateTransitionHistory(dispatchedFromStatus, dispatchedFromFullfillmentStatus, reason: null);
-                    AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
-                    return;
-                case FullfillmentStatus.Allocating:
-                case FullfillmentStatus.Pending:
-                case FullfillmentStatus.OnHold:
-                    var nonAllocatedFromStatus = Status;
-                    var nonAllocatedFromFullfillmentStatus = FullfillmentStatus;
-                    Status = OrderStatus.Refused;
-                    FullfillmentStatus = FullfillmentStatus.Cancelled;
-                    AppendStateTransitionHistory(nonAllocatedFromStatus, nonAllocatedFromFullfillmentStatus, reason: null);
-                    AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
-                    return;
-                case FullfillmentStatus.Cancelled:
-                    throw new InvalidOperationException("Order fulfillment is already cancelled.");
-                default:
-                    throw new InvalidOperationException(
-                        "Order cannot be refused in the current fulfillment state.");
-            }
-        }
-
-        /// <summary>
-        /// Completes refusal after <see cref="FullfillmentStatus.Releasing"/> and inventory release; sets
-        /// <see cref="FullfillmentStatus.Cancelled"/>; <see cref="OrderStatus"/> remains <see cref="OrderStatus.Refused"/>.
-        /// </summary>
-        public void CompleteRefusalAfterInventoryReleased()
-        {
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Refused || FullfillmentStatus != FullfillmentStatus.Releasing)
-            {
-                throw new InvalidOperationException(
-                    "Order can only complete refusal after inventory release when it is Refused and releasing inventory.");
-            }
-
-            FullfillmentStatus = FullfillmentStatus.Cancelled;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
+            Status = OrderStatus.Refused;
+            AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
         }
 
         /// <summary>
@@ -449,28 +288,22 @@ namespace Invoria.Ordering.Domain.Orders
         /// </summary>
         public void MarkShipped()
         {
-            if (Status == OrderStatus.Shipped && FullfillmentStatus == FullfillmentStatus.Dispatched)
+            if (Status == OrderStatus.Shipped)
             {
                 return;
             }
 
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Accepted || FullfillmentStatus != FullfillmentStatus.Dispatched)
+            if (Status != OrderStatus.Accepted)
             {
                 throw new InvalidOperationException(
-                    "Order can only be marked shipped when it is Accepted and fulfillment is Dispatched.");
+                    "Order can only be marked shipped when it is Accepted.");
             }
 
             Status = OrderStatus.Shipped;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
         }
 
         /// <summary>
         /// Replaces the full customer return list for a shipped order in one atomic batch.
-        /// Duplicate lines in the request are grouped by order line id and quantities are summed.
-        /// An empty list clears all returns. When all lines are fully returned, <see cref="Complete"/> cancels the order.
         /// </summary>
         public Result RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
         {
@@ -536,24 +369,19 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Complete()
         {
-            var fromStatus = Status;
-            var fromFullfillmentStatus = FullfillmentStatus;
-
-            if (Status != OrderStatus.Shipped || FullfillmentStatus != FullfillmentStatus.Dispatched)
+            if (Status != OrderStatus.Shipped)
             {
                 throw new InvalidOperationException(
-                    "Order can only be completed when it is Shipped and fulfillment is Dispatched.");
+                    "Order can only be completed when it is Shipped.");
             }
 
             if (AllItemsFullyReturned())
             {
                 Status = OrderStatus.Cancelled;
-                AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: "All order items returned");
                 return;
             }
 
             Status = OrderStatus.Completed;
-            AppendStateTransitionHistory(fromStatus, fromFullfillmentStatus, reason: null);
         }
 
         private int ReturnedQuantity(string orderItemId)
@@ -567,25 +395,6 @@ namespace Invoria.Ordering.Domain.Orders
         {
             return Items.Count > 0
                 && Items.All(i => ReturnedQuantity(i.Id) >= i.Quantity);
-        }
-
-        private void AppendStateTransitionHistory(
-            OrderStatus fromStatus,
-            FullfillmentStatus fromFullfillmentStatus,
-            string? reason)
-        {
-            var orderId = string.IsNullOrWhiteSpace(Id)
-                ? Guid.NewGuid().ToString("N")
-                : Id;
-
-            StateTransitionHistory.Add(new OrderStateTransitionHistory(
-                orderId,
-                fromStatus,
-                Status,
-                fromFullfillmentStatus,
-                FullfillmentStatus,
-                DateTimeOffset.UtcNow,
-                reason));
         }
     }
 }

@@ -23,7 +23,6 @@ public sealed class RecordOrderAllocationFailedCommandHandler
     {
         var order = await _orderRepository
             .AsQuerable()
-            .Include(o => o.FailureDetails)
             .SingleOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken);
 
         if (order == null)
@@ -46,10 +45,6 @@ public sealed class RecordOrderAllocationFailedCommandHandler
         try
         {
             order.CancelDueToAllocationFailure(request.Reason);
-            var details = request.ItemErrors
-                .Select(i => new OrderFailureDetails(i.ItemId, i.QuantityRequested, i.QuantityAvailable, i.Shortage))
-                .ToList();
-            order.ReplaceFailureDetails(details);
         }
         catch (InvalidOperationException ex)
         {
