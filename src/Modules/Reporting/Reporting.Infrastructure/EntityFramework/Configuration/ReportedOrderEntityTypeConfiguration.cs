@@ -24,7 +24,6 @@ public sealed class ReportedOrderEntityTypeConfiguration : IEntityTypeConfigurat
             .IsRequired();
 
         builder.Property(x => x.OrderStatus).IsRequired();
-        builder.Property(x => x.FullfillmentStatus).IsRequired();
         builder.Property(x => x.PaymentType).IsRequired();
         builder.Property(x => x.PaymentStatus).IsRequired();
 
@@ -46,16 +45,6 @@ public sealed class ReportedOrderEntityTypeConfiguration : IEntityTypeConfigurat
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(x => x.Payments)
-            .WithOne(x => x.ReportedOrder)
-            .HasForeignKey(x => x.ReportedOrderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(x => x.StateTransitions)
-            .WithOne(x => x.ReportedOrder)
-            .HasForeignKey(x => x.ReportedOrderId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(x => x.FailureDetails)
             .WithOne(x => x.ReportedOrder)
             .HasForeignKey(x => x.ReportedOrderId)
             .OnDelete(DeleteBehavior.Cascade);

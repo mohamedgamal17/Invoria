@@ -45,7 +45,6 @@ public sealed class OrderCreatedIntegrationEventConsumer : IHandleMessages<Order
             OrderNumber = order.OrderNumber,
             CustomerId = order.CustomerId,
             OrderStatus = order.OrderStatus,
-            FullfillmentStatus = order.FullfillmentStatus,
             PaymentType = order.PaymentType,
             PaymentStatus = order.PaymentStatus,
             TotalOrderAmount = order.TotalOrderAmount,
