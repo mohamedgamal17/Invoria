@@ -5,7 +5,6 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Contracts.Events;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
@@ -433,16 +432,17 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         acceptResponse.IsSuccessStatusCode.Should().BeTrue();
 
         var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(RecordOrderAllocationSucceededCommand.FromEvent(new OrderAllocationSucceededIntegrationEvent
+        await mediator.Send(new RecordOrderAllocationSucceededCommand
         {
             OrderId = partialOrder.Id,
-            CustomerId = customerId,
-            AllocatedAt = DateTimeOffset.UtcNow,
-            AllocatedLines = []
-        }));
+            CustomerId = customerId
+        });
 
         var dispatchResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/dispatch", new { Id = partialOrder.Id });
         dispatchResponse.IsSuccessStatusCode.Should().BeTrue();
+
+        var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
+        (await Client.PostAsync($"/orders/{partialOrder.Id}/ship", emptyJson)).EnsureSuccessStatusCode();
 
         var completeResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/complete", new { });
         completeResponse.IsSuccessStatusCode.Should().BeTrue();

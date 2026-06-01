@@ -89,6 +89,9 @@ public class RefuseOrderEndpointTests : OrderingTestFixture
         var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
         dispatchResponse.EnsureSuccessStatusCode();
 
+        var shipResponse = await Client.PostAsync($"/orders/{created.Id}/ship", emptyJson);
+        shipResponse.EnsureSuccessStatusCode();
+
         var completeResponse = await Client.PostAsync(
             $"/orders/{created.Id}/complete",
             emptyJson);

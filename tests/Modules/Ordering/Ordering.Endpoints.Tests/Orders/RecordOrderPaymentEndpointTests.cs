@@ -43,6 +43,9 @@ public class RecordOrderPaymentEndpointTests : OrderingTestFixture
         var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
         dispatchResponse.EnsureSuccessStatusCode();
 
+        var shipResponse = await Client.PostAsync($"/orders/{created.Id}/ship", emptyJson);
+        shipResponse.EnsureSuccessStatusCode();
+
         var completeResponse = await Client.PostAsync($"/orders/{created.Id}/complete", emptyJson);
         completeResponse.EnsureSuccessStatusCode();
         var completeEnvelope = await completeResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
