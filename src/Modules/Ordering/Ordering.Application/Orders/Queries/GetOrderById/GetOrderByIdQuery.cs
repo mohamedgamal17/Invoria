@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 
 namespace Invoria.Ordering.Application.Orders.Queries.GetOrderById;
 

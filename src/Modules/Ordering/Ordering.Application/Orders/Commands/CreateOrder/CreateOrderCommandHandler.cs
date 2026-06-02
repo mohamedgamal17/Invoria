@@ -2,7 +2,7 @@ using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Application.Orders.Services;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 
@@ -28,13 +28,11 @@ namespace Invoria.Ordering.Application.Orders.Commands.CreateOrder
         {
             var orderNumber = await _orderNumberGenerator.GenerateAsync(cancellationToken);
 
-            var order = new Order(orderNumber, request.CustomerId, request.PaymentType);
-
             var items = request.Items
                 .Select(c => new OrderItem(c.ProductId, c.Quantity, c.Price))
                 .ToList();
 
-            order.UpdateItems(items);
+            var order = Order.Create(orderNumber, request.CustomerId, request.PaymentType, items);
 
             await _orderRepository.Add(order, cancellationToken);
 

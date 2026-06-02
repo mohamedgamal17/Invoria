@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Events;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 using Invoria.Ordering.Domain.Orders;
 using MediatR;
 using Microsoft.Extensions.Logging;

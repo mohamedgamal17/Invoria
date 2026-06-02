@@ -1,8 +1,8 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Application.Requests;
 using Invoria.BuildingBlocks.Domain.Dtos;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Ordering.Application.Orders.Queries.ListOrders;
 

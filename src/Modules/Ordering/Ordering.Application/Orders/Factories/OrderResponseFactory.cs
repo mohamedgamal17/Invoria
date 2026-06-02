@@ -4,7 +4,7 @@ using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Services;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Orders.Factories

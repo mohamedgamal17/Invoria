@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Invoria.Ordering.Application.Orders.Factories;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
