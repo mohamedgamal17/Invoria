@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
