@@ -1,7 +1,9 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Domain.Orders.Events;
+
 namespace Invoria.Ordering.Domain.Orders
 {
     public class Order : AuditedAggregateRoot
@@ -32,6 +34,24 @@ namespace Invoria.Ordering.Domain.Orders
             PaymentStatus = OrderPaymentStatus.Unpaid;
         }
 
+        private Order(
+            string id,
+            string orderNumber,
+            string customerId,
+            OrderPaymentType paymentType)
+        {
+            Id = id;
+            OrderNumber = orderNumber;
+            CustomerId = customerId;
+            PaymentType = paymentType;
+            Items = new List<OrderItem>();
+            Payments = new List<OrderPayment>();
+            Status = OrderStatus.Pending;
+            AmountPaid = 0m;
+            AmountOutstanding = 0m;
+            PaymentStatus = OrderPaymentStatus.Unpaid;
+        }
+
         public Order(string orderNumber, string customerId, OrderPaymentType paymentType = OrderPaymentType.Immediate)
         {
             OrderNumber = orderNumber;
@@ -43,6 +63,24 @@ namespace Invoria.Ordering.Domain.Orders
             AmountPaid = 0m;
             AmountOutstanding = 0m;
             PaymentStatus = OrderPaymentStatus.Unpaid;
+        }
+
+        public static Order Create(
+            string orderNumber,
+            string customerId,
+            OrderPaymentType paymentType,
+            List<OrderItem> items)
+        {
+            var order = new Order(
+                Guid.NewGuid().ToString("N"),
+                orderNumber,
+                customerId,
+                paymentType);
+
+            order.UpdateItems(items);
+            order.AddDomainEvent(new OrderCreatedDomainEvent(order.Id, order.OrderNumber, order.CustomerId));
+
+            return order;
         }
 
         public void RecordPayment(decimal paidAmount, OrderPaymentMethod method, DateTimeOffset paidAt)
