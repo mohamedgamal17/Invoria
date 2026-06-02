@@ -16,7 +16,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
         new()
         {
             OccurredOn = occurred,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = "order-1",
                 OrderNumber = "ON-9",

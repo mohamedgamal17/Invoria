@@ -29,7 +29,7 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
         var message = new OrderCreatedIntegrationEvent
         {
             OccurredOn = occurred,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = "order-1",
                 OrderNumber = "ON-9",
@@ -106,7 +106,7 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
         var message = new OrderCreatedIntegrationEvent
         {
             OccurredOn = DateTimeOffset.UtcNow,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = "order-1",
                 OrderNumber = "ON-9",
