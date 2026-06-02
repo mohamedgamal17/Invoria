@@ -26,18 +26,11 @@ namespace Invoria.Ordering.Application.Orders.Commands.CreateOrder
 
         public async Task<Result<OrderDto>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
         {
-            var itemCommands = request.Items ?? new List<CreateOrderItemCommand>();
-
-            if (itemCommands.Count == 0)
-            {
-                return new InvalidOperationException("Order items must have one or more item.");
-            }
-
             var orderNumber = await _orderNumberGenerator.GenerateAsync(cancellationToken);
 
             var order = new Order(orderNumber, request.CustomerId, request.PaymentType);
 
-            var items = itemCommands
+            var items = request.Items
                 .Select(c => new OrderItem(c.ProductId, c.Quantity, c.Price))
                 .ToList();
 

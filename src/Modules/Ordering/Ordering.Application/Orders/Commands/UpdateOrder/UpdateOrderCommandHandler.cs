@@ -4,6 +4,7 @@ using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
@@ -25,13 +26,6 @@ public class UpdateOrderCommandHandler : IApplicatonRequestHandler<UpdateOrderCo
 
     public async Task<Result<OrderDto>> Handle(UpdateOrderCommand request, CancellationToken cancellationToken)
     {
-        var itemCommands = request.Items ?? new List<CreateOrderItemCommand>();
-
-        if (itemCommands.Count == 0)
-        {
-            return new InvalidOperationException("Order items must have one or more item.");
-        }
-
         var order = await _orderRepository
             .AsQuerable()
             .Include(o => o.Items)
@@ -43,18 +37,17 @@ public class UpdateOrderCommandHandler : IApplicatonRequestHandler<UpdateOrderCo
             return Result.Failure<OrderDto>(new NotFoundException($"Order with ID {request.Id} not found"));
         }
 
-        var items = itemCommands
+        if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Revision)
+        {
+            return Result.Failure<OrderDto>(new BusinessLogicException(
+                "Order items can only be updated when the order is Pending or Revision."));
+        }
+
+        var items = request.Items
             .Select(c => new OrderItem(c.ProductId, c.Quantity, c.Price))
             .ToList();
 
-        try
-        {
-            order.UpdateItems(items);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Result.Failure<OrderDto>(new BusinessLogicException(ex.Message, ex));
-        }
+        order.UpdateItems(items);
 
         await _orderRepository.Update(order, cancellationToken);
 
