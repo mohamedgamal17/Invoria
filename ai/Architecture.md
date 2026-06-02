@@ -156,12 +156,12 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - `Orders/Enums/` — `OrderStatus`, `OrderPaymentType`, `AllocationReleaseReason`, etc. (`Invoria.Ordering.Contracts.Orders.Enums`)
   - `Orders/Dtos/` — `OrderDto`, `OrderItemDto`, … (`Invoria.Ordering.Contracts.Orders.Dtos`)
   - `Orders/Events/` — integration events (`Invoria.Ordering.Contracts.Orders.Events`)
-  - `Orders/Models/` — `OrderIntegrationPayload`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
+  - `Orders/Models/` — `OrderModel`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
 
 - **Integration events**
   - **`OrderCreatedIntegrationEvent`**
     - File: `Orders/Events/OrderCreatedIntegrationEvent.cs`
-    - Raised from domain event **`OrderCreatedDomainEvent`** (`Ordering.Domain/Orders/Events/`) when `Order.Create` persists a new order; **`OrderCreatedDomainEventHandler`** reloads the aggregate and publishes the full order snapshot.
+    - Raised from domain event **`OrderCreatedDomainEvent`** (`Ordering.Domain/Orders/Events/`) when `Order.Create` runs; carries the full **`Order`** aggregate. **`OrderCreatedDomainEventHandler`** maps it to `OrderModel` and publishes the integration event.
   - **`AllocateOrderIntegrationEvent`**
     - File: `Orders/Events/AllocateOrderIntegrationEvent.cs`
     - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Orders/Models`).
@@ -867,7 +867,7 @@ flowchart LR
 
 - **Sagas**
   - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
-  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and will orchestrate long-running order ↔ inventory coordination (e.g. allocation). Workflow states are strongly typed string constants in `OrderSagaProcessState` (initial state: `Created`). Message handlers and correlation are added incrementally.
+  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and orchestrate long-running order ↔ inventory coordination. The saga is **initiated** by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). Workflow states are strongly typed string constants in `OrderSagaProcessState` (initial state: `Created`). Further message handlers and transitions are added incrementally.
 
 - **Cross-module events**
   - Integration event types (for example `AllocateOrderIntegrationEvent` in `Invoria.Ordering.Contracts`) are consumed by Inventory handlers when messages are published to the configured transport and routing/subscriptions match the host setup.
