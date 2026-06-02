@@ -15,7 +15,7 @@ public class OrderAcceptDomainTests
     }
 
     [Test]
-    public void Accept_raises_OrderAcceptedDomainEvent_with_lines_and_sets_accepted()
+    public void Accept_sets_processing()
     {
         var order = new Order("TEST-1", Guid.NewGuid().ToString());
         order.UpdateItems([new OrderItem("p1", 2, 10m)]);
@@ -25,15 +25,12 @@ public class OrderAcceptDomainTests
 
         order.Accept();
 
-        order.Status.Should().Be(OrderStatus.Accepted);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderAcceptedDomainEvent>();
-        var ev = (OrderAcceptedDomainEvent)order.DomainEvents.Single();
-        ev.OrderId.Should().Be("order-accept-1");
-        ev.Lines[0].OrderItemId.Should().Be("line-accept-1");
+        order.Status.Should().Be(OrderStatus.Processing);
+        order.DomainEvents.Should().BeEmpty();
     }
 
     [Test]
-    public void Accept_when_reopened_sets_accepted()
+    public void Accept_when_revision_sets_processing()
     {
         var order = new Order("N-A3", "cust-3");
         SetEntityId(order, "order-accept-reopen");
@@ -44,12 +41,12 @@ public class OrderAcceptDomainTests
 
         order.Accept();
 
-        order.Status.Should().Be(OrderStatus.Accepted);
-        order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderAcceptedDomainEvent>();
+        order.Status.Should().Be(OrderStatus.Processing);
+        order.DomainEvents.Should().BeEmpty();
     }
 
     [Test]
-    public void Accept_throws_when_not_pending_or_reopened()
+    public void Accept_throws_when_not_pending_or_revision()
     {
         var order = new Order("N-A4", "cust-4");
         order.UpdateItems([new OrderItem("p1", 1, 1m)]);

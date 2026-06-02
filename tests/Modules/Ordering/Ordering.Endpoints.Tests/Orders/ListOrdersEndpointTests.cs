@@ -4,13 +4,11 @@ using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
-using Invoria.Ordering.Tests.Fakes;
 using Invoria.Endpoints.Tests.Utilities;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,16 +110,6 @@ public class ListOrdersEndpointTests : OrderingTestFixture
 
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
         (await Client.PostAsync($"/orders/{createdOrder.Id}/accept", emptyJson)).EnsureSuccessStatusCode();
-
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = createdOrder.Id,
-            CustomerId = createdOrder.CustomerId
-        });
-
-        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, createdOrder.Id);
 
         var getResponse = await Client.GetAsync($"/orders/{createdOrder.Id}");
         getResponse.EnsureSuccessStatusCode();
@@ -387,16 +375,6 @@ public class ListOrdersEndpointTests : OrderingTestFixture
 
         var acceptResponse = await Client.PostAsJsonAsync($"/orders/{partialOrder.Id}/accept", new { });
         acceptResponse.IsSuccessStatusCode.Should().BeTrue();
-
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = partialOrder.Id,
-            CustomerId = customerId
-        });
-
-        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, partialOrder.Id);
 
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
 

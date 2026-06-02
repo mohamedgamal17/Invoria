@@ -4,7 +4,6 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
@@ -53,17 +52,10 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_complete_order_when_accepted_and_dispatched()
+    public async Task Should_complete_order_when_processing()
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = order.Id,
-            CustomerId = order.CustomerId
-        });
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
-
         var command = new CompleteOrderCommand(order.Id);
 
         var result = await Mediator.Send(command);
@@ -77,27 +69,20 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_accepted_but_not_dispatched()
+    public async Task Should_complete_when_processing_and_allocation_succeeded()
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = order.Id,
-            CustomerId = order.CustomerId
-        });
-
         var result = await Mediator.Send(new CompleteOrderCommand(order.Id));
-
-        result.ShouldBeFailure(typeof(BusinessLogicException));
+        result.ShouldBeSuccess();
     }
 
     [Test]
     [TestCase(OrderStatus.Pending)]
-    [TestCase(OrderStatus.Reopened)]
+    [TestCase(OrderStatus.Revision)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_accepted(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_processing(OrderStatus status)
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await SetOrderStatusAsync(order.Id, status);

@@ -3,12 +3,10 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
-using Invoria.Ordering.Tests.Fakes;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,7 +15,7 @@ namespace Invoria.Ordering.Endpoints.Tests.Orders;
 [TestFixture]
 public class AddReturnItemsEndpointTests : OrderingTestFixture
 {
-    private async Task<OrderDto> CreateAndShipOrderAsync()
+    private async Task<OrderDto> CreateAndPrepareProcessingOrderAsync()
     {
         var createRequest = new CreateOrderRequest
         {
@@ -42,23 +40,13 @@ public class AddReturnItemsEndpointTests : OrderingTestFixture
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
 
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = created.Id,
-            CustomerId = created.CustomerId
-        });
-
-        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, created.Id);
-
         return created;
     }
 
     [Test]
-    public async Task Should_record_return_items_after_ship()
+    public async Task Should_record_return_items_after_accept()
     {
-        var created = await CreateAndShipOrderAsync();
+        var created = await CreateAndPrepareProcessingOrderAsync();
 
         var getResponse = await Client.GetAsync($"/orders/{created.Id}");
         getResponse.EnsureSuccessStatusCode();
@@ -113,7 +101,7 @@ public class AddReturnItemsEndpointTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_order_not_shipped()
+    public async Task Should_record_return_items_when_order_pending()
     {
         var createRequest = new CreateOrderRequest
         {
@@ -147,14 +135,14 @@ public class AddReturnItemsEndpointTests : OrderingTestFixture
                 Items = [new AddReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
             });
 
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        response.IsSuccessStatusCode.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Test]
     public async Task Should_fail_when_unknown_line()
     {
-        var created = await CreateAndShipOrderAsync();
+        var created = await CreateAndPrepareProcessingOrderAsync();
 
         var response = await Client.PutAsJsonAsync(
             $"/orders/{created.Id}/return-items",

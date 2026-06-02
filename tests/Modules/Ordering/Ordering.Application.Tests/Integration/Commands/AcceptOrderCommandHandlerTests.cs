@@ -119,7 +119,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         result.Value!.Id.Should().Be(order.Id);
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Accepted);
+        status.Should().Be(OrderStatus.Processing);
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
@@ -130,10 +130,10 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_accept_order_when_reopened()
+    public async Task Should_accept_order_when_revision()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Revision);
         var expectedSnapshot = await LoadOrderWithItemsAsync(ServiceProvider, order.Id);
 
         var command = new AcceptOrderCommand(order.Id);
@@ -144,7 +144,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         result.Value.Should().NotBeNull();
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Accepted);
+        status.Should().Be(OrderStatus.Processing);
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
@@ -155,7 +155,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_already_accepted()
+    public async Task Should_fail_when_already_processing()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
@@ -166,10 +166,10 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    [TestCase(OrderStatus.Accepted)]
+    [TestCase(OrderStatus.Processing)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_pending_or_reopened(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_pending_or_revision(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, status);

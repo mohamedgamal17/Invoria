@@ -62,10 +62,10 @@ public class ReopenOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_reopen_order_when_accepted()
+    public async Task Should_reopen_order_when_processing()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Accepted);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Processing);
 
         var command = new ReopenOrderCommand(order.Id);
 
@@ -76,15 +76,15 @@ public class ReopenOrderCommandHandlerTests : OrderTestFixture
         result.Value!.Id.Should().Be(order.Id);
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Reopened);
+        status.Should().Be(OrderStatus.Revision);
     }
 
     [Test]
     [TestCase(OrderStatus.Pending)]
-    [TestCase(OrderStatus.Reopened)]
+    [TestCase(OrderStatus.Revision)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_accepted(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_processing(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, status);

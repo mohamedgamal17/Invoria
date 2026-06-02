@@ -76,10 +76,10 @@ public class UpdateOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_update_items_when_order_is_reopened()
+    public async Task Should_update_items_when_order_is_revision()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Revision);
 
         var newItems = new List<CreateOrderItemCommand>
         {
@@ -96,10 +96,10 @@ public class UpdateOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_order_is_not_pending_or_reopened()
+    public async Task Should_fail_when_order_is_not_pending_or_revision()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Accepted);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Processing);
 
         var command = new UpdateOrderCommand(
             order.Id,

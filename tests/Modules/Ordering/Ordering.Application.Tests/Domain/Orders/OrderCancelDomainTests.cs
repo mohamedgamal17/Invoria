@@ -54,9 +54,6 @@ public class OrderCancelDomainTests
     {
         var order = CreateOrderWithItems("cancel-bad-status");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.Complete();
 
         var act = () => order.Cancel();
@@ -65,16 +62,12 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_throws_when_shipped()
+    public void Cancel_succeeds_when_processing()
     {
         var order = CreateOrderWithItems("cancel-shipped");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
 
-        var act = () => order.Cancel();
-
-        act.Should().Throw<InvalidOperationException>();
+        order.Cancel();
+        order.Status.Should().Be(OrderStatus.Cancelled);
     }
 }

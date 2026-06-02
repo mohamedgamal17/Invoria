@@ -4,7 +4,6 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Application.Orders.Queries.GetOrderById;
 using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Domain.Orders;
@@ -40,15 +39,9 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
         await db.SaveChangesAsync();
     }
 
-    private async Task PrepareShippedOrderAsync(Order order)
+    private async Task PrepareProcessingOrderAsync(Order order)
     {
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = order.Id,
-            CustomerId = order.CustomerId
-        });
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
     }
 
     private async Task<string> GetFirstOrderLineIdAsync(string orderId)
@@ -62,10 +55,10 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_record_return_items_when_shipped()
+    public async Task Should_record_return_items_when_processing()
     {
         var order = await PersistOneRandomOrderAsync();
-        await PrepareShippedOrderAsync(order);
+        await PrepareProcessingOrderAsync(order);
         var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var command = new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]);
@@ -85,7 +78,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     public async Task Should_persist_returns_and_reload_via_GetOrderById()
     {
         var order = await PersistOneRandomOrderAsync();
-        await PrepareShippedOrderAsync(order);
+        await PrepareProcessingOrderAsync(order);
         var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var recordResult = await Mediator.Send(
@@ -103,7 +96,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_order_not_shipped()
+    public async Task Should_record_return_items_when_order_pending()
     {
         var order = await PersistOneRandomOrderAsync();
         var lineId = await GetFirstOrderLineIdAsync(order.Id);
@@ -111,14 +104,14 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
         var result = await Mediator.Send(
             new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
 
-        result.ShouldBeFailure(typeof(BusinessValidationException));
+        result.ShouldBeSuccess();
     }
 
     [Test]
     public async Task Should_fail_when_unknown_order_line()
     {
         var order = await PersistOneRandomOrderAsync();
-        await PrepareShippedOrderAsync(order);
+        await PrepareProcessingOrderAsync(order);
 
         var result = await Mediator.Send(
             new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(Guid.NewGuid().ToString(), 1)]));
@@ -130,7 +123,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     public async Task Should_fail_when_return_quantity_exceeds_ordered()
     {
         var order = await PersistOneRandomOrderAsync();
-        await PrepareShippedOrderAsync(order);
+        await PrepareProcessingOrderAsync(order);
         var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var db = Scope.Resolve<OrderingDbContext>();
@@ -160,7 +153,7 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     public async Task Should_clear_returns_when_items_empty()
     {
         var order = await PersistOneRandomOrderAsync();
-        await PrepareShippedOrderAsync(order);
+        await PrepareProcessingOrderAsync(order);
         var lineId = await GetFirstOrderLineIdAsync(order.Id);
 
         var recordResult = await Mediator.Send(

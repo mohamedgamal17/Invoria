@@ -29,9 +29,6 @@ public class OrderPaymentDomainTests
     private static void CompleteViaFulfillment(Order order)
     {
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.Complete();
         order.Status.Should().Be(OrderStatus.Completed);
     }
@@ -224,9 +221,6 @@ public class OrderPaymentDomainTests
             new OrderItem("p", 2, 50m));
         SetEntityId(order.Items[0], "line-1");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
         order.NetOfTotalOrderAmount.Should().Be(50m);
         order.Complete();

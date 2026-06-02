@@ -3,12 +3,10 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Contracts.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
-using Invoria.Ordering.Tests.Fakes;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +16,7 @@ namespace Invoria.Ordering.Endpoints.Tests.Orders;
 public class CompleteOrderEndpointTests : OrderingTestFixture
 {
     [Test]
-    public async Task Should_complete_order_after_accept_allocation_and_dispatch()
+    public async Task Should_complete_order_after_accept_and_allocation()
     {
         var productId = Guid.NewGuid().ToString();
         var customerId = Guid.NewGuid().ToString();
@@ -42,16 +40,6 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
-
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = created.Id,
-            CustomerId = created.CustomerId
-        });
-
-        var orderRepository = Scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(orderRepository, created.Id);
 
         var completeResponse = await Client.PostAsync(
             $"/orders/{created.Id}/complete",
@@ -91,7 +79,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_accepted_but_not_dispatched()
+    public async Task Should_complete_when_processing()
     {
         var createRequest = new CreateOrderRequest
         {
@@ -111,18 +99,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
 
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = created.Id,
-            CustomerId = created.CustomerId
-        });
-
-        var completeResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/complete",
-            emptyJson);
-
-        completeResponse.IsSuccessStatusCode.Should().BeFalse();
-        completeResponse.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        var completeResponse = await Client.PostAsync($"/orders/{created.Id}/complete", emptyJson);
+        completeResponse.IsSuccessStatusCode.Should().BeTrue();
     }
 }

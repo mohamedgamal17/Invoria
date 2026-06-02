@@ -147,9 +147,6 @@ public class OrderResponseFactoryTests : OrderingTestFixture
 
         order.UpdateItems(new List<OrderItem> { new(productId, 1, 100m) });
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.Complete();
         order.RecordPayment(25m, OrderPaymentMethod.Cheque, DateTimeOffset.Parse("2026-06-01T10:00:00Z"));
 
@@ -183,9 +180,6 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         SetEntityId(order.Items[0], returnedLineId);
         SetEntityId(order.Items[1], otherLineId);
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.RecordReturnItems([new OrderReturnItem(returnedLineId, 1)]).IsSuccess.Should().BeTrue();
 
         var paging = new PagingDto<Order>
@@ -223,9 +217,6 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         SetEntityId(order.Items[0], "line-returned");
         SetEntityId(order.Items[1], "line-other");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.RecordReturnItems([new OrderReturnItem("line-returned", 1)]).IsSuccess.Should().BeTrue();
 
         var paging = new PagingDto<Order>

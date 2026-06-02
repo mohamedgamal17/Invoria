@@ -18,7 +18,7 @@ public class OrderRefusalDomainTests
     }
 
     [Test]
-    public void Refuse_when_accepted_sets_refused_and_raises_release_and_refused_events()
+    public void Refuse_when_processing_sets_cancelled_and_raises_release_and_refused_events()
     {
         var order = CreateOrderWithItems("ref-alloc");
         order.Accept();
@@ -26,26 +26,23 @@ public class OrderRefusalDomainTests
 
         order.Refuse();
 
-        order.Status.Should().Be(OrderStatus.Refused);
+        order.Status.Should().Be(OrderStatus.Cancelled);
         order.DomainEvents.Should().HaveCount(2);
         order.DomainEvents.Should().ContainSingle(e => e is OrderRefusalReleaseRequestedDomainEvent);
         order.DomainEvents.Should().ContainSingle(e => e is OrderRefusedDomainEvent);
     }
 
     [Test]
-    public void Refuse_when_completed_sets_refused_and_refused_event()
+    public void Refuse_when_completed_sets_cancelled_and_refused_event()
     {
         var order = CreateOrderWithItems("ref-done");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.Complete();
         order.ClearDomainEvents();
 
         order.Refuse();
 
-        order.Status.Should().Be(OrderStatus.Refused);
+        order.Status.Should().Be(OrderStatus.Cancelled);
         order.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<OrderRefusedDomainEvent>();
     }
 

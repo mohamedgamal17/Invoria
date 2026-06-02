@@ -9,11 +9,10 @@ namespace Invoria.Ordering.Application.Tests.Domain.Orders;
 public class OrderCompleteDomainTests
 {
     [Test]
-    public void Complete_throws_when_not_shipped()
+    public void Complete_throws_when_not_processing()
     {
         var order = new Order("N-C1", "cust");
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
-        order.Accept();
 
         var act = () => order.Complete();
 
@@ -21,15 +20,11 @@ public class OrderCompleteDomainTests
     }
 
     [Test]
-    public void Complete_sets_status_to_completed_when_shipped()
+    public void Complete_sets_status_to_completed_when_processing()
     {
         var order = new Order("N-C2", "cust");
         order.UpdateItems(new List<OrderItem> { new("p1", 2, 10m) });
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-
         order.Complete();
 
         order.Status.Should().Be(OrderStatus.Completed);
@@ -43,9 +38,6 @@ public class OrderCompleteDomainTests
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
         typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(order.Items[0], "line-1");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
         order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
 
         order.Complete();

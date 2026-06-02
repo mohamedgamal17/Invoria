@@ -79,10 +79,10 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_cancel_order_when_reopened()
+    public async Task Should_cancel_order_when_revision()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Revision);
 
         var command = new CancelOrderCommand(order.Id);
 
@@ -97,8 +97,6 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
 
     [Test]
     [TestCase(OrderStatus.Completed)]
-    [TestCase(OrderStatus.Cancelled)]
-    [TestCase(OrderStatus.Refused)]
     public async Task Should_fail_when_order_status_does_not_allow_cancellation(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
@@ -107,17 +105,6 @@ public class CancelOrderCommandHandlerTests : OrderTestFixture
         var command = new CancelOrderCommand(order.Id);
 
         var result = await Mediator.Send(command);
-
-        result.ShouldBeFailure(typeof(BusinessLogicException));
-    }
-
-    [Test]
-    public async Task Should_fail_when_shipped()
-    {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Shipped);
-
-        var result = await Mediator.Send(new CancelOrderCommand(order.Id));
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
     }

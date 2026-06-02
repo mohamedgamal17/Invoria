@@ -4,7 +4,6 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderPayment;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
@@ -61,8 +60,6 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
 
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
         await Mediator.Send(new CompleteOrderCommand(order.Id));
         await SetPaymentTypeDebtAsync(order.Id);
 
@@ -85,8 +82,6 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
 
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
-        await OrderFulfillmentTestTransitions.DispatchAndShipAsync(OrderRepository, order.Id);
         await Mediator.Send(new CompleteOrderCommand(order.Id));
 
         var payable = await GetPayableOrderAmountFromDbAsync(order.Id);
