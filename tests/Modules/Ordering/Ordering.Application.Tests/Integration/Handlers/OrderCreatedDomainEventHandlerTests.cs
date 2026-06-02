@@ -27,7 +27,6 @@ public class OrderCreatedDomainEventHandlerTests : OrderTestFixture
     {
         var bus = ServiceProvider.GetRequiredService<Mock<IBus>>();
         var handler = new OrderCreatedDomainEventHandler(
-            OrderRepository,
             bus.Object,
             Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderCreatedDomainEventHandler>>());
 
@@ -37,10 +36,9 @@ public class OrderCreatedDomainEventHandlerTests : OrderTestFixture
             OrderPaymentType.Debt,
             [new OrderItem("p1", 2, 50m)]);
 
-        await OrderRepository.Add(order, CancellationToken.None);
         var lineId = order.Items[0].Id;
 
-        var ev = new OrderCreatedDomainEvent(order.Id, order.OrderNumber, order.CustomerId);
+        var ev = new OrderCreatedDomainEvent(order);
 
         await handler.Handle(ev, CancellationToken.None);
 

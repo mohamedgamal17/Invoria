@@ -9,7 +9,7 @@ namespace Invoria.Ordering.Application.Tests.Domain.Orders;
 public class OrderCreatedDomainTests
 {
     [Test]
-    public void Create_raises_OrderCreatedDomainEvent_with_order_identity()
+    public void Create_raises_OrderCreatedDomainEvent_with_order_instance()
     {
         const string orderNumber = "ON-CREATE-1";
         const string customerId = "cust-create-1";
@@ -28,8 +28,8 @@ public class OrderCreatedDomainTests
             .Which.Should().BeOfType<OrderCreatedDomainEvent>();
 
         var domainEvent = (OrderCreatedDomainEvent)order.DomainEvents.Single();
-        domainEvent.OrderId.Should().Be(order.Id);
-        domainEvent.OrderNumber.Should().Be(orderNumber);
-        domainEvent.CustomerId.Should().Be(customerId);
+        domainEvent.Order.Should().BeSameAs(order);
+        domainEvent.Order.Items.Should().ContainSingle()
+            .Which.ProductId.Should().Be("p1");
     }
 }
