@@ -166,20 +166,16 @@ namespace Invoria.Ordering.Domain.Orders
         }
 
         /// <summary>
-        /// Reopens an accepted order and requests inventory release when allocations may exist.
+        /// Moves a processing order into revision so it can be edited and accepted again.
         /// </summary>
-        public void Reopen()
+        public void Revise()
         {
             if (Status != OrderStatus.Processing)
             {
                 throw new InvalidOperationException(
-                    "Order can only be reopened when it is Processing.");
+                    "Order can only be revised when it is Processing.");
             }
 
-            var lines = Items
-                .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
-                .ToList();
-            AddDomainEvent(new OrderReopenReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, lines));
             Status = OrderStatus.Revision;
         }
 

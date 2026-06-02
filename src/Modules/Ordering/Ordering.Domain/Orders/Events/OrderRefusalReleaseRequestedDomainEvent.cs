@@ -5,7 +5,7 @@ namespace Invoria.Ordering.Domain.Orders.Events;
 
 /// <summary>
 /// Raised when refusing an order requires inventory to release batch allocations; application layer translates
-/// to a release integration event marked for refusal (distinct from reopen release).
+/// to a release integration event marked for refusal.
 /// </summary>
 public sealed class OrderRefusalReleaseRequestedDomainEvent : DomainEvent, INotification
 {
