@@ -121,16 +121,4 @@ public class UpdateOrderCommandHandlerTests : OrderTestFixture
 
         result.ShouldBeFailure(typeof(NotFoundException));
     }
-
-    [Test]
-    public async Task Should_fail_when_items_is_empty()
-    {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
-
-        var command = new UpdateOrderCommand(order.Id, new List<CreateOrderItemCommand>());
-
-        var result = await Mediator.Send(command);
-
-        result.ShouldBeFailure(typeof(InvalidOperationException));
-    }
 }

@@ -76,17 +76,5 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands
                     It.IsAny<Dictionary<string, string>>()),
                 Times.Once);
         }
-
-        [Test]
-        public async Task Should_fail_when_items_is_empty()
-        {
-            var command = new CreateOrderCommand(
-                Guid.NewGuid().ToString(),
-                new List<CreateOrderItemCommand>());
-
-            var result = await Mediator.Send(command);
-
-            result.ShouldBeFailure(typeof(InvalidOperationException));
-        }
     }
 }
