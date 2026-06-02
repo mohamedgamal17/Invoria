@@ -43,7 +43,7 @@ public class AcceptOrderCommandHandler : IApplicatonRequestHandler<AcceptOrderCo
 
         try
         {
-            order.Accept();
+            order.Revise();
         }
         catch (InvalidOperationException ex)
         {
