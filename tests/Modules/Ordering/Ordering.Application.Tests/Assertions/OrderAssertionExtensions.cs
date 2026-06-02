@@ -4,8 +4,8 @@ using Invoria.Catalog.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Orders.Commands.UpdateOrder;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Tests.Assertions

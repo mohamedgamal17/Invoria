@@ -6,7 +6,7 @@ using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;

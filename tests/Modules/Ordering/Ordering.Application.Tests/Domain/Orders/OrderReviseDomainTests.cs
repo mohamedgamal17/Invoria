@@ -1,5 +1,5 @@
 using FluentAssertions;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Tests.Domain.Orders;

@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;

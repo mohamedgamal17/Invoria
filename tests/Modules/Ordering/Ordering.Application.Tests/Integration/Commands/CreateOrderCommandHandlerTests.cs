@@ -1,8 +1,8 @@
 using Invoria.Application.Tests.Extensions;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Tests.Assertions;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Rebus.Bus;

@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Services;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;

@@ -1,5 +1,5 @@
 using Invoria.Ordering.Application.Orders.Handlers;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Domain.Orders.Events;
 using Moq;
 using Rebus.Bus;
