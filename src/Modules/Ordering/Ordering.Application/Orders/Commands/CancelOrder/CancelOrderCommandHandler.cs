@@ -3,6 +3,7 @@ using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
@@ -35,14 +36,13 @@ public class CancelOrderCommandHandler : IApplicatonRequestHandler<CancelOrderCo
             return Result.Failure<OrderDto>(new NotFoundException($"Order with ID {request.Id} not found"));
         }
 
-        try
+        if (order.Status == OrderStatus.Completed)
         {
-            order.Cancel();
+            return Result.Failure<OrderDto>(new BusinessLogicException(
+                "Order can only be cancelled when the order is not Completed."));
         }
-        catch (InvalidOperationException ex)
-        {
-            return Result.Failure<OrderDto>(new BusinessLogicException(ex.Message, ex));
-        }
+
+        order.Cancel();
 
         await _orderRepository.Update(order, cancellationToken);
 
