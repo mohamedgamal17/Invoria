@@ -1,6 +1,6 @@
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Models;
 
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published when an order should be allocated against inventory batches.

@@ -1,4 +1,4 @@
-﻿namespace Invoria.Ordering.Contracts.Models
+namespace Invoria.Ordering.Contracts.Orders.Models
 {
     public class OrderItemModel
     {

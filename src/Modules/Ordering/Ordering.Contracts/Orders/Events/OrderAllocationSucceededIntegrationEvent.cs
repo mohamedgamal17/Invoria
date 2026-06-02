@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 public class OrderAllocationSucceededIntegrationEvent
 {

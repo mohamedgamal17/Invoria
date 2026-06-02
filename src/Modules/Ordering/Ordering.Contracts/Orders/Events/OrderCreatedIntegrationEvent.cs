@@ -1,12 +1,12 @@
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Models;
 
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
-/// Published when a persisted sales order aggregate is updated.
+/// Published when a new sales order is persisted.
 /// Carries the order snapshot in <see cref="Order"/> plus when the event was raised.
 /// </summary>
-public class OrderUpdatedIntegrationEvent
+public class OrderCreatedIntegrationEvent
 {
     public required OrderIntegrationPayload Order { get; set; }
 

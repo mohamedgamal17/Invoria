@@ -1,6 +1,6 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
-namespace Invoria.Ordering.Contracts.Models;
+namespace Invoria.Ordering.Contracts.Orders.Models;
 
 /// <summary>
 /// Shared order snapshot for integration messaging (e.g. created or updated order notifications).

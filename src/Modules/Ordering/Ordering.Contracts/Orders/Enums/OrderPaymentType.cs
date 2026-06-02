@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Orders;
+namespace Invoria.Ordering.Contracts.Orders.Enums;
 
 public enum OrderPaymentType
 {

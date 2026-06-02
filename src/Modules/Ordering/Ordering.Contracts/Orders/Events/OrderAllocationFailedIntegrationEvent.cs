@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published when inventory cannot complete allocation for an order (e.g. insufficient stock).

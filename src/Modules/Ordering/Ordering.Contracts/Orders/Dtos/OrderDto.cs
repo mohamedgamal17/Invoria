@@ -1,8 +1,8 @@
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.CustomerManagement.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
-namespace Invoria.Ordering.Contracts.Dtos
+namespace Invoria.Ordering.Contracts.Orders.Dtos
 {
     public class OrderDto : AuditedEntityDto
     {

@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published when an order is refused without a two-phase release (e.g. not allocated yet).

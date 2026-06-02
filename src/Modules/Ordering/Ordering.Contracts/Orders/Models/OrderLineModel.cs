@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Models;
+namespace Invoria.Ordering.Contracts.Orders.Models;
 
 /// <summary>
 /// Order line item payload for integration events and cross-module messaging.

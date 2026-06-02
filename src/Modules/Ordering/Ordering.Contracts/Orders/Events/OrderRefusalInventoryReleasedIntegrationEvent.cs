@@ -1,4 +1,4 @@
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published by Inventory after allocations for a <strong>refused</strong> order have been released (or there were none).

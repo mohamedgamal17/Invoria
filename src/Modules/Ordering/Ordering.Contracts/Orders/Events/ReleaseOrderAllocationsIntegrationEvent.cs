@@ -1,6 +1,7 @@
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Contracts.Orders.Models;
 
-namespace Invoria.Ordering.Contracts.Events;
+namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published when inventory should release batch allocations for order lines (reopen or refusal).

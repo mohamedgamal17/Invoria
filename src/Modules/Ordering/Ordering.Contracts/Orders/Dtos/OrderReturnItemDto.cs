@@ -1,6 +1,6 @@
 using Invoria.Catalog.Contracts.Dtos;
 
-namespace Invoria.Ordering.Contracts.Dtos;
+namespace Invoria.Ordering.Contracts.Orders.Dtos;
 
 public class OrderReturnItemDto
 {
