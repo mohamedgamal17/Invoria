@@ -25,7 +25,7 @@ public sealed class OrderEntityUpdatedDomainEventHandler : INotificationHandler<
         var integrationEvent = new OrderUpdatedIntegrationEvent
         {
             OccurredOn = notification.OccurredOn,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = order.Id,
                 OrderNumber = order.OrderNumber,

@@ -1,3 +1,4 @@
+using Invoria.Ordering.Contracts.Orders.Models;
 using Rebus.Sagas;
 
 namespace Invoria.Ordering.Application.Orders.Sagas;
@@ -15,4 +16,12 @@ public sealed class OrderSagaState : ISagaData
     public string CustomerId { get; set; } = default!;
 
     public string State { get; set; } = OrderSagaProcessState.Created;
+
+    public void ApplyCreated(OrderModel order)
+    {
+        OrderId = order.Id;
+        OrderNumber = order.OrderNumber;
+        CustomerId = order.CustomerId;
+        State = OrderSagaProcessState.Created;
+    }
 }
