@@ -1,7 +1,7 @@
 using FastEndpoints;
 using FluentValidation;
 using Invoria.BuildingBlocks.Application.Requests;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Ordering.Endpoints.Orders.Requests;
 
