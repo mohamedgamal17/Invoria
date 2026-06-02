@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Repositories;
 using Microsoft.Extensions.Logging;

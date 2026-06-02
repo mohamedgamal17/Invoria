@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Reporting.Infrastructure.Orders.Materialization.StatusSummary;
 
