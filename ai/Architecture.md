@@ -152,10 +152,19 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 - **Location**
   - `src/Modules/Ordering/Ordering.Contracts`
 
+- **Layout** (bounded context `Orders/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
+  - `Orders/Enums/` — `OrderStatus`, `OrderPaymentType`, `AllocationReleaseReason`, etc. (`Invoria.Ordering.Contracts.Orders.Enums`)
+  - `Orders/Dtos/` — `OrderDto`, `OrderItemDto`, … (`Invoria.Ordering.Contracts.Orders.Dtos`)
+  - `Orders/Events/` — integration events (`Invoria.Ordering.Contracts.Orders.Events`)
+  - `Orders/Models/` — `OrderIntegrationPayload`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
+
 - **Integration events**
+  - **`OrderCreatedIntegrationEvent`**
+    - File: `Orders/Events/OrderCreatedIntegrationEvent.cs`
+    - Raised from domain event **`OrderCreatedDomainEvent`** (`Ordering.Domain/Orders/Events/`) when `Order.Create` persists a new order; **`OrderCreatedDomainEventHandler`** reloads the aggregate and publishes the full order snapshot.
   - **`AllocateOrderIntegrationEvent`**
-    - File: `Events/AllocateOrderIntegrationEvent.cs`
-    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Ordering.Contracts.Models`).
+    - File: `Orders/Events/AllocateOrderIntegrationEvent.cs`
+    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Orders/Models`).
     - Published by the Ordering bounded context when an order allocation is integrated; consumed by Inventory (and potentially other modules) via Rebus.
 
 - **Relationships**
@@ -854,6 +863,11 @@ flowchart LR
 - **Handlers**
   - Modules register `Rebus.Handlers.IHandleMessages<T>` implementations with the DI container.
   - Inventory registers integration event handlers via `RebusHandlersServiceInstaller` in `Invoria.Inventory.Infrastructure`.
+  - Ordering registers `OrderSaga` via `RebusHandlersServiceInstaller` in `Invoria.Ordering.Infrastructure`.
+
+- **Sagas**
+  - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
+  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and will orchestrate long-running order ↔ inventory coordination (e.g. allocation). Workflow states are strongly typed string constants in `OrderSagaProcessState` (initial state: `Created`). Message handlers and correlation are added incrementally.
 
 - **Cross-module events**
   - Integration event types (for example `AllocateOrderIntegrationEvent` in `Invoria.Ordering.Contracts`) are consumed by Inventory handlers when messages are published to the configured transport and routing/subscriptions match the host setup.
@@ -902,7 +916,7 @@ flowchart LR
 - **Inventory (Rebus integration)**
   - Integration event **contracts** live in **`Invoria.Ordering.Contracts`** (for example `AllocateOrderIntegrationEvent`).
   - **Application** includes `AllocateOrderIntegrationConsumer` (`Batches/Consumers/`), implementing `IHandleMessages<AllocateOrderIntegrationEvent>`.
-  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and may host `AllocateOrderIntegrationEventHandler` under `Events/`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` in that project file.
+  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` and import `Invoria.Ordering.Contracts.Orders.Events` (or related namespaces).
 
 - **Procurement (layered module)**
   - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
