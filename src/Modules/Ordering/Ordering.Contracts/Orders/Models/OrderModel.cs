@@ -6,7 +6,7 @@ namespace Invoria.Ordering.Contracts.Orders.Models;
 /// Shared order snapshot for integration messaging (e.g. created or updated order notifications).
 /// <see cref="Id"/> is the order aggregate id.
 /// </summary>
-public class OrderIntegrationPayload
+public class OrderModel
 {
     public required string Id { get; set; }
 

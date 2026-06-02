@@ -8,7 +8,7 @@ namespace Invoria.Ordering.Contracts.Orders.Events;
 /// </summary>
 public class OrderUpdatedIntegrationEvent
 {
-    public required OrderIntegrationPayload Order { get; set; }
+    public required OrderModel Order { get; set; }
 
     public required DateTimeOffset OccurredOn { get; set; }
 }
