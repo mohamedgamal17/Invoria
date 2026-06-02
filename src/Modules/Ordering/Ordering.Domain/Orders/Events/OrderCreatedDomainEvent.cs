@@ -1,17 +1,14 @@
+using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Events;
 
 namespace Invoria.Ordering.Domain.Orders.Events;
 
 public sealed class OrderCreatedDomainEvent : DomainEvent
 {
-    public OrderCreatedDomainEvent(string orderId, string orderNumber, string customerId)
+    public OrderCreatedDomainEvent(Order order)
     {
-        OrderId = orderId;
-        OrderNumber = orderNumber;
-        CustomerId = customerId;
+        Order = Guard.Against.Null(order);
     }
 
-    public string OrderId { get; }
-    public string OrderNumber { get; }
-    public string CustomerId { get; }
+    public Order Order { get; }
 }

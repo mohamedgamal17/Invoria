@@ -78,7 +78,7 @@ namespace Invoria.Ordering.Domain.Orders
                 paymentType);
 
             order.UpdateItems(items);
-            order.AddDomainEvent(new OrderCreatedDomainEvent(order.Id, order.OrderNumber, order.CustomerId));
+            order.AddDomainEvent(new OrderCreatedDomainEvent(order));
 
             return order;
         }
