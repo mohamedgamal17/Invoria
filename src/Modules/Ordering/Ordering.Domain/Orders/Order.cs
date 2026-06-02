@@ -1,10 +1,7 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Contracts.Orders;
-using Invoria.Ordering.Domain.Orders.Events;
-
 namespace Invoria.Ordering.Domain.Orders
 {
     public class Order : AuditedAggregateRoot
@@ -56,12 +53,6 @@ namespace Invoria.Ordering.Domain.Orders
                     "Payments can only be recorded after the order is completed.");
             }
 
-            if (NetOfTotalOrderAmount <= 0m)
-            {
-                throw new InvalidOperationException(
-                    "Cannot record payments when the order has no positive total amount.");
-            }
-
             if (paidAmount <= 0m)
             {
                 throw new InvalidOperationException("Payment amount must be greater than zero.");
@@ -77,12 +68,6 @@ namespace Invoria.Ordering.Domain.Orders
 
             if (PaymentType == OrderPaymentType.Immediate)
             {
-                if (Payments.Count > 0)
-                {
-                    throw new InvalidOperationException(
-                        "Immediate payment orders accept only a single full payment.");
-                }
-
                 if (paidAmount != NetOfTotalOrderAmount)
                 {
                     throw new InvalidOperationException(
@@ -147,36 +132,15 @@ namespace Invoria.Ordering.Domain.Orders
             PaymentStatus = OrderPaymentStatus.Partial;
         }
 
-        /// <summary>
-        /// Accepts the order for fulfillment allocation when it is <see cref="OrderStatus.Pending"/> or
-        /// <see cref="OrderStatus.Revision"/>.
-        /// </summary>
-        public void Accept()
+        public void Revise()
         {
             if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
             {
                 throw new InvalidOperationException(
-                    "Order can only be accepted when it is Pending or Revision.");
+                    "Order can only be revised when it is Pending or Revision.");
             }
 
             Status = OrderStatus.Processing;
-            var lines = Items
-                .Select(i => new OrderAcceptedLine(i.Id, i.ProductId, i.Quantity))
-                .ToList();
-        }
-
-        /// <summary>
-        /// Moves a processing order into revision so it can be edited and accepted again.
-        /// </summary>
-        public void Revise()
-        {
-            if (Status != OrderStatus.Processing)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be revised when it is Processing.");
-            }
-
-            Status = OrderStatus.Revision;
         }
 
         public void Cancel()
@@ -190,42 +154,9 @@ namespace Invoria.Ordering.Domain.Orders
             Status = OrderStatus.Cancelled;
         }
 
-        /// <summary>
-        /// Refuses the order when it is <see cref="OrderStatus.Processing"/> or <see cref="OrderStatus.Completed"/>.
-        /// </summary>
-        public void Refuse()
-        {
-            if (Status != OrderStatus.Processing && Status != OrderStatus.Completed)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be refused when it is Processing or Completed.");
-            }
-
-            if (Status == OrderStatus.Processing)
-            {
-                var refusalLines = Items
-                    .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
-                    .ToList();
-                AddDomainEvent(new OrderRefusalReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, refusalLines));
-            }
-
-            Status = OrderStatus.Cancelled;
-            AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
-        }
-
-
-        /// <summary>
-        /// Replaces the full customer return list for a shipped order in one atomic batch.
-        /// </summary>
         public Result RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
         {
             Guard.Against.Null(returnItems);
-
-            var errors = ValidateReturnItems(returnItems);
-            if (errors.Count > 0)
-            {
-                return Result.Failure(new BusinessValidationException(errors));
-            }
 
             var normalizedItems = NormalizeReturnItems(returnItems);
             ReturnItems.Clear();
@@ -237,33 +168,6 @@ namespace Invoria.Ordering.Domain.Orders
             RefreshPaymentSummary();
 
             return Result.Success();
-        }
-
-        private List<string> ValidateReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
-        {
-            var errors = new List<string>();
-
-            var quantitiesByLine = returnItems
-                .GroupBy(r => r.OrderItemId)
-                .ToDictionary(g => g.Key, g => g.Sum(r => r.Quantity));
-
-            foreach (var (orderItemId, batchQuantity) in quantitiesByLine)
-            {
-                var line = Items.SingleOrDefault(i => i.Id == orderItemId);
-                if (line is null)
-                {
-                    errors.Add($"Return item references unknown order line '{orderItemId}'.");
-                    continue;
-                }
-
-                if (batchQuantity > line.Quantity)
-                {
-                    errors.Add(
-                        $"Return quantity for order line '{orderItemId}' cannot exceed ordered quantity.");
-                }
-            }
-
-            return errors;
         }
 
         private static List<OrderReturnItem> NormalizeReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
