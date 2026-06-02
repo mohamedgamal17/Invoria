@@ -33,10 +33,10 @@ public class OrderAcceptDomainTests
     public void Accept_when_revision_sets_processing()
     {
         var order = new Order("N-A3", "cust-3");
-        SetEntityId(order, "order-accept-reopen");
+        SetEntityId(order, "order-accept-revise");
         order.UpdateItems([new OrderItem("p1", 2, 10m)]);
         order.Accept();
-        order.Reopen();
+        order.Revise();
         order.ClearDomainEvents();
 
         order.Accept();

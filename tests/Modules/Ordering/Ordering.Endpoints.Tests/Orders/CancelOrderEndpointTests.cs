@@ -74,20 +74,14 @@ public class CancelOrderEndpointTests : OrderingTestFixture
         var created = createEnvelope!.Result!;
         created.Id.Should().NotBeNullOrEmpty();
 
-        // Seed Processing to allow Reopen transition into Revision.
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
             var rows = await db.Set<Order>()
                 .Where(o => o.Id == created.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Processing));
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Revision));
             rows.Should().Be(1);
         }
-
-        var reopenResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/reopen",
-            new StringContent("{}", Encoding.UTF8, "application/json"));
-        reopenResponse.IsSuccessStatusCode.Should().BeTrue();
 
         var cancelResponse = await Client.PostAsync(
             $"/orders/{created.Id}/cancel",

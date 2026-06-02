@@ -38,11 +38,11 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_succeeds_when_reopened()
+    public void Cancel_succeeds_when_revised()
     {
-        var order = CreateOrderWithItems("cancel-reopen");
+        var order = CreateOrderWithItems("cancel-revise");
         order.Accept();
-        order.Reopen();
+        order.Revise();
 
         order.Cancel();
 
