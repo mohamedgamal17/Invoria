@@ -4,16 +4,12 @@ namespace Invoria.Ordering.Contracts.Orders
     {
         Pending = 5 ,
 
-        Accepted = 10,
+        Processing = 10,
 
-        Shipped = 15,
+        Revision = 15,
 
         Completed = 20,
-
-        Cancelled = 25,
-
-        Reopened = 30,
-
-        Refused = 35
+        
+        Cancelled = 25
     }
 }

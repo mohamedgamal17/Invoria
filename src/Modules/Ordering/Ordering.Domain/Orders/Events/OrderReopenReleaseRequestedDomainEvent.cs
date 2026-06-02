@@ -3,6 +3,8 @@ using MediatR;
 
 namespace Invoria.Ordering.Domain.Orders.Events;
 
+public sealed record OrderDispatchedLine(string OrderItemId, string ProductId, int Quantity);
+
 /// <summary>
 /// Raised when reopening requires inventory to release allocations; application layer can translate to an integration event.
 /// </summary>

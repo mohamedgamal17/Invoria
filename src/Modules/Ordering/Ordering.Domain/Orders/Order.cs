@@ -28,8 +28,6 @@ namespace Invoria.Ordering.Domain.Orders
 
         public OrderPaymentStatus PaymentStatus { get; private set; }
 
-        private bool _hasBeenDispatched;
-
         private Order()
         {
             Items = new List<OrderItem>();
@@ -113,10 +111,10 @@ namespace Invoria.Ordering.Domain.Orders
                 throw new InvalidOperationException("Order items must have one or more item.");
             }
 
-            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
             {
                 throw new InvalidOperationException(
-                    "Order items can only be updated when the order is Pending or Reopened.");
+                    "Order items can only be updated when the order is Pending or Revision.");
             }
 
             Items = items;
@@ -151,21 +149,20 @@ namespace Invoria.Ordering.Domain.Orders
 
         /// <summary>
         /// Accepts the order for fulfillment allocation when it is <see cref="OrderStatus.Pending"/> or
-        /// <see cref="OrderStatus.Reopened"/>.
+        /// <see cref="OrderStatus.Revision"/>.
         /// </summary>
         public void Accept()
         {
-            if (Status != OrderStatus.Pending && Status != OrderStatus.Reopened)
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
             {
                 throw new InvalidOperationException(
-                    "Order can only be accepted when it is Pending or Reopened.");
+                    "Order can only be accepted when it is Pending or Revision.");
             }
 
-            Status = OrderStatus.Accepted;
+            Status = OrderStatus.Processing;
             var lines = Items
                 .Select(i => new OrderAcceptedLine(i.Id, i.ProductId, i.Quantity))
                 .ToList();
-            AddDomainEvent(new OrderAcceptedDomainEvent(Id, OrderNumber, CustomerId, lines));
         }
 
         /// <summary>
@@ -173,104 +170,42 @@ namespace Invoria.Ordering.Domain.Orders
         /// </summary>
         public void Reopen()
         {
-            if (Status != OrderStatus.Accepted)
+            if (Status != OrderStatus.Processing)
             {
                 throw new InvalidOperationException(
-                    "Order can only be reopened when it is Accepted.");
+                    "Order can only be reopened when it is Processing.");
             }
 
             var lines = Items
                 .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
                 .ToList();
             AddDomainEvent(new OrderReopenReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, lines));
-            Status = OrderStatus.Reopened;
+            Status = OrderStatus.Revision;
         }
 
         public void Cancel()
         {
-            if (Status != OrderStatus.Pending
-                && Status != OrderStatus.Accepted
-                && Status != OrderStatus.Reopened)
+            if (Status == OrderStatus.Completed)
             {
                 throw new InvalidOperationException(
-                    "Order can only be cancelled when the order is Pending, Accepted, or Reopened.");
+                    "Order can only be cancelled when the order is not Completed.");
             }
 
             Status = OrderStatus.Cancelled;
         }
 
         /// <summary>
-        /// Cancels the order when inventory allocation fails after the order was accepted.
-        /// </summary>
-        public void CancelDueToAllocationFailure(string reason)
-        {
-            Guard.Against.NullOrWhiteSpace(reason);
-
-            if (Status != OrderStatus.Accepted)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be cancelled due to allocation failure when it is Accepted.");
-            }
-
-            Status = OrderStatus.Cancelled;
-        }
-
-        /// <summary>
-        /// Confirms inventory allocation succeeded after the order was accepted. Idempotent while <see cref="OrderStatus.Accepted"/>.
-        /// </summary>
-        public void MarkInventoryAllocated()
-        {
-            if (Status == OrderStatus.Accepted)
-            {
-                return;
-            }
-
-            throw new InvalidOperationException(
-                "Order can only be marked inventory allocated when it is Accepted.");
-        }
-
-        /// <summary>
-        /// Marks the order as dispatched after inventory is allocated. Idempotent while still <see cref="OrderStatus.Accepted"/>.
-        /// </summary>
-        public void MarkDispatched()
-        {
-            if (Status == OrderStatus.Shipped || Status == OrderStatus.Completed)
-            {
-                return;
-            }
-
-            if (Status != OrderStatus.Accepted)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be marked dispatched when it is Accepted.");
-            }
-
-            if (_hasBeenDispatched)
-            {
-                return;
-            }
-
-            _hasBeenDispatched = true;
-
-            var lines = Items
-                .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
-                .ToList();
-
-            AddDomainEvent(new OrderDispatchedDomainEvent(Id, OrderNumber, CustomerId, lines));
-        }
-
-        /// <summary>
-        /// Refuses the order when it is <see cref="OrderStatus.Accepted"/> or <see cref="OrderStatus.Completed"/>.
+        /// Refuses the order when it is <see cref="OrderStatus.Processing"/> or <see cref="OrderStatus.Completed"/>.
         /// </summary>
         public void Refuse()
         {
-            if (Status != OrderStatus.Accepted && Status != OrderStatus.Completed)
+            if (Status != OrderStatus.Processing && Status != OrderStatus.Completed)
             {
                 throw new InvalidOperationException(
-                    "Order can only be refused when it is Accepted or Completed.");
+                    "Order can only be refused when it is Processing or Completed.");
             }
 
-            if (Status == OrderStatus.Accepted)
+            if (Status == OrderStatus.Processing)
             {
                 var refusalLines = Items
                     .Select(i => new OrderDispatchedLine(i.Id, i.ProductId, i.Quantity))
@@ -278,29 +213,10 @@ namespace Invoria.Ordering.Domain.Orders
                 AddDomainEvent(new OrderRefusalReleaseRequestedDomainEvent(Id, OrderNumber, CustomerId, refusalLines));
             }
 
-            Status = OrderStatus.Refused;
+            Status = OrderStatus.Cancelled;
             AddDomainEvent(new OrderRefusedDomainEvent(Id, OrderNumber, CustomerId));
         }
 
-        /// <summary>
-        /// Marks the order as shipped after it has been dispatched to the customer.
-        /// Idempotent when <see cref="OrderStatus"/> is already <see cref="OrderStatus.Shipped"/>.
-        /// </summary>
-        public void MarkShipped()
-        {
-            if (Status == OrderStatus.Shipped)
-            {
-                return;
-            }
-
-            if (Status != OrderStatus.Accepted)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be marked shipped when it is Accepted.");
-            }
-
-            Status = OrderStatus.Shipped;
-        }
 
         /// <summary>
         /// Replaces the full customer return list for a shipped order in one atomic batch.
@@ -330,11 +246,6 @@ namespace Invoria.Ordering.Domain.Orders
         private List<string> ValidateReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
         {
             var errors = new List<string>();
-
-            if (Status != OrderStatus.Shipped)
-            {
-                errors.Add("Return items can only be recorded when the order is Shipped.");
-            }
 
             var quantitiesByLine = returnItems
                 .GroupBy(r => r.OrderItemId)
@@ -369,10 +280,10 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Complete()
         {
-            if (Status != OrderStatus.Shipped)
+            if (Status != OrderStatus.Processing)
             {
                 throw new InvalidOperationException(
-                    "Order can only be completed when it is Shipped.");
+                    "Order can only be completed when it is Processing.");
             }
 
             if (AllItemsFullyReturned())
