@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Materialization.DebtSummary;
 using Invoria.Reporting.Application.Orders.Materialization.OrderPeriodSummary;
 using Invoria.Reporting.Application.Orders.Materialization.StatusSummary;

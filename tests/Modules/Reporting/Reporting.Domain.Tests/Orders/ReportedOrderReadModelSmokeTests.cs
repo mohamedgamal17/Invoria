@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Domain.Orders;
 
 namespace Invoria.Reporting.Domain.Tests.Orders;

@@ -4,8 +4,8 @@ using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Infrastructure.EntityFramework;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

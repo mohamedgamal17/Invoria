@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Contracts.Orders.Reports;
 
 namespace Invoria.Reporting.Endpoints.Tests.Orders;

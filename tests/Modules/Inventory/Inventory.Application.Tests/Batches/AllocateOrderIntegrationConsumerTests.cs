@@ -2,8 +2,8 @@ using FluentAssertions;
 using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
 using Invoria.Inventory.Application.Batches.Consumers;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 using MediatR;
 using Moq;
 

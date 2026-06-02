@@ -1,6 +1,6 @@
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Consumers;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Repositories;
@@ -21,7 +21,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
                 Id = "order-1",
                 OrderNumber = "ON-9",
                 CustomerId = "cust-1",
-                OrderStatus = OrderStatus.Accepted,
+                OrderStatus = OrderStatus.Processing,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 200m,
@@ -97,7 +97,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
         {
             Assert.That(upserted!.OrderNumber, Is.EqualTo("ON-9"));
             Assert.That(upserted.CustomerId, Is.EqualTo("cust-1"));
-            Assert.That(upserted.OrderStatus, Is.EqualTo(OrderStatus.Accepted));
+            Assert.That(upserted.OrderStatus, Is.EqualTo(OrderStatus.Processing));
             Assert.That(upserted.TotalOrderAmount, Is.EqualTo(200m));
             Assert.That(upserted.ReplicationVersion, Is.EqualTo(2));
             Assert.That(upserted.SourceLastKnownAt, Is.EqualTo(occurred));
@@ -119,7 +119,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
             Id = "order-1",
             OrderNumber = "ON-9",
             CustomerId = "cust-1",
-            OrderStatus = OrderStatus.Accepted,
+            OrderStatus = OrderStatus.Processing,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 200m,

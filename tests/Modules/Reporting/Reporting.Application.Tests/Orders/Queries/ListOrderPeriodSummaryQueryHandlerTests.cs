@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Queries.ListOrderPeriodSummary;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders;

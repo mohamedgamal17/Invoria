@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Queries.GetCustomerDebtSummary;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Orders.DebtSummary;

@@ -5,7 +5,7 @@ using Invoria.BuildingBlocks.Application.Requests;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Endpoints.Tests.Utilities;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Contracts.Orders.Reports;
 
 namespace Invoria.Reporting.Endpoints.Tests.Orders;

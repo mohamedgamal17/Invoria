@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Consumers;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Repositories;
