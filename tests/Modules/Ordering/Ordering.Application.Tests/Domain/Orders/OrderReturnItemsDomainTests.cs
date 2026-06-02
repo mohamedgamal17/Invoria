@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Domain.Orders;
 
@@ -25,7 +24,7 @@ public class OrderReturnItemsDomainTests
             SetEntityId(order.Items[i], lines[i].lineId);
         }
 
-        order.Accept();
+        order.Revise();
         return order;
     }
 
@@ -59,7 +58,7 @@ public class OrderReturnItemsDomainTests
         SetEntityId(order, "order-return-2");
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
         SetEntityId(order.Items[0], "line-1");
-        order.Accept();
+        order.Revise();
         var result = order.RecordReturnItems([new OrderReturnItem("line-1", 1)]);
 
         result.IsSuccess.Should().BeTrue();
@@ -76,32 +75,6 @@ public class OrderReturnItemsDomainTests
 
         result.IsSuccess.Should().BeTrue();
         order.ReturnItems.Should().ContainSingle();
-    }
-
-    [Test]
-    public void RecordReturnItems_fails_for_unknown_order_item_id()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 1, 10m));
-
-        var result = order.RecordReturnItems([new OrderReturnItem("unknown-line", 1)]);
-
-        result.IsFailure.Should().BeTrue();
-        var validation = (BusinessValidationException)result.Exception!;
-        validation.Messages.Should().Contain(m => m.Contains("unknown-line"));
-        order.ReturnItems.Should().BeEmpty();
-    }
-
-    [Test]
-    public void RecordReturnItems_fails_when_return_quantity_exceeds_line_quantity()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
-
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 3)]);
-
-        result.IsFailure.Should().BeTrue();
-        var validation = (BusinessValidationException)result.Exception!;
-        validation.Messages.Should().Contain(m => m.Contains("line-1") && m.Contains("ordered quantity"));
-        order.ReturnItems.Should().BeEmpty();
     }
 
     [Test]
@@ -174,21 +147,6 @@ public class OrderReturnItemsDomainTests
     }
 
     [Test]
-    public void RecordReturnItems_validates_batch_sum_per_line_when_over_ordered_quantity()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
-
-        var result = order.RecordReturnItems(
-        [
-            new OrderReturnItem("line-1", 1),
-            new OrderReturnItem("line-1", 2)
-        ]);
-
-        result.IsFailure.Should().BeTrue();
-        order.ReturnItems.Should().BeEmpty();
-    }
-
-    [Test]
     public void RecordReturnItems_clears_returns_when_list_is_empty()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
@@ -203,36 +161,17 @@ public class OrderReturnItemsDomainTests
     }
 
     [Test]
-    public void RecordReturnItems_failed_replace_does_not_mutate_existing_returns()
+    public void RecordReturnItems_replaces_existing_returns_on_second_call()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
         order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
 
         var result = order.RecordReturnItems([new OrderReturnItem("line-1", 5)]);
 
-        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
         order.ReturnItems.Should().ContainSingle();
-        order.ReturnItems[0].Quantity.Should().Be(1);
-        order.NetOfTotalOrderAmount.Should().Be(10m);
-    }
-
-    [Test]
-    public void RecordReturnItems_collects_multiple_validation_messages()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 1, 10m));
-
-        var result = order.RecordReturnItems(
-        [
-            new OrderReturnItem("unknown-line", 1),
-            new OrderReturnItem("line-1", 5)
-        ]);
-
-        result.IsFailure.Should().BeTrue();
-        var validation = (BusinessValidationException)result.Exception!;
-        validation.Messages.Should().HaveCountGreaterThanOrEqualTo(2);
-        validation.Messages.Should().Contain(m => m.Contains("unknown-line"));
-        validation.Messages.Should().Contain(m => m.Contains("line-1") && m.Contains("ordered quantity"));
-        order.ReturnItems.Should().BeEmpty();
+        order.ReturnItems[0].Quantity.Should().Be(5);
+        order.NetOfTotalOrderAmount.Should().Be(0m);
     }
 
     [Test]

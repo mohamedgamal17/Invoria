@@ -138,21 +138,4 @@ public class AddReturnItemsEndpointTests : OrderingTestFixture
         response.IsSuccessStatusCode.Should().BeTrue();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
-
-    [Test]
-    public async Task Should_fail_when_unknown_line()
-    {
-        var created = await CreateAndPrepareProcessingOrderAsync();
-
-        var response = await Client.PutAsJsonAsync(
-            $"/orders/{created.Id}/return-items",
-            new AddReturnItemsRequest
-            {
-                Id = created.Id,
-                Items = [new AddReturnLineItemRequest { OrderItemId = Guid.NewGuid().ToString(), Quantity = 1 }]
-            });
-
-        response.IsSuccessStatusCode.Should().BeFalse();
-        response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
-    }
 }

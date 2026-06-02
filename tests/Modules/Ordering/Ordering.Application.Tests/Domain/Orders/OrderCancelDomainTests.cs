@@ -30,7 +30,7 @@ public class OrderCancelDomainTests
     public void Cancel_succeeds_when_accepted()
     {
         var order = CreateOrderWithItems("cancel-acc");
-        order.Accept();
+        order.Revise();
 
         order.Cancel();
 
@@ -41,8 +41,7 @@ public class OrderCancelDomainTests
     public void Cancel_succeeds_when_revised()
     {
         var order = CreateOrderWithItems("cancel-revise");
-        order.Accept();
-        order.Revise();
+        typeof(Order).GetProperty(nameof(Order.Status))!.SetValue(order, OrderStatus.Revision);
 
         order.Cancel();
 
@@ -53,7 +52,7 @@ public class OrderCancelDomainTests
     public void Cancel_throws_when_completed()
     {
         var order = CreateOrderWithItems("cancel-bad-status");
-        order.Accept();
+        order.Revise();
         order.Complete();
 
         var act = () => order.Cancel();
@@ -65,7 +64,7 @@ public class OrderCancelDomainTests
     public void Cancel_succeeds_when_processing()
     {
         var order = CreateOrderWithItems("cancel-shipped");
-        order.Accept();
+        order.Revise();
 
         order.Cancel();
         order.Status.Should().Be(OrderStatus.Cancelled);

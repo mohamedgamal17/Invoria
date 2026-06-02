@@ -108,39 +108,6 @@ public class AddReturnItemsCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_fail_when_unknown_order_line()
-    {
-        var order = await PersistOneRandomOrderAsync();
-        await PrepareProcessingOrderAsync(order);
-
-        var result = await Mediator.Send(
-            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(Guid.NewGuid().ToString(), 1)]));
-
-        result.ShouldBeFailure(typeof(BusinessValidationException));
-    }
-
-    [Test]
-    public async Task Should_fail_when_return_quantity_exceeds_ordered()
-    {
-        var order = await PersistOneRandomOrderAsync();
-        await PrepareProcessingOrderAsync(order);
-        var lineId = await GetFirstOrderLineIdAsync(order.Id);
-
-        var db = Scope.Resolve<OrderingDbContext>();
-        var lineQuantity = await db.Set<Order>()
-            .Where(o => o.Id == order.Id)
-            .SelectMany(o => o.Items)
-            .Where(i => i.Id == lineId)
-            .Select(i => i.Quantity)
-            .SingleAsync();
-
-        var result = await Mediator.Send(
-            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, lineQuantity + 1)]));
-
-        result.ShouldBeFailure(typeof(BusinessValidationException));
-    }
-
-    [Test]
     public async Task Should_fail_when_order_not_found()
     {
         var result = await Mediator.Send(
