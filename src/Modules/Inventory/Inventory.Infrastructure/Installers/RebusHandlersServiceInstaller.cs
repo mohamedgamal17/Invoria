@@ -2,7 +2,7 @@ using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Inventory.Application.Allocations.Consumers;
 using Invoria.Inventory.Application.Batches.Consumers;
 using Invoria.Inventory.Contracts.Events;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Procurement.Contracts.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
