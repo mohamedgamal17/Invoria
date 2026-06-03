@@ -170,6 +170,18 @@ namespace Invoria.Ordering.Domain.Orders
             PaymentStatus = OrderPaymentStatus.Partial;
         }
 
+        public void Accept()
+        {
+            if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be accepted when it is Pending or Revision.");
+            }
+
+            Status = OrderStatus.Processing;
+            AddDomainEvent(new OrderAcceptedDomainEvent(this));
+        }
+
         public void Revise()
         {
             if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
