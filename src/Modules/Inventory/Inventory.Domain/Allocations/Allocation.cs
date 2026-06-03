@@ -53,7 +53,7 @@ public class Allocation : AuditedAggregateRoot
 
     private void InitiatePendingAllocation()
     {
-        AddDomainEvent(AllocationInitiatedDomainEvent.ForPendingAllocation(this));
+        AddDomainEvent(new AllocationInitiatedDomainEvent(this));
     }
 
     public void MarkAsAllocated()
@@ -98,7 +98,7 @@ public class Allocation : AuditedAggregateRoot
         }
 
         Status = AllocationStatus.Allocated;
-        AddDomainEvent(AllocationCompletedDomainEvent.ForAllocation(this));
+        AddDomainEvent(new AllocationCompletedDomainEvent(this));
         return true;
     }
 
@@ -111,7 +111,7 @@ public class Allocation : AuditedAggregateRoot
         }
 
         Status = AllocationStatus.Failed;
-        AddDomainEvent(AllocationFailedDomainEvent.ForAllocation(this));
+        AddDomainEvent(new AllocationFailedDomainEvent(this));
     }
 
     public void MarkAsReleased()
