@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +23,7 @@ namespace Invoria.Inventory.Infrastructure
 
             if (bus is not null)
             {
+                await bus.Subscribe<AllocateOrderIntegrationEvent>();
                 await bus.Subscribe<RequestAllocationIntegrationEvent>();
                 await bus.Subscribe<ReleaseAllocationIntegrationEvent>();
             }
