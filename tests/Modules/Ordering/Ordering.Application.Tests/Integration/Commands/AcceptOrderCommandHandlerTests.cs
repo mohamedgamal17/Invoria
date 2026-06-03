@@ -177,9 +177,9 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var act = () => Mediator.Send(new AcceptOrderCommand(order.Id));
+        var result = await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.ShouldBeFailure(typeof(BusinessLogicException));
     }
 
     [Test]
@@ -193,9 +193,9 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var command = new AcceptOrderCommand(order.Id);
 
-        var act = () => Mediator.Send(command);
+        var result = await Mediator.Send(command);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        result.ShouldBeFailure(typeof(BusinessLogicException));
     }
 
     [Test]
