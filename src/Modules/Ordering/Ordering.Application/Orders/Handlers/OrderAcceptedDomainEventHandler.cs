@@ -1,5 +1,5 @@
+using Invoria.Ordering.Application.Orders.Extensions;
 using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
 using Invoria.Ordering.Domain.Orders.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -20,26 +20,19 @@ public sealed class OrderAcceptedDomainEventHandler : INotificationHandler<Order
 
     public async Task Handle(OrderAcceptedDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new AllocateOrderIntegrationEvent
+        var order = notification.Order;
+
+        var integrationEvent = new OrderAcceptedIntegrationEvent
         {
-            Id = notification.OrderId,
-            OrderNumber = notification.OrderNumber,
-            CustomerId = notification.CustomerId,
-            Items = notification.Lines
-                .Select(l => new OrderItemModel
-                {
-                    Id = l.OrderItemId,
-                    ProductId = l.ProductId,
-                    Quantity = l.Quantity
-                })
-                .ToList()
+            OccurredOn = notification.OccurredOn,
+            Order = order.ToOrderModel()
         };
 
         _logger.LogDebug(
             "Publishing integration event {EventName} for OrderId={OrderId} OrderNumber={OrderNumber}",
-            nameof(AllocateOrderIntegrationEvent),
-            integrationEvent.Id,
-            integrationEvent.OrderNumber);
+            nameof(OrderAcceptedIntegrationEvent),
+            integrationEvent.Order.Id,
+            integrationEvent.Order.OrderNumber);
         await _bus.Publish(integrationEvent);
     }
 }

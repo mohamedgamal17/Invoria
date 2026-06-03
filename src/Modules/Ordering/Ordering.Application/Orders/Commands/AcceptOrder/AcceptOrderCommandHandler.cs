@@ -3,12 +3,9 @@ using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Contracts.Orders.Dtos;
-using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
-using Rebus.Bus;
 
 namespace Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 
@@ -16,16 +13,13 @@ public class AcceptOrderCommandHandler : IApplicatonRequestHandler<AcceptOrderCo
 {
     private readonly IOrderingRepository<Order> _orderRepository;
     private readonly IOrderResponseFactory _orderResponseFactory;
-    private readonly IBus _bus;
 
     public AcceptOrderCommandHandler(
         IOrderingRepository<Order> orderRepository,
-        IOrderResponseFactory orderResponseFactory,
-        IBus bus)
+        IOrderResponseFactory orderResponseFactory)
     {
         _orderRepository = orderRepository;
         _orderResponseFactory = orderResponseFactory;
-        _bus = bus;
     }
 
     public async Task<Result<OrderDto>> Handle(AcceptOrderCommand request, CancellationToken cancellationToken)
@@ -41,31 +35,9 @@ public class AcceptOrderCommandHandler : IApplicatonRequestHandler<AcceptOrderCo
             return Result.Failure<OrderDto>(new NotFoundException($"Order with ID {request.Id} not found"));
         }
 
-        try
-        {
-            order.Revise();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Result.Failure<OrderDto>(new BusinessLogicException(ex.Message, ex));
-        }
+        order.Accept();
 
         await _orderRepository.Update(order, cancellationToken);
-
-        await _bus.Publish(new AllocateOrderIntegrationEvent
-        {
-            Id = order.Id,
-            OrderNumber = order.OrderNumber,
-            CustomerId = order.CustomerId,
-            Items = order.Items
-                .Select(i => new OrderItemModel
-                {
-                    Id = i.Id,
-                    ProductId = i.ProductId,
-                    Quantity = i.Quantity
-                })
-                .ToList()
-        });
 
         var dto = await _orderResponseFactory.PrepareDto(order);
 
