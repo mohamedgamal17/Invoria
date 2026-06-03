@@ -1,10 +1,9 @@
-using System.Reflection;
 using FluentAssertions;
 using Invoria.Ordering.Application.Orders.Sagas;
 using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Contracts.Orders.Models;
-using Rebus.Sagas;
+using Rebus.TestHelpers;
 
 namespace Invoria.Ordering.Application.Tests.Orders.Sagas;
 
@@ -12,19 +11,60 @@ namespace Invoria.Ordering.Application.Tests.Orders.Sagas;
 public class OrderSagaTests
 {
     [Test]
-    public async Task Handle_new_saga_populates_state_from_integration_event()
+    public void Deliver_OrderCreatedIntegrationEvent_creates_saga_with_created_state()
     {
-        var saga = new OrderSaga();
-        MountSaga(saga, new OrderSagaState(), isNew: true);
+        using var fixture = SagaFixture.For(() => new OrderSaga());
 
-        var message = new OrderCreatedIntegrationEvent
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-1", "cust-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.OrderNumber.Should().Be("ON-1");
+        data.CustomerId.Should().Be("cust-1");
+        data.State.Should().Be(OrderSagaProcessState.Created);
+    }
+
+    [Test]
+    public void Deliver_duplicate_OrderCreatedIntegrationEvent_does_not_overwrite_existing_saga()
+    {
+        using var fixture = SagaFixture.For(() => new OrderSaga());
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-ORIGINAL",
+            CustomerId = "cust-original",
+            State = OrderSagaProcessState.Created
+        });
+
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-DUPLICATE", "cust-duplicate"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.OrderNumber.Should().Be("ON-ORIGINAL");
+        data.CustomerId.Should().Be("cust-original");
+    }
+
+    private static OrderCreatedIntegrationEvent BuildOrderCreated(
+        string orderId,
+        string orderNumber,
+        string customerId) =>
+        new()
         {
             OccurredOn = DateTimeOffset.UtcNow,
             Order = new OrderModel
             {
-                Id = "order-1",
-                OrderNumber = "ON-1",
-                CustomerId = "cust-1",
+                Id = orderId,
+                OrderNumber = orderNumber,
+                CustomerId = customerId,
                 OrderStatus = OrderStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
@@ -34,60 +74,4 @@ public class OrderSagaTests
                 Lines = []
             }
         };
-
-        await saga.Handle(message);
-
-        saga.Data.OrderId.Should().Be("order-1");
-        saga.Data.OrderNumber.Should().Be("ON-1");
-        saga.Data.CustomerId.Should().Be("cust-1");
-        saga.Data.State.Should().Be(OrderSagaProcessState.Created);
-    }
-
-    [Test]
-    public async Task Handle_existing_saga_is_idempotent()
-    {
-        var saga = new OrderSaga();
-        var existing = new OrderSagaState
-        {
-            Id = Guid.NewGuid(),
-            OrderId = "order-1",
-            OrderNumber = "ON-ORIGINAL",
-            CustomerId = "cust-original",
-            State = OrderSagaProcessState.Created
-        };
-        MountSaga(saga, existing, isNew: false);
-
-        var message = new OrderCreatedIntegrationEvent
-        {
-            OccurredOn = DateTimeOffset.UtcNow,
-            Order = new OrderModel
-            {
-                Id = "order-1",
-                OrderNumber = "ON-DUPLICATE",
-                CustomerId = "cust-duplicate",
-                OrderStatus = OrderStatus.Pending,
-                PaymentType = OrderPaymentType.Debt,
-                PaymentStatus = OrderPaymentStatus.Unpaid,
-                TotalOrderAmount = 50m,
-                AmountPaid = 0m,
-                AmountOutstanding = 50m,
-                Lines = []
-            }
-        };
-
-        await saga.Handle(message);
-
-        saga.Data.OrderNumber.Should().Be("ON-ORIGINAL");
-        saga.Data.CustomerId.Should().Be("cust-original");
-    }
-
-    private static void MountSaga(OrderSaga saga, OrderSagaState data, bool isNew)
-    {
-        saga.Data = data;
-
-        typeof(Saga).GetProperty(
-                "HoldsNewSagaDataInstance",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .SetValue(saga, isNew);
-    }
 }
