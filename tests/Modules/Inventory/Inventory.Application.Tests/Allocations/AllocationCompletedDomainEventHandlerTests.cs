@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Application.Allocations.Handlers;
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Allocations.Events;
 using Invoria.Inventory.Domain.Batches;

@@ -1,11 +1,11 @@
 using FluentAssertions;
-using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
+using Invoria.Inventory.Application.Allocations.Commands.CreateAllocate;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Invoria.Inventory.Infrastructure.EntityFramework;
-using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Allocations.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,12 +25,12 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
 
         var evt = NewAllocateEvent(
             id: orderId,
-            items: new List<OrderItemModel>
+            items: new List<AllocateOrderLineModel>
             {
                 new() { Id = orderItemId, ProductId = productId, Quantity = 4 }
             });
 
-        var result = await Mediator.Send(AllocateOrderCommand.FromEvent(evt));
+        var result = await Mediator.Send(CreateAllocateCommand.FromEvent(evt));
 
         result.IsSuccess.Should().BeTrue();
 
@@ -62,7 +62,7 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
         var orderId = Guid.NewGuid().ToString();
         var evt = NewAllocateEvent(id: orderId, items: []);
 
-        var act = () => Mediator.Send(AllocateOrderCommand.FromEvent(evt));
+        var act = () => Mediator.Send(CreateAllocateCommand.FromEvent(evt));
 
         await act.Should().ThrowAsync<ArgumentException>();
 
@@ -77,12 +77,12 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
     {
         var evt = NewAllocateEvent(
             id: " ",
-            items: new List<OrderItemModel>
+            items: new List<AllocateOrderLineModel>
             {
                 new() { Id = "i-1", ProductId = Guid.NewGuid().ToString(), Quantity = 1 }
             });
 
-        var act = () => Mediator.Send(AllocateOrderCommand.FromEvent(evt));
+        var act = () => Mediator.Send(CreateAllocateCommand.FromEvent(evt));
 
         await act.Should().ThrowAsync<ArgumentException>();
 
@@ -96,12 +96,12 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
     public async Task Fails_when_line_quantity_invalid()
     {
         var evt = NewAllocateEvent(
-            items: new List<OrderItemModel>
+            items: new List<AllocateOrderLineModel>
             {
                 new() { Id = "i-1", ProductId = Guid.NewGuid().ToString(), Quantity = 0 }
             });
 
-        var act = () => Mediator.Send(AllocateOrderCommand.FromEvent(evt));
+        var act = () => Mediator.Send(CreateAllocateCommand.FromEvent(evt));
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -114,13 +114,13 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
 
         var evt = NewAllocateEvent(
             id: orderId,
-            items: new List<OrderItemModel>
+            items: new List<AllocateOrderLineModel>
             {
                 new() { Id = $"oi-{Guid.NewGuid():N}", ProductId = productId, Quantity = 1 }
             });
 
-        var first = await Mediator.Send(AllocateOrderCommand.FromEvent(evt));
-        var second = await Mediator.Send(AllocateOrderCommand.FromEvent(evt));
+        var first = await Mediator.Send(CreateAllocateCommand.FromEvent(evt));
+        var second = await Mediator.Send(CreateAllocateCommand.FromEvent(evt));
 
         first.IsSuccess.Should().BeTrue();
         second.IsSuccess.Should().BeTrue();
@@ -132,7 +132,7 @@ public class OrderInventoryAllocatorTests : BatchTestFixture
     }
 
     private static AllocateOrderIntegrationEvent NewAllocateEvent(
-        List<OrderItemModel> items,
+        List<AllocateOrderLineModel> items,
         string? id = null,
         string? orderNumber = null,
         string? customerId = null) =>

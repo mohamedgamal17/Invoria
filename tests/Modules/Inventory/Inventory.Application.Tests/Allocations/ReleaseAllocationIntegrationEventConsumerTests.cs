@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Invoria.Inventory.Application.Allocations.Commands.ReleaseAllocation;
 using Invoria.Inventory.Application.Allocations.Consumers;
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using MediatR;
 using Moq;

@@ -4,7 +4,7 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Infrastructure.Common;
 using Invoria.Endpoints.Tests.Utilities;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 using Invoria.Inventory.Domain.Batches;
 using Invoria.Inventory.Endpoints.Batches.Requests;
 

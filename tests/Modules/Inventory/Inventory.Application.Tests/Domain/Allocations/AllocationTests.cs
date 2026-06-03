@@ -41,8 +41,8 @@ public class AllocationTests
 
         allocation.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<AllocationInitiatedDomainEvent>();
         var ev = (AllocationInitiatedDomainEvent)allocation.DomainEvents.Single();
-        ev.AllocationId.Should().Be(allocation.Id);
-        ev.Status.Should().Be(AllocationStatus.Pending);
+        ev.Allocation.Should().BeSameAs(allocation);
+        ev.Allocation.Status.Should().Be(AllocationStatus.Pending);
     }
 
     [Test]

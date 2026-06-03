@@ -80,8 +80,8 @@ public class AllocationMarkAllocatedTests
         allocation.Status.Should().Be(AllocationStatus.Allocated);
         allocation.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<AllocationCompletedDomainEvent>();
         var completed = (AllocationCompletedDomainEvent)allocation.DomainEvents.Single();
-        completed.AllocationId.Should().Be(allocation.Id);
-        completed.OrderId.Should().Be("order-1");
+        completed.Allocation.Should().BeSameAs(allocation);
+        completed.Allocation.OrderId.Should().Be("order-1");
     }
 
     [Test]
@@ -109,8 +109,8 @@ public class AllocationMarkAllocatedTests
         allocation.Status.Should().Be(AllocationStatus.Failed);
         allocation.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<AllocationFailedDomainEvent>();
         var failed = (AllocationFailedDomainEvent)allocation.DomainEvents.Single();
-        failed.AllocationId.Should().Be(allocation.Id);
-        failed.OrderId.Should().Be("order-9");
+        failed.Allocation.Should().BeSameAs(allocation);
+        failed.Allocation.OrderId.Should().Be("order-9");
     }
 
     private static void SetEntityId(Batch batch, string id) =>

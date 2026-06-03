@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Invoria.Inventory.Application.Allocations.Commands.RequestAllocation;
-using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
+using Invoria.Inventory.Application.Allocations.Commands.CreateAllocate;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Infrastructure.EntityFramework;
-using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Allocations.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,9 +23,9 @@ public class RequestAllocationCommandHandlerTests : Batches.BatchTestFixture
 
         (await Mediator.Send(new CreateBatchCommand(productId, 10, 10m))).IsSuccess.Should().BeTrue();
 
-        (await Mediator.Send(AllocateOrderCommand.FromEvent(NewAllocateEvent(
+        (await Mediator.Send(CreateAllocateCommand.FromEvent(NewAllocateEvent(
             orderId,
-            [new OrderItemModel { Id = orderItemId, ProductId = productId, Quantity = 4 }]))))
+            [new AllocateOrderLineModel { Id = orderItemId, ProductId = productId, Quantity = 4 }]))))
             .IsSuccess.Should().BeTrue();
 
         var allocationId = await GetAllocationIdForOrderAsync(orderId);
@@ -54,9 +54,9 @@ public class RequestAllocationCommandHandlerTests : Batches.BatchTestFixture
 
         (await Mediator.Send(new CreateBatchCommand(productId, 3, 10m))).IsSuccess.Should().BeTrue();
 
-        (await Mediator.Send(AllocateOrderCommand.FromEvent(NewAllocateEvent(
+        (await Mediator.Send(CreateAllocateCommand.FromEvent(NewAllocateEvent(
             orderId,
-            [new OrderItemModel { Id = orderItemId, ProductId = productId, Quantity = 4 }]))))
+            [new AllocateOrderLineModel { Id = orderItemId, ProductId = productId, Quantity = 4 }]))))
             .IsSuccess.Should().BeTrue();
 
         var allocationId = await GetAllocationIdForOrderAsync(orderId);
@@ -85,7 +85,7 @@ public class RequestAllocationCommandHandlerTests : Batches.BatchTestFixture
 
     private static AllocateOrderIntegrationEvent NewAllocateEvent(
         string orderId,
-        List<OrderItemModel> items) =>
+        List<AllocateOrderLineModel> items) =>
         new()
         {
             Id = orderId,

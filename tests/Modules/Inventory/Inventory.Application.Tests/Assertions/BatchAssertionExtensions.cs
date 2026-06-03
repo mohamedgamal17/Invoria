@@ -2,7 +2,7 @@ using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
 using Invoria.Inventory.Application.Batches.Commands.UpdateBatch;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 using Invoria.Inventory.Domain.Batches;
 
 namespace Invoria.Inventory.Application.Tests.Assertions;
