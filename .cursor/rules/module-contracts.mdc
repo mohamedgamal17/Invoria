@@ -32,6 +32,20 @@ Ordering.Contracts/
 
 Full namespace: `Invoria.{Module}.Contracts.{Context}.{Enums|Dtos|Events|Models}`.
 
+**Example (Inventory):**
+
+```
+Inventory.Contracts/
+  AssemblyReference.cs
+  Allocations/
+    Events/      → Invoria.Inventory.Contracts.Allocations.Events
+    Models/      → Invoria.Inventory.Contracts.Allocations.Models
+  Batches/
+    Dtos/        → Invoria.Inventory.Contracts.Batches.Dtos
+  Stock/
+    Dtos/        → Invoria.Inventory.Contracts.Stock.Dtos
+```
+
 ## Rules
 
 - Keep only `AssemblyReference.cs` (and similar markers) at the contracts project root—no flat `Dtos/`, `Events/`, or `Models/` at root when a context folder exists.

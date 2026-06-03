@@ -56,7 +56,7 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Application: `Invoria.Ordering.Application`
   - Infrastructure: `Invoria.Ordering.Infrastructure`
   - Presentation / Endpoints: `Invoria.Ordering.Endpoints`
-  - Contracts: `Invoria.Ordering.Contracts` (includes integration events such as `AllocateOrderIntegrationEvent`)
+  - Contracts: `Invoria.Ordering.Contracts` (order integration events); `Invoria.Inventory.Contracts` (allocation integration events such as `AllocateOrderIntegrationEvent`)
 
 - **Inventory Module**
   - Domain: `Invoria.Inventory.Domain`
@@ -162,10 +162,9 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - **`OrderCreatedIntegrationEvent`**
     - File: `Orders/Events/OrderCreatedIntegrationEvent.cs`
     - Raised from domain event **`OrderCreatedDomainEvent`** (`Ordering.Domain/Orders/Events/`) when `Order.Create` runs; carries the full **`Order`** aggregate. **`OrderCreatedDomainEventHandler`** maps it to `OrderModel` and publishes the integration event.
-  - **`AllocateOrderIntegrationEvent`**
-    - File: `Orders/Events/AllocateOrderIntegrationEvent.cs`
-    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Orders/Models`).
-    - Published by the Ordering bounded context when an order allocation is integrated; consumed by Inventory (and potentially other modules) via Rebus.
+  - **`OrderAcceptedIntegrationEvent`**
+    - File: `Orders/Events/OrderAcceptedIntegrationEvent.cs`
+    - Published when an order is accepted (Processing); consumed by **`OrderSaga`** to trigger inventory allocation.
 
 - **Relationships**
   - `Ordering.Contracts` may reference other modules’ contract projects for shared DTO shapes (as configured in `Invoria.Ordering.Contracts.csproj`).
@@ -267,7 +266,7 @@ flowchart LR
     - Handles `AllocationFailedDomainEvent` after save and publishes `AllocationFailedIntegrationEvent`.
 
 - **Order allocation flow**
-  1. Ordering publishes `AllocateOrderIntegrationEvent` when an order is accepted.
+  1. Ordering publishes `OrderAcceptedIntegrationEvent` when an order is accepted; **`OrderSaga`** transitions to `Allocating` and publishes `AllocateOrderIntegrationEvent` (contract in `Invoria.Inventory.Contracts.Allocations.Events`).
   2. Inventory creates `Allocation` (`Pending`) via `AllocateOrderCommand`.
   3. `AllocationInitiatedDomainEvent` is dispatched after save.
   4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent`.
@@ -331,18 +330,27 @@ flowchart LR
 - **Location**
   - `src/Modules/Inventory/Inventory.Contracts`
 
-- DTOs such as `BatchDto` support API and application boundaries.
+- **Layout** (bounded contexts `Allocations/`, `Batches/`, `Stock/`—see `.cursor/rules/module-contracts.mdc`)
+  - `Allocations/Events/` — allocation integration events (`Invoria.Inventory.Contracts.Allocations.Events`)
+  - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
+  - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
+  - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
+
 - **Integration events**
+  - **`AllocateOrderIntegrationEvent`**
+    - File: `Allocations/Events/AllocateOrderIntegrationEvent.cs`
+    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<AllocateOrderLineModel>`).
+    - Published by **`OrderSaga`** when an order is accepted; consumed by Inventory via `AllocateOrderIntegrationEventConsumer`.
   - **`RequestAllocationIntegrationEvent`**
-    - File: `Events/RequestAllocationIntegrationEvent.cs`
+    - File: `Allocations/Events/RequestAllocationIntegrationEvent.cs`
     - Payload: `AllocationId` only.
     - Published by Inventory after an allocation aggregate is created; consumed by `RequestAllocationIntegrationEventConsumer`.
   - **`AllocationSucceededIntegrationEvent`**
-    - File: `Events/AllocationSucceededIntegrationEvent.cs`
+    - File: `Allocations/Events/AllocationSucceededIntegrationEvent.cs`
     - Payload: `AllocationId`, `OrderId`.
     - Published by Inventory when batch reservation completes for all lines.
   - **`AllocationFailedIntegrationEvent`**
-    - File: `Events/AllocationFailedIntegrationEvent.cs`
+    - File: `Allocations/Events/AllocationFailedIntegrationEvent.cs`
     - Payload: `AllocationId`, `OrderId`.
     - Published by Inventory when batch reservation cannot fully satisfy the allocation.
 
@@ -867,10 +875,10 @@ flowchart LR
 
 - **Sagas**
   - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
-  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and orchestrate long-running order ↔ inventory coordination. The saga is **initiated** by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). Workflow states are strongly typed string constants in `OrderSagaProcessState` (initial state: `Created`). Further message handlers and transitions are added incrementally.
+  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and orchestrate long-running order ↔ inventory coordination. The saga is **initiated** by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, state moves to `Allocating` and the saga publishes `AllocateOrderIntegrationEvent`. Workflow states are string constants in `OrderSagaProcessState` (`Created`, `Allocating`).
 
 - **Cross-module events**
-  - Integration event types (for example `AllocateOrderIntegrationEvent` in `Invoria.Ordering.Contracts`) are consumed by Inventory handlers when messages are published to the configured transport and routing/subscriptions match the host setup.
+  - Inventory-owned integration events (for example `AllocateOrderIntegrationEvent` in `Invoria.Inventory.Contracts`) are published by Ordering saga handlers and consumed by Inventory when subscriptions and routing match the host setup.
 
 ### Logging and Caching
 
@@ -911,15 +919,18 @@ flowchart LR
     - BuildingBlocks Domain for `IBaseEntity`.
 
 - **Ordering.Contracts**
-  - Holds cross-boundary DTOs and **integration events** (for example `AllocateOrderIntegrationEvent`) referenced by the API host (Rebus routing) and by consumer modules such as Inventory.
+  - Holds order DTOs and **integration events** (`OrderCreatedIntegrationEvent`, `OrderAcceptedIntegrationEvent`, etc.) for Rebus messaging.
+
+- **Inventory.Contracts**
+  - Holds inventory integration events and models (for example `AllocateOrderIntegrationEvent` under `Allocations/Events/`).
 
 - **Inventory (Rebus integration)**
-  - Integration event **contracts** live in **`Invoria.Ordering.Contracts`** (for example `AllocateOrderIntegrationEvent`).
   - **Application** includes `AllocateOrderIntegrationConsumer` (`Batches/Consumers/`), implementing `IHandleMessages<AllocateOrderIntegrationEvent>`.
-  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` and import `Invoria.Ordering.Contracts.Orders.Events` (or related namespaces).
+  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and subscribes to `AllocateOrderIntegrationEvent` in `InventoryModuleBootStrapper`.
+  - Consumers reference `Invoria.Inventory.Contracts.Allocations.Events` (and related namespaces).
 
 - **Procurement (layered module)**
   - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
 
-This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using shared contract types in `Ordering.Contracts` and handlers registered in consuming modules (e.g. Inventory).
+This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using contract types in the owning module’s `{Module}.Contracts` project and handlers registered in consuming modules.
 
