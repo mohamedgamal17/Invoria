@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
@@ -72,30 +73,46 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
         return await db.Set<Order>()
             .Include(o => o.Items)
+            .Include(o => o.Payments)
             .SingleAsync(o => o.Id == orderId);
     }
 
-    private static bool MatchesAllocateEvent(AllocateOrderIntegrationEvent e, Order expected)
+    private static bool MatchesOrderAcceptedEvent(OrderAcceptedIntegrationEvent e, Order expected)
     {
-        if (e.Id != expected.Id || e.OrderNumber != expected.OrderNumber || e.CustomerId != expected.CustomerId)
+        if (e.Order.Id != expected.Id ||
+            e.Order.OrderNumber != expected.OrderNumber ||
+            e.Order.CustomerId != expected.CustomerId)
         {
             return false;
         }
 
-        if (e.Items.Count != expected.Items.Count)
+        if (e.Order.OrderStatus != OrderStatus.Processing ||
+            e.Order.PaymentType != expected.PaymentType ||
+            e.Order.PaymentStatus != expected.PaymentStatus ||
+            e.Order.TotalOrderAmount != expected.TotalOrderAmount ||
+            e.Order.AmountPaid != expected.AmountPaid ||
+            e.Order.AmountOutstanding != expected.AmountOutstanding)
+        {
+            return false;
+        }
+
+        if (e.Order.Lines.Count != expected.Items.Count)
         {
             return false;
         }
 
         var byItemId = expected.Items.ToDictionary(i => i.Id);
-        foreach (var item in e.Items)
+        foreach (var line in e.Order.Lines)
         {
-            if (!byItemId.TryGetValue(item.Id, out var line))
+            if (!byItemId.TryGetValue(line.Id, out var item))
             {
                 return false;
             }
 
-            if (line.ProductId != item.ProductId || line.Quantity != item.Quantity)
+            if (line.ProductId != item.ProductId ||
+                line.Quantity != item.Quantity ||
+                line.UnitPrice != item.Price ||
+                line.LineTotal != item.Price * item.Quantity)
             {
                 return false;
             }
@@ -124,7 +141,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
-                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.Is<OrderAcceptedIntegrationEvent>(e => MatchesOrderAcceptedEvent(e, expectedSnapshot)),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
@@ -149,7 +166,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
-                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.Is<OrderAcceptedIntegrationEvent>(e => MatchesOrderAcceptedEvent(e, expectedSnapshot)),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
@@ -160,9 +177,9 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var result = await Mediator.Send(new AcceptOrderCommand(order.Id));
+        var act = () => Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        result.ShouldBeFailure(typeof(BusinessLogicException));
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Test]
@@ -176,9 +193,9 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
 
         var command = new AcceptOrderCommand(order.Id);
 
-        var result = await Mediator.Send(command);
+        var act = () => Mediator.Send(command);
 
-        result.ShouldBeFailure(typeof(BusinessLogicException));
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Test]
