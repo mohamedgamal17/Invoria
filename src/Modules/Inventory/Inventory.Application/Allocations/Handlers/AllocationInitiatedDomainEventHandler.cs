@@ -1,4 +1,4 @@
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Domain.Allocations.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -23,7 +23,7 @@ public sealed class AllocationInitiatedDomainEventHandler : INotificationHandler
     {
         var integrationEvent = new RequestAllocationIntegrationEvent
         {
-            AllocationId = notification.AllocationId
+            AllocationId = notification.Allocation.Id!
         };
 
         _logger.LogDebug(

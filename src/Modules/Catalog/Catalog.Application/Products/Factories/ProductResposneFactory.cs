@@ -2,7 +2,7 @@ using Invoria.BuildingBlocks.Application.Factories;
 using Invoria.Catalog.Contracts.Dtos;
 using Invoria.Catalog.Domain.Products;
 using Invoria.Inventory.Application.Stock;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Stock.Dtos;
 
 namespace Invoria.Catalog.Application.Products.Factories
 {

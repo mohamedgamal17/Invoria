@@ -24,4 +24,11 @@ public sealed class OrderSagaState : ISagaData
         CustomerId = order.CustomerId;
         State = OrderSagaProcessState.Created;
     }
+
+    public void ApplyAccepted(OrderModel order)
+    {
+        OrderNumber = order.OrderNumber;
+        CustomerId = order.CustomerId;
+        State = OrderSagaProcessState.Allocating;
+    }
 }

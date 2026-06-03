@@ -1,11 +1,11 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Allocations.Models;
 
-namespace Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
+namespace Invoria.Inventory.Application.Allocations.Commands.CreateAllocate;
 
-public sealed class AllocateOrderCommand : ICommand<Empty>
+public sealed class CreateAllocateCommand : ICommand<Empty>
 {
     public string Id { get; init; } = string.Empty;
 
@@ -13,7 +13,7 @@ public sealed class AllocateOrderCommand : ICommand<Empty>
 
     public string CustomerId { get; init; } = string.Empty;
 
-    public List<OrderItemModel> Items { get; init; } = [];
+    public List<AllocateOrderLineModel> Items { get; init; } = [];
 
     public AllocateOrderIntegrationEvent ToEvent() =>
         new()
@@ -24,7 +24,7 @@ public sealed class AllocateOrderCommand : ICommand<Empty>
             Items = Items
         };
 
-    public static AllocateOrderCommand FromEvent(AllocateOrderIntegrationEvent message) =>
+    public static CreateAllocateCommand FromEvent(AllocateOrderIntegrationEvent message) =>
         new()
         {
             Id = message.Id,

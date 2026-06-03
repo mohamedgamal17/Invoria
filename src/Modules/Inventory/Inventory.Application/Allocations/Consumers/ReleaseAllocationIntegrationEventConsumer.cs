@@ -1,5 +1,5 @@
 using Invoria.Inventory.Application.Allocations.Commands.ReleaseAllocation;
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;

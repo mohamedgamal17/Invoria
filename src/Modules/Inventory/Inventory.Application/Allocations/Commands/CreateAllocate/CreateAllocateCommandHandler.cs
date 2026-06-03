@@ -3,20 +3,20 @@ using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Inventory.Domain;
 using Invoria.Inventory.Domain.Allocations;
 
-namespace Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
+namespace Invoria.Inventory.Application.Allocations.Commands.CreateAllocate;
 
-public sealed class AllocateOrderCommandHandler
-    : IApplicatonRequestHandler<AllocateOrderCommand, Empty>
+public sealed class CreateAllocateCommandHandler
+    : IApplicatonRequestHandler<CreateAllocateCommand, Empty>
 {
     private readonly IInventoryRepository<Allocation> _allocationRepository;
 
-    public AllocateOrderCommandHandler(IInventoryRepository<Allocation> allocationRepository)
+    public CreateAllocateCommandHandler(IInventoryRepository<Allocation> allocationRepository)
     {
         _allocationRepository = allocationRepository;
     }
 
     public async Task<Result<Empty>> Handle(
-        AllocateOrderCommand request,
+        CreateAllocateCommand request,
         CancellationToken cancellationToken)
     {
         var lines = request.Items

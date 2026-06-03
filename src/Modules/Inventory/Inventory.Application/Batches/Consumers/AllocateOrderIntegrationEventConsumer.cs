@@ -1,5 +1,5 @@
-using Invoria.Inventory.Application.Batches.Commands.AllocateOrder;
-using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Inventory.Application.Allocations.Commands.CreateAllocate;
+using Invoria.Inventory.Contracts.Allocations.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Rebus.Handlers;
@@ -27,6 +27,6 @@ public sealed class AllocateOrderIntegrationEventConsumer : IHandleMessages<Allo
             message.Id,
             message.OrderNumber);
 
-        return _mediator.Send(AllocateOrderCommand.FromEvent(message), CancellationToken.None);
+        return _mediator.Send(CreateAllocateCommand.FromEvent(message), CancellationToken.None);
     }
 }

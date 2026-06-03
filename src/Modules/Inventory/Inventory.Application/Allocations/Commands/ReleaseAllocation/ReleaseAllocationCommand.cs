@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Inventory.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
 
 namespace Invoria.Inventory.Application.Allocations.Commands.ReleaseAllocation;
 
