@@ -1,6 +1,6 @@
-using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Inventory.Contracts.Allocations.Models;
 
-namespace Invoria.Ordering.Contracts.Orders.Events;
+namespace Invoria.Inventory.Contracts.Allocations.Events;
 
 /// <summary>
 /// Published when an order should be allocated against inventory batches.
@@ -14,5 +14,5 @@ public class AllocateOrderIntegrationEvent
 
     public required string CustomerId { get; set; }
 
-    public required List<OrderItemModel> Items { get; set; }
+    public required List<AllocateOrderLineModel> Items { get; set; }
 }

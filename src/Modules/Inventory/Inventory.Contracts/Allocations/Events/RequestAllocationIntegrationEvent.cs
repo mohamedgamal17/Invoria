@@ -1,4 +1,4 @@
-namespace Invoria.Inventory.Contracts.Events;
+namespace Invoria.Inventory.Contracts.Allocations.Events;
 
 /// <summary>
 /// Published when batch reservation should proceed for a pending allocation.

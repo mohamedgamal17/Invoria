@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Dtos;
 
-namespace Invoria.Inventory.Contracts.Dtos;
+namespace Invoria.Inventory.Contracts.Batches.Dtos;
 
 public class BatchDto : AuditedEntityDto
 {

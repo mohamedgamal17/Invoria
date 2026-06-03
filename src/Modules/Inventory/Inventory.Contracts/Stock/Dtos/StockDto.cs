@@ -1,4 +1,4 @@
-namespace Invoria.Inventory.Contracts.Dtos;
+namespace Invoria.Inventory.Contracts.Stock.Dtos;
 
 public class StockDto
 {

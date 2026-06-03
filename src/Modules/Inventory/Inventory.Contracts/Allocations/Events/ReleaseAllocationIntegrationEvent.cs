@@ -1,4 +1,4 @@
-namespace Invoria.Inventory.Contracts.Events;
+namespace Invoria.Inventory.Contracts.Allocations.Events;
 
 /// <summary>
 /// Published when stock reserved for an allocation should be released.
