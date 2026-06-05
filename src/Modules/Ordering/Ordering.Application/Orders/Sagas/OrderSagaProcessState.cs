@@ -4,5 +4,7 @@ public static class OrderSagaProcessState
 {
     public const string Created = "Created";
 
-    public const string Allocating = "Allocating";
+    public const string RequestAllocation = "RequestAllocation";
+
+    public const string Allocate = "Allocate";
 }

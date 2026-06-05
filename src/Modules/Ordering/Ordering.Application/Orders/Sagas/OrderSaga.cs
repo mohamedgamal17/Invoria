@@ -1,4 +1,6 @@
+using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Ordering.Application.Orders.Extensions;
+using Invoria.Ordering.Application.Orders.Sagas.Activities;
 using Invoria.Ordering.Contracts.Orders.Events;
 using Rebus.Bus;
 using Rebus.Handlers;
@@ -9,7 +11,8 @@ namespace Invoria.Ordering.Application.Orders.Sagas;
 public sealed class OrderSaga : Saga<OrderSagaState>,
     IAmInitiatedBy<OrderCreatedIntegrationEvent>,
     IHandleMessages<OrderCreatedIntegrationEvent>,
-    IHandleMessages<OrderAcceptedIntegrationEvent>
+    IHandleMessages<OrderAcceptedIntegrationEvent>,
+    IHandleMessages<AllocationCreatedIntegrationEvent>
 {
     private readonly IBus _bus;
 
@@ -22,15 +25,11 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
     {
         config.Correlate<OrderCreatedIntegrationEvent>(m => m.Order.Id, d => d.OrderId);
         config.Correlate<OrderAcceptedIntegrationEvent>(m => m.Order.Id, d => d.OrderId);
+        config.Correlate<AllocationCreatedIntegrationEvent>(m => m.Allocation.OrderId, d => d.OrderId);
     }
 
     public Task Handle(OrderCreatedIntegrationEvent message)
     {
-        if (!IsNew)
-        {
-            return Task.CompletedTask;
-        }
-
         Data.ApplyCreated(message.Order);
 
         return Task.CompletedTask;
@@ -38,13 +37,17 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
 
     public async Task Handle(OrderAcceptedIntegrationEvent message)
     {
-        if (IsNew || Data.State == OrderSagaProcessState.Allocating)
-        {
-            return;
-        }
-
         Data.ApplyAccepted(message.Order);
 
         await _bus.Publish(message.Order.ToAllocateOrderIntegrationEvent());
+    }
+
+    public async Task Handle(AllocationCreatedIntegrationEvent message)
+    {
+        Data.ApplyAllocationCreated(message.Allocation);
+
+        await _bus.Publish(new RecordOrderAllocationSagaActivity(
+            message.Allocation.OrderId,
+            message.Allocation.Id));
     }
 }

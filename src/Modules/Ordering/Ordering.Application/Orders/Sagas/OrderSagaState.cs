@@ -1,3 +1,4 @@
+using Invoria.Inventory.Contracts.Allocations.Models;
 using Invoria.Ordering.Contracts.Orders.Models;
 using Rebus.Sagas;
 
@@ -15,6 +16,8 @@ public sealed class OrderSagaState : ISagaData
 
     public string CustomerId { get; set; } = default!;
 
+    public string? AllocationId { get; set; }
+
     public string State { get; set; } = OrderSagaProcessState.Created;
 
     public void ApplyCreated(OrderModel order)
@@ -29,6 +32,12 @@ public sealed class OrderSagaState : ISagaData
     {
         OrderNumber = order.OrderNumber;
         CustomerId = order.CustomerId;
-        State = OrderSagaProcessState.Allocating;
+        State = OrderSagaProcessState.RequestAllocation;
+    }
+
+    public void ApplyAllocationCreated(AllocationModel allocation)
+    {
+        AllocationId = allocation.Id;
+        State = OrderSagaProcessState.Allocate;
     }
 }
