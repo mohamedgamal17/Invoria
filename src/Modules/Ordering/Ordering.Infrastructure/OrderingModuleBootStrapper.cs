@@ -1,4 +1,6 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Ordering.Application.Orders.Sagas.Activities;
 using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +24,8 @@ namespace Invoria.Ordering.Infrastructure
             {
                 await bus.Subscribe<OrderCreatedIntegrationEvent>();
                 await bus.Subscribe<OrderAcceptedIntegrationEvent>();
+                await bus.Subscribe<AllocationCreatedIntegrationEvent>();
+                await bus.Subscribe<RecordOrderAllocationSagaActivity>();
                 await bus.Subscribe<ReleaseOrderAllocationsIntegrationEvent>();
             }
         }

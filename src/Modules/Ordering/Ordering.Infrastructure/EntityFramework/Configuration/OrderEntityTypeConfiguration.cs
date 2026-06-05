@@ -34,6 +34,9 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
             builder.Property(x => x.PaymentStatus)
                 .IsRequired();
 
+            builder.Property(x => x.AllocationId)
+                .HasMaxLength(OrderTableConsts.AllocationIdMaxLength);
+
             builder.HasMany(x => x.Items)
                 .WithOne()
                 .HasForeignKey("OrderId")

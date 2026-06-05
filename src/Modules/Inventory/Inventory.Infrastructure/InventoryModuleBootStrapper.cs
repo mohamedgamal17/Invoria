@@ -24,7 +24,7 @@ namespace Invoria.Inventory.Infrastructure
             if (bus is not null)
             {
                 await bus.Subscribe<AllocateOrderIntegrationEvent>();
-                await bus.Subscribe<RequestAllocationIntegrationEvent>();
+                await bus.Subscribe<AllocationCreatedIntegrationEvent>();
                 await bus.Subscribe<ReleaseAllocationIntegrationEvent>();
             }
         }
