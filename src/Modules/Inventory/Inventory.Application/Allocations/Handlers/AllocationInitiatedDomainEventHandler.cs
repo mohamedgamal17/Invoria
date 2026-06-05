@@ -1,3 +1,4 @@
+using Invoria.Inventory.Application.Allocations.Extensions;
 using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Domain.Allocations.Events;
 using MediatR;
@@ -21,15 +22,17 @@ public sealed class AllocationInitiatedDomainEventHandler : INotificationHandler
 
     public async Task Handle(AllocationInitiatedDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new RequestAllocationIntegrationEvent
+        var integrationEvent = new AllocationCreatedIntegrationEvent
         {
-            AllocationId = notification.Allocation.Id!
+            Allocation = notification.Allocation.ToAllocationModel(),
+            OccurredOn = DateTimeOffset.UtcNow
         };
 
         _logger.LogDebug(
-            "Publishing integration event {EventName} for AllocationId={AllocationId}",
-            nameof(RequestAllocationIntegrationEvent),
-            integrationEvent.AllocationId);
+            "Publishing integration event {EventName} for AllocationId={AllocationId} OrderId={OrderId}",
+            nameof(AllocationCreatedIntegrationEvent),
+            integrationEvent.Allocation.Id,
+            integrationEvent.Allocation.OrderId);
 
         await _bus.Publish(integrationEvent);
     }
