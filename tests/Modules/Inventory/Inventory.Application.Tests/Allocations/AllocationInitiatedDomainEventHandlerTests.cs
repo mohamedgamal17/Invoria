@@ -4,6 +4,8 @@ using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Allocations.Events;
 using Moq;
 using Rebus.Bus;
+using ContractAllocationLineStatus = Invoria.Inventory.Contracts.Allocations.Enums.AllocationLineStatus;
+using ContractAllocationStatus = Invoria.Inventory.Contracts.Allocations.Enums.AllocationStatus;
 
 namespace Invoria.Inventory.Application.Tests.Allocations;
 
@@ -11,7 +13,7 @@ namespace Invoria.Inventory.Application.Tests.Allocations;
 public class AllocationInitiatedDomainEventHandlerTests
 {
     [Test]
-    public async Task Publishes_RequestAllocationIntegrationEvent_with_allocation_id()
+    public async Task Publishes_AllocationCreatedIntegrationEvent_with_allocation_snapshot()
     {
         var bus = new Mock<IBus>();
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
@@ -30,7 +32,16 @@ public class AllocationInitiatedDomainEventHandlerTests
 
         bus.Verify(
             b => b.Publish(
-                It.Is<RequestAllocationIntegrationEvent>(msg => msg.AllocationId == allocation.Id),
+                It.Is<AllocationCreatedIntegrationEvent>(msg =>
+                    msg.Allocation.Id == allocation.Id &&
+                    msg.Allocation.OrderId == "order-1" &&
+                    msg.Allocation.Status == ContractAllocationStatus.Pending &&
+                    msg.Allocation.Lines.Count == 1 &&
+                    msg.Allocation.Lines[0].OrderItemId == "oi-1" &&
+                    msg.Allocation.Lines[0].ProductId == "p-1" &&
+                    msg.Allocation.Lines[0].QuantityRequested == 3 &&
+                    msg.Allocation.Lines[0].Status == ContractAllocationLineStatus.Pending &&
+                    msg.OccurredOn != default),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
