@@ -2,10 +2,6 @@ using Invoria.Inventory.Contracts.Allocations.Models;
 
 namespace Invoria.Inventory.Contracts.Allocations.Events;
 
-/// <summary>
-/// Published when an order should be allocated against inventory batches.
-/// <see cref="Id"/> is the order aggregate id.
-/// </summary>
 public class AllocateOrderIntegrationEvent
 {
     public required string Id { get; set; }
