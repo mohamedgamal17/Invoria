@@ -27,6 +27,8 @@ namespace Invoria.Ordering.Domain.Orders
 
         public OrderPaymentStatus PaymentStatus { get; private set; }
 
+        public string? AllocationId { get; private set; }
+
         private Order()
         {
             Items = new List<OrderItem>();
@@ -180,6 +182,24 @@ namespace Invoria.Ordering.Domain.Orders
 
             Status = OrderStatus.Processing;
             AddDomainEvent(new OrderAcceptedDomainEvent(this));
+        }
+
+        public void RecordAllocation(string allocationId)
+        {
+            Guard.Against.NullOrWhiteSpace(allocationId);
+            Guard.Against.OutOfRange(
+                allocationId.Length,
+                nameof(allocationId),
+                1,
+                OrderTableConsts.AllocationIdMaxLength);
+
+            if (Status != OrderStatus.Processing)
+            {
+                throw new InvalidOperationException(
+                    "Order allocation can only be recorded when the order is Processing.");
+            }
+
+            AllocationId = allocationId;
         }
 
         public void Revise()
