@@ -27,6 +27,7 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<AllocationCreatedIntegrationEvent>();
                 await bus.Subscribe<AllocationFailedIntegrationEvent>();
                 await bus.Subscribe<AllocationSucceededIntegrationEvent>();
+                await bus.Subscribe<OrderRevisionRequestedIntegrationEvent>();
                 await bus.Subscribe<RecordOrderAllocationSagaActivity>();
                 await bus.Subscribe<ReviseOrderSagaActivity>();
                 await bus.Subscribe<MarkOrderAllocatedSagaActivity>();
