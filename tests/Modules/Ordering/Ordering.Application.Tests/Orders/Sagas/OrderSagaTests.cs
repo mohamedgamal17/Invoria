@@ -360,6 +360,56 @@ public class OrderSagaTests
             Times.Once);
     }
 
+    [Test]
+    public void Deliver_OrderRevisionRequested_after_allocation_succeeded_publishes_release_allocation_event()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-1", "cust-1"));
+        fixture.Deliver(BuildOrderAccepted("order-1", "ON-1", "cust-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationCreated("order-1", "alloc-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationSucceeded("order-1", "alloc-1"));
+        fixture.Deliver(BuildOrderRevisionRequested("order-1", "ON-1", "cust-1", "alloc-1", "line-1", "p1", 2));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.State.Should().Be(OrderSagaProcessState.RevisionRequested);
+        data.AllocationId.Should().Be("alloc-1");
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<ReleaseAllocationIntegrationEvent>(e => e.AllocationId == "alloc-1"),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_OrderRevisionRequested_without_saga_does_not_publish_release_allocation_event()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildOrderRevisionRequested(
+            "order-orphan",
+            "ON-X",
+            "cust-x",
+            "alloc-1",
+            "line-1",
+            "p1",
+            1));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<ReleaseAllocationIntegrationEvent>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
     private static Mock<IBus> CreateBus()
     {
         var bus = new Mock<IBus>();
@@ -469,5 +519,42 @@ public class OrderSagaTests
         {
             OrderId = orderId,
             AllocationId = allocationId
+        };
+
+    private static OrderRevisionRequestedIntegrationEvent BuildOrderRevisionRequested(
+        string orderId,
+        string orderNumber,
+        string customerId,
+        string allocationId,
+        string lineId,
+        string productId,
+        int quantity) =>
+        new()
+        {
+            OccurredOn = DateTimeOffset.UtcNow,
+            AllocationId = allocationId,
+            Order = new OrderModel
+            {
+                Id = orderId,
+                OrderNumber = orderNumber,
+                CustomerId = customerId,
+                OrderStatus = OrderStatus.RevisionPending,
+                PaymentType = OrderPaymentType.Debt,
+                PaymentStatus = OrderPaymentStatus.Unpaid,
+                TotalOrderAmount = 100m,
+                AmountPaid = 0m,
+                AmountOutstanding = 100m,
+                Lines =
+                [
+                    new OrderLineModel
+                    {
+                        Id = lineId,
+                        ProductId = productId,
+                        Quantity = quantity,
+                        UnitPrice = 50m,
+                        LineTotal = 50m * quantity
+                    }
+                ]
+            }
         };
 }

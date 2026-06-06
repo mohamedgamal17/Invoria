@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
+using Invoria.Ordering.Domain.Orders.Events;
 
 namespace Invoria.Ordering.Application.Tests.Domain.Orders;
 
@@ -27,6 +28,21 @@ public class OrderRequestRevisionDomainTests
         order.Status.Should().Be(OrderStatus.RevisionPending);
         order.OrderAllocated.Should().BeFalse();
         order.AllocationId.Should().Be("alloc-1");
+    }
+
+    [Test]
+    public void RequestRevision_raises_OrderRevisionRequestedDomainEvent_with_order_instance()
+    {
+        var order = CreateProcessingOrder();
+        order.RecordAllocation("alloc-1");
+        order.MarkAsAllocated();
+        order.ClearDomainEvents();
+
+        order.RequestRevision();
+
+        order.DomainEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<OrderRevisionRequestedDomainEvent>()
+            .Which.Order.Should().BeSameAs(order);
     }
 
     [Test]
