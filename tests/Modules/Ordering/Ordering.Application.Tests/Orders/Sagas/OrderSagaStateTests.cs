@@ -57,6 +57,18 @@ public class OrderSagaStateTests
         state.AllocationId.Should().Be("alloc-1");
     }
 
+    [Test]
+    public void ApplyAllocationReleased_sets_allocation_released_state_and_allocation_id()
+    {
+        var state = CreateState(OrderSagaProcessState.RevisionRequested);
+        state.AllocationId = "alloc-1";
+
+        state.ApplyAllocationReleased("alloc-1");
+
+        state.State.Should().Be(OrderSagaProcessState.AllocationReleased);
+        state.AllocationId.Should().Be("alloc-1");
+    }
+
     private static OrderSagaState CreateState(string sagaState) =>
         new()
         {

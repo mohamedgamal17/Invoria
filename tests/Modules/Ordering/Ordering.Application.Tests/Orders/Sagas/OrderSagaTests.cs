@@ -410,6 +410,50 @@ public class OrderSagaTests
             Times.Never);
     }
 
+    [Test]
+    public void Deliver_AllocationReleased_after_revision_requested_publishes_revise_saga_activity()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-1", "cust-1"));
+        fixture.Deliver(BuildOrderAccepted("order-1", "ON-1", "cust-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationCreated("order-1", "alloc-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationSucceeded("order-1", "alloc-1"));
+        fixture.Deliver(BuildOrderRevisionRequested("order-1", "ON-1", "cust-1", "alloc-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationReleased("order-1", "alloc-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.State.Should().Be(OrderSagaProcessState.AllocationReleased);
+        data.AllocationId.Should().Be("alloc-1");
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<ReviseOrderSagaActivity>(a => a.OrderId == "order-1"),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_AllocationReleased_without_saga_does_not_publish_revise_saga_activity()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildAllocationReleased("order-orphan", "alloc-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<ReviseOrderSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
     private static Mock<IBus> CreateBus()
     {
         var bus = new Mock<IBus>();
@@ -556,5 +600,14 @@ public class OrderSagaTests
                     }
                 ]
             }
+        };
+
+    private static AllocationReleasedIntegrationEvent BuildAllocationReleased(
+        string orderId,
+        string allocationId) =>
+        new()
+        {
+            OrderId = orderId,
+            AllocationId = allocationId
         };
 }
