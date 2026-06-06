@@ -262,6 +262,74 @@ public class OrderSagaTests
     }
 
     [Test]
+    public void Deliver_AllocationSucceeded_after_allocate_publishes_mark_order_allocated_saga_activity()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-1", "cust-1"));
+        fixture.Deliver(BuildOrderAccepted("order-1", "ON-1", "cust-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationCreated("order-1", "alloc-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationSucceeded("order-1", "alloc-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.State.Should().Be(OrderSagaProcessState.AllocationSucceeded);
+        data.AllocationId.Should().Be("alloc-1");
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<MarkOrderAllocatedSagaActivity>(a => a.OrderId == "order-1"),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_AllocationSucceeded_without_saga_does_not_publish_mark_order_allocated_saga_activity()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildAllocationSucceeded("order-orphan", "alloc-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<MarkOrderAllocatedSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
+    [Test]
+    public void Deliver_duplicate_AllocationSucceeded_publishes_mark_order_allocated_saga_activity_on_each_delivery()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Deliver(BuildOrderCreated("order-1", "ON-1", "cust-1"));
+        fixture.Deliver(BuildOrderAccepted("order-1", "ON-1", "cust-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationCreated("order-1", "alloc-1", "line-1", "p1", 2));
+        fixture.Deliver(BuildAllocationSucceeded("order-1", "alloc-1"));
+        fixture.Deliver(BuildAllocationSucceeded("order-1", "alloc-1"));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        var data = fixture.Data
+            .OfType<OrderSagaState>()
+            .Single(d => d.OrderId == "order-1");
+
+        data.State.Should().Be(OrderSagaProcessState.AllocationSucceeded);
+        data.AllocationId.Should().Be("alloc-1");
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<MarkOrderAllocatedSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Exactly(2));
+    }
+
+    [Test]
     public void Deliver_OrderAccepted_when_state_is_allocate_publishes_allocate_event_and_sets_request_allocation()
     {
         var bus = CreateBus();
@@ -386,6 +454,15 @@ public class OrderSagaTests
         };
 
     private static AllocationFailedIntegrationEvent BuildAllocationFailed(
+        string orderId,
+        string allocationId) =>
+        new()
+        {
+            OrderId = orderId,
+            AllocationId = allocationId
+        };
+
+    private static AllocationSucceededIntegrationEvent BuildAllocationSucceeded(
         string orderId,
         string allocationId) =>
         new()

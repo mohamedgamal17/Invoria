@@ -33,6 +33,18 @@ public class OrderSagaStateTests
         state.AllocationId.Should().Be("alloc-9");
     }
 
+    [Test]
+    public void ApplyAllocationSucceeded_sets_allocation_succeeded_state_and_allocation_id()
+    {
+        var state = CreateState(OrderSagaProcessState.Allocate);
+        state.AllocationId = "alloc-1";
+
+        state.ApplyAllocationSucceeded("alloc-1");
+
+        state.State.Should().Be(OrderSagaProcessState.AllocationSucceeded);
+        state.AllocationId.Should().Be("alloc-1");
+    }
+
     private static OrderSagaState CreateState(string sagaState) =>
         new()
         {
