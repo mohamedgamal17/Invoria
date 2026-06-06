@@ -242,6 +242,7 @@ namespace Invoria.Ordering.Domain.Orders
 
             Status = OrderStatus.RevisionPending;
             OrderAllocated = false;
+            AddDomainEvent(new OrderRevisionRequestedDomainEvent(this));
         }
 
         public void Cancel()
