@@ -1,0 +1,53 @@
+---
+description: Command handler orchestration for message-service vs user-facing commands
+alwaysApply: true
+---
+
+# Command handler orchestration
+
+## Message-service commands
+
+Commands triggered by Rebus (saga activities, integration-event follow-ups) trust the orchestrated flow.
+
+Handlers should:
+
+1. Load the aggregate with `SingleAsync` (trust it exists)
+2. Call the domain method directly (e.g. `order.Revise()`)
+3. Persist and return success
+
+Do **not**:
+
+- Return `NotFoundException` or other defensive guards
+- Wrap domain calls in `try/catch` for `InvalidOperationException`
+- Add redundant state pre-checks before the domain call
+
+Example: `ReviseOrderCommandHandler` (called from `ReviseOrderSagaActivityHandler` after allocation failure).
+
+## User-facing commands
+
+Commands invoked from API endpoints serve external callers who may send invalid state.
+
+Handlers should:
+
+1. Load the aggregate
+2. Return `NotFoundException` when missing
+3. **Explicitly guard state** before calling the domain method
+4. Return `BusinessLogicException` from the guard (not from catching domain exceptions)
+5. Call the domain method, persist, return
+
+Example: `AcceptOrderCommandHandler` checks `order.Status` is Pending or Revision before `order.Accept()`.
+
+## Anti-pattern (do not use)
+
+```csharp
+try
+{
+    order.SomeDomainMethod();
+}
+catch (InvalidOperationException ex)
+{
+    return Result.Failure<T>(new BusinessLogicException(ex.Message, ex));
+}
+```
+
+Use explicit guards for user commands; call domain methods directly for message-service commands.
