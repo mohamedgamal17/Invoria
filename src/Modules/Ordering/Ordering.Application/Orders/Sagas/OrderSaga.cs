@@ -14,7 +14,8 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
     IHandleMessages<OrderAcceptedIntegrationEvent>,
     IHandleMessages<AllocationCreatedIntegrationEvent>,
     IHandleMessages<AllocationFailedIntegrationEvent>,
-    IHandleMessages<AllocationSucceededIntegrationEvent>
+    IHandleMessages<AllocationSucceededIntegrationEvent>,
+    IHandleMessages<OrderRevisionRequestedIntegrationEvent>
 {
     private readonly IBus _bus;
 
@@ -30,6 +31,7 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         config.Correlate<AllocationCreatedIntegrationEvent>(m => m.Allocation.OrderId, d => d.OrderId);
         config.Correlate<AllocationFailedIntegrationEvent>(m => m.OrderId, d => d.OrderId);
         config.Correlate<AllocationSucceededIntegrationEvent>(m => m.OrderId, d => d.OrderId);
+        config.Correlate<OrderRevisionRequestedIntegrationEvent>(m => m.Order.Id, d => d.OrderId);
     }
 
     public Task Handle(OrderCreatedIntegrationEvent message)
@@ -67,5 +69,15 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         Data.ApplyAllocationSucceeded(message.AllocationId);
 
         await _bus.Publish(new MarkOrderAllocatedSagaActivity(message.OrderId));
+    }
+
+    public async Task Handle(OrderRevisionRequestedIntegrationEvent message)
+    {
+        Data.ApplyRevisionRequested(message.AllocationId);
+
+        await _bus.Publish(new ReleaseAllocationIntegrationEvent
+        {
+            AllocationId = message.AllocationId
+        });
     }
 }
