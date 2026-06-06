@@ -7,4 +7,6 @@ public static class OrderSagaProcessState
     public const string RequestAllocation = "RequestAllocation";
 
     public const string Allocate = "Allocate";
+
+    public const string AllocationFailed = "AllocationFailed";
 }
