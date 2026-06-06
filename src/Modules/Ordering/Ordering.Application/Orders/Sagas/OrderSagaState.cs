@@ -58,4 +58,10 @@ public sealed class OrderSagaState : ISagaData
         AllocationId = allocationId;
         State = OrderSagaProcessState.RevisionRequested;
     }
+
+    public void ApplyAllocationReleased(string allocationId)
+    {
+        AllocationId = allocationId;
+        State = OrderSagaProcessState.AllocationReleased;
+    }
 }
