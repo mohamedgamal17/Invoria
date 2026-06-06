@@ -13,5 +13,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
     {
         services.AddTransient<OrderSaga>();
         services.AddTransient<IHandleMessages<RecordOrderAllocationSagaActivity>, RecordOrderAllocationSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<ReviseOrderSagaActivity>, ReviseOrderSagaActivityHandler>();
     }
 }
