@@ -29,6 +29,8 @@ namespace Invoria.Ordering.Domain.Orders
 
         public string? AllocationId { get; private set; }
 
+        public bool OrderAllocated { get; private set; }
+
         private Order()
         {
             Items = new List<OrderItem>();
@@ -204,13 +206,25 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Revise()
         {
-            if (Status != OrderStatus.Pending && Status != OrderStatus.Revision)
+            if (Status != OrderStatus.Processing)
             {
                 throw new InvalidOperationException(
-                    "Order can only be revised when it is Pending or Revision.");
+                    "Order can only be revised when it is Processing.");
             }
 
-            Status = OrderStatus.Processing;
+            Status = OrderStatus.Revision;
+            OrderAllocated = false;
+        }
+
+        public void MarkAsAllocated()
+        {
+            if (Status != OrderStatus.Processing)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be marked as allocated when it is Processing.");
+            }
+
+            OrderAllocated = true;
         }
 
         public void Cancel()
