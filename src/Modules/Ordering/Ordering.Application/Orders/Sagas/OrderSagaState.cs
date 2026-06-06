@@ -46,4 +46,10 @@ public sealed class OrderSagaState : ISagaData
         AllocationId = allocationId;
         State = OrderSagaProcessState.AllocationFailed;
     }
+
+    public void ApplyAllocationSucceeded(string allocationId)
+    {
+        AllocationId = allocationId;
+        State = OrderSagaProcessState.AllocationSucceeded;
+    }
 }

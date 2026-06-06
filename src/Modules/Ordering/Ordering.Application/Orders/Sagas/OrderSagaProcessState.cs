@@ -9,4 +9,6 @@ public static class OrderSagaProcessState
     public const string Allocate = "Allocate";
 
     public const string AllocationFailed = "AllocationFailed";
+
+    public const string AllocationSucceeded = "AllocationSucceeded";
 }
