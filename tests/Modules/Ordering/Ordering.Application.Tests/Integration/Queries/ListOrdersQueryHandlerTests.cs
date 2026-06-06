@@ -40,7 +40,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
     private static void CompleteOrder(Order order)
     {
-        order.Revise();
+        order.Accept();
         order.Complete();
     }
 
@@ -430,7 +430,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
 
         var acceptedOrder = new Order("STATUS-ACCEPTED", customerId);
         acceptedOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
-        acceptedOrder.Revise();
+        acceptedOrder.Accept();
         await OrderRepository.Add(acceptedOrder, CancellationToken.None);
 
         var query = new ListOrdersQuery

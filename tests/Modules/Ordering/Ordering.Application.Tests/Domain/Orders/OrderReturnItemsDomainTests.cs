@@ -24,7 +24,7 @@ public class OrderReturnItemsDomainTests
             SetEntityId(order.Items[i], lines[i].lineId);
         }
 
-        order.Revise();
+        order.Accept();
         return order;
     }
 
@@ -58,7 +58,7 @@ public class OrderReturnItemsDomainTests
         SetEntityId(order, "order-return-2");
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
         SetEntityId(order.Items[0], "line-1");
-        order.Revise();
+        order.Accept();
         var result = order.RecordReturnItems([new OrderReturnItem("line-1", 1)]);
 
         result.IsSuccess.Should().BeTrue();

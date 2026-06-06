@@ -28,7 +28,7 @@ public class OrderPaymentDomainTests
     /// </summary>
     private static void CompleteViaFulfillment(Order order)
     {
-        order.Revise();
+        order.Accept();
         order.Complete();
         order.Status.Should().Be(OrderStatus.Completed);
     }
@@ -220,7 +220,7 @@ public class OrderPaymentDomainTests
             OrderPaymentType.Immediate,
             new OrderItem("p", 2, 50m));
         SetEntityId(order.Items[0], "line-1");
-        order.Revise();
+        order.Accept();
         order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
         order.NetOfTotalOrderAmount.Should().Be(50m);
         order.Complete();

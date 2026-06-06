@@ -30,7 +30,7 @@ public class OrderCancelDomainTests
     public void Cancel_succeeds_when_accepted()
     {
         var order = CreateOrderWithItems("cancel-acc");
-        order.Revise();
+        order.Accept();
 
         order.Cancel();
 
@@ -52,7 +52,7 @@ public class OrderCancelDomainTests
     public void Cancel_throws_when_completed()
     {
         var order = CreateOrderWithItems("cancel-bad-status");
-        order.Revise();
+        order.Accept();
         order.Complete();
 
         var act = () => order.Cancel();
@@ -64,7 +64,7 @@ public class OrderCancelDomainTests
     public void Cancel_succeeds_when_processing()
     {
         var order = CreateOrderWithItems("cancel-shipped");
-        order.Revise();
+        order.Accept();
 
         order.Cancel();
         order.Status.Should().Be(OrderStatus.Cancelled);
