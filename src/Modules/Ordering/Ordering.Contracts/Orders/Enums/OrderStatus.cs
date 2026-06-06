@@ -6,6 +6,8 @@ namespace Invoria.Ordering.Contracts.Orders.Enums
 
         Processing = 10,
 
+        RevisionPending = 30,
+
         Revision = 15,
 
         Completed = 20,
