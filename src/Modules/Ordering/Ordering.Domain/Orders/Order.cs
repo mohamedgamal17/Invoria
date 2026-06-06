@@ -206,14 +206,13 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void Revise()
         {
-            if (Status != OrderStatus.Processing)
+            if (Status != OrderStatus.Processing && Status != OrderStatus.RevisionPending)
             {
                 throw new InvalidOperationException(
-                    "Order can only be revised when it is Processing.");
+                    "Order can only be revised when it is Processing or RevisionPending.");
             }
 
             Status = OrderStatus.Revision;
-            OrderAllocated = false;
         }
 
         public void MarkAsAllocated()
@@ -225,6 +224,24 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             OrderAllocated = true;
+        }
+
+        public void RequestRevision()
+        {
+            if (Status != OrderStatus.Processing)
+            {
+                throw new InvalidOperationException(
+                    "Order revision can only be requested when the order is Processing.");
+            }
+
+            if (!OrderAllocated)
+            {
+                throw new InvalidOperationException(
+                    "Order revision can only be requested when the order is allocated.");
+            }
+
+            Status = OrderStatus.RevisionPending;
+            OrderAllocated = false;
         }
 
         public void Cancel()
