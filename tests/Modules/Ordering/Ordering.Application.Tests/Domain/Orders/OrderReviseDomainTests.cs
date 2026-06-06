@@ -28,18 +28,21 @@ public class OrderReviseDomainTests
     }
 
     [Test]
-    public void Revise_sets_order_allocated_false()
+    public void Revise_from_revision_pending_sets_revision()
     {
         var order = CreateProcessingOrder();
+        order.RecordAllocation("alloc-1");
         order.MarkAsAllocated();
+        order.RequestRevision();
 
         order.Revise();
 
-        order.OrderAllocated.Should().BeFalse();
+        order.Status.Should().Be(OrderStatus.Revision);
+        order.AllocationId.Should().Be("alloc-1");
     }
 
     [Test]
-    public void Revise_throws_when_not_processing()
+    public void Revise_throws_when_not_processing_or_revision_pending()
     {
         var order = new Order("N-R8", "cust");
         order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
