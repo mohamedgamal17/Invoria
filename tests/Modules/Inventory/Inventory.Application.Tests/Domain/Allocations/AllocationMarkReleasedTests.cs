@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Domain.Allocations;
+using Invoria.Inventory.Domain.Allocations.Events;
 using Invoria.Inventory.Domain.Batches;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Allocations;
@@ -17,6 +18,19 @@ public class AllocationMarkReleasedTests
 
         allocation.Status.Should().Be(AllocationStatus.Released);
         allocation.Lines.Should().OnlyContain(l => l.Status == AllocationLineStatus.Released);
+    }
+
+    [Test]
+    public void MarkAsReleased_raises_AllocationReleasedDomainEvent_with_allocation_instance()
+    {
+        var allocation = CreateAllocatedAllocation();
+        allocation.ClearDomainEvents();
+
+        allocation.MarkAsReleased();
+
+        allocation.DomainEvents.Should().ContainSingle()
+            .Which.Should().BeOfType<AllocationReleasedDomainEvent>()
+            .Which.Allocation.Should().BeSameAs(allocation);
     }
 
     [Test]
