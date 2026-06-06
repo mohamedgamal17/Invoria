@@ -128,5 +128,6 @@ public class Allocation : AuditedAggregateRoot
         }
 
         Status = AllocationStatus.Released;
+        AddDomainEvent(new AllocationReleasedDomainEvent(this));
     }
 }
