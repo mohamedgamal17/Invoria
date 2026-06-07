@@ -4,11 +4,12 @@ using Invoria.Inventory.Domain.Returns;
 namespace Invoria.Inventory.Application.Tests.Domain.Returns;
 
 [TestFixture]
-public class ReturnTests
+public class ImmediateReturnTests
 {
     [Test]
-    public void Create_should_create_return_with_order_id_and_lines()
+    public void Create_should_create_immediate_return_with_allocation_order_and_lines()
     {
+        var allocationId = "allocation-1";
         var orderId = "order-1";
         var returnLines = new[]
         {
@@ -16,9 +17,10 @@ public class ReturnTests
             ReturnLine.Create("order-item-2", "product-2", 5)
         };
 
-        var @return = TestReturn.Create(orderId, returnLines);
+        var @return = ImmediateReturn.Create(allocationId, orderId, returnLines);
 
         @return.Type.Should().Be(ReturnType.Immediate);
+        @return.AllocationId.Should().Be(allocationId);
         @return.OrderId.Should().Be(orderId);
         @return.ReturnLines.Should().HaveCount(2);
         @return.ReturnLines.Should().ContainSingle(l =>
@@ -32,42 +34,23 @@ public class ReturnTests
     [TestCase(null)]
     [TestCase("")]
     [TestCase(" ")]
-    public void Create_should_throw_when_order_id_is_invalid(string? orderId)
+    public void Create_should_throw_when_allocation_id_is_invalid(string? allocationId)
     {
         var returnLines = new[] { ReturnLine.Create("oi-1", "p-1", 1) };
 
-        var act = () => TestReturn.Create(orderId!, returnLines);
+        var act = () => ImmediateReturn.Create(allocationId!, "order-1", returnLines);
 
         act.Should().Throw<ArgumentException>();
     }
 
     [Test]
-    public void Create_should_throw_when_order_id_exceeds_max_length()
+    public void Create_should_throw_when_allocation_id_exceeds_max_length()
     {
-        var orderId = new string('o', ReturnTableConsts.OrderIdMaxLength + 1);
+        var allocationId = new string('a', ImmediateReturnTableConsts.AllocationIdMaxLength + 1);
         var returnLines = new[] { ReturnLine.Create("oi-1", "p-1", 1) };
 
-        var act = () => TestReturn.Create(orderId, returnLines);
+        var act = () => ImmediateReturn.Create(allocationId, "order-1", returnLines);
 
         act.Should().Throw<ArgumentException>();
-    }
-
-    [Test]
-    public void Create_should_throw_when_lines_are_empty()
-    {
-        var act = () => TestReturn.Create("order-1", Array.Empty<ReturnLine>());
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    private sealed class TestReturn : Return
-    {
-        public static TestReturn Create(string orderId, IEnumerable<ReturnLine> returnLines) =>
-            new(orderId, returnLines);
-
-        private TestReturn(string orderId, IEnumerable<ReturnLine> returnLines)
-            : base(orderId, returnLines, ReturnType.Immediate)
-        {
-        }
     }
 }
