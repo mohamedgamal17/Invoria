@@ -30,7 +30,7 @@ public class CompleteOrderEndpoint : EndpointBase<CompleteOrderRequest, OrderDto
         Summary(s =>
         {
             s.Summary = "Complete order";
-            s.Description = "Marks the order as completed when allowed.";
+            s.Description = "Marks the order as completed when allowed. Optional items may be omitted, an empty array, or one or more return lines recorded at completion.";
             s.Responses[StatusCodes.Status200OK] =
                 InvoriaOpenApiResponseDescriptions.Ok200 + " Returns the updated order.";
             s.Responses[StatusCodes.Status400BadRequest] = InvoriaOpenApiResponseDescriptions.BadRequest400;
@@ -45,7 +45,11 @@ public class CompleteOrderEndpoint : EndpointBase<CompleteOrderRequest, OrderDto
     {
         ValidateRequest(req);
 
-        var command = new CompleteOrderCommand(req.Id);
+        var lines = (req.Items ?? [])
+            .Select(i => new CompleteReturnItemLine(i.OrderItemId, i.Quantity))
+            .ToList();
+
+        var command = new CompleteOrderCommand(req.Id, lines);
 
         var result = await _mediator.Send(command, ct);
 
