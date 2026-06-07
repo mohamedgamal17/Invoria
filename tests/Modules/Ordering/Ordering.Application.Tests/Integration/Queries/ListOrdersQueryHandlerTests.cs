@@ -3,7 +3,7 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
-using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
+using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
 using Invoria.Ordering.Contracts.Orders.Enums;
@@ -41,17 +41,17 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     private static void CompleteOrder(Order order)
     {
         order.Accept();
-        order.Complete();
+        order.Complete([]);
     }
 
-    private async Task<string> PrepareShippedOrderWithReturnAsync(Order order)
+    private async Task<string> PrepareCompletedOrderWithReturnAsync(Order order)
     {
         await TestMediator.Send(new AcceptOrderCommand(order.Id));
 
         var lineId = await GetFirstOrderLineIdAsync(Scope.Resolve<OrderingDbContext>(), order.Id);
-        var recordResult = await TestMediator.Send(
-            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
-        recordResult.ShouldBeSuccess();
+        var completeResult = await TestMediator.Send(
+            new CompleteOrderCommand(order.Id, [new CompleteReturnItemLine(lineId, 1)]));
+        completeResult.ShouldBeSuccess();
 
         return lineId;
     }
@@ -112,7 +112,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     {
         var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
         var order = persisted.Single();
-        await PrepareShippedOrderWithReturnAsync(order);
+        await PrepareCompletedOrderWithReturnAsync(order);
 
         var query = new ListOrdersQuery
         {
@@ -137,7 +137,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     {
         var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
         var order = persisted.Single();
-        var lineId = await PrepareShippedOrderWithReturnAsync(order);
+        var lineId = await PrepareCompletedOrderWithReturnAsync(order);
 
         var query = new ListOrdersQuery
         {

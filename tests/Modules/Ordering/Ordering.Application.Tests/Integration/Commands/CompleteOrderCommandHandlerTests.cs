@@ -4,6 +4,7 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
@@ -102,5 +103,55 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
         var result = await Mediator.Send(command);
 
         result.ShouldBeFailure(typeof(NotFoundException));
+    }
+
+    [Test]
+    public async Task Should_complete_with_return_items()
+    {
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
+        await Mediator.Send(new AcceptOrderCommand(order.Id));
+
+        var lineId = await Scope.Resolve<OrderingDbContext>()
+            .Set<Order>()
+            .Where(o => o.Id == order.Id)
+            .SelectMany(o => o.Items)
+            .Select(i => i.Id)
+            .FirstAsync();
+
+        var result = await Mediator.Send(
+            new CompleteOrderCommand(order.Id, [new CompleteReturnItemLine(lineId, 1)]));
+
+        result.ShouldBeSuccess();
+        result.Value!.ReturnItems.Should().ContainSingle();
+        result.Value.ReturnItems[0].Quantity.Should().Be(1);
+
+        var status = await GetOrderStatusFromDbAsync(order.Id);
+        status.Should().Be(OrderStatus.Completed);
+    }
+
+    [Test]
+    public async Task Should_complete_when_all_items_returned()
+    {
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
+        await Mediator.Send(new AcceptOrderCommand(order.Id));
+
+        var lines = await Scope.Resolve<OrderingDbContext>()
+            .Set<Order>()
+            .Where(o => o.Id == order.Id)
+            .SelectMany(o => o.Items)
+            .Select(i => new { i.Id, i.Quantity })
+            .ToListAsync();
+
+        var returnLines = lines
+            .Select(l => new CompleteReturnItemLine(l.Id, l.Quantity))
+            .ToList();
+
+        var result = await Mediator.Send(new CompleteOrderCommand(order.Id, returnLines));
+
+        result.ShouldBeSuccess();
+
+        var status = await GetOrderStatusFromDbAsync(order.Id);
+        status.Should().Be(OrderStatus.Completed);
+        result.Value!.NetOfTotalOrderAmount.Should().Be(0m);
     }
 }
