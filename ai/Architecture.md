@@ -240,6 +240,8 @@ flowchart LR
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
   - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
   - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
+  - **`Return`** (`Returns/Return.cs`): abstract aggregate root for order returns; properties `OrderId` and `ReturnLines`. Concrete subclasses will expose factory methods; EF persistence requires at least one concrete derived type.
+  - **`ReturnLine`** (`Returns/ReturnLine.cs`): child entity on `Return` with `ReturnId`, `OrderItemId`, `ProductId`, and `Quantity`.
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -330,10 +332,11 @@ flowchart LR
 - **Location**
   - `src/Modules/Inventory/Inventory.Contracts`
 
-- **Layout** (bounded contexts `Allocations/`, `Batches/`, `Stock/`—see `.cursor/rules/module-contracts.mdc`)
+- **Layout** (bounded contexts `Allocations/`, `Batches/`, `Returns/`, `Stock/`—see `.cursor/rules/module-contracts.mdc`)
   - `Allocations/Events/` — allocation integration events (`Invoria.Inventory.Contracts.Allocations.Events`)
   - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
   - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
+  - `Returns/Enums/` — `ReturnType` (`Invoria.Inventory.Contracts.Returns.Enums`)
   - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
 
 - **Integration events**
