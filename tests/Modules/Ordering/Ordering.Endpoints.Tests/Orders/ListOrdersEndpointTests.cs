@@ -115,12 +115,12 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         getResponse.EnsureSuccessStatusCode();
         var lineId = (await getResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>())!.Result!.Items.Single().Id;
 
-        var returnRequest = new AddReturnItemsRequest
+        var completeRequest = new CompleteOrderRequest
         {
             Id = createdOrder.Id,
-            Items = [new AddReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
+            Items = [new CompleteReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
         };
-        (await Client.PutAsJsonAsync($"/orders/{createdOrder.Id}/return-items", returnRequest))
+        (await Client.PostAsJsonAsync($"/orders/{createdOrder.Id}/complete", completeRequest))
             .EnsureSuccessStatusCode();
 
         var listQuery = new
