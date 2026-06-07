@@ -39,172 +39,105 @@ public class OrderReturnItemsDomainTests
     }
 
     [Test]
-    public void NetOfTotalOrderAmount_reduces_after_partial_return()
+    public void NetOfTotalOrderAmount_reduces_after_partial_return_on_complete()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 3, 10m));
 
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 1)]);
+        order.Complete([new OrderReturnItem("line-1", 1)]);
 
-        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Completed);
         order.TotalOrderAmount.Should().Be(30m);
         order.NetOfTotalOrderAmount.Should().Be(20m);
         order.ReturnItems.Should().ContainSingle();
     }
 
     [Test]
-    public void RecordReturnItems_succeeds_in_pending_state()
-    {
-        var order = new Order("N-R2", "cust");
-        SetEntityId(order, "order-return-2");
-        order.UpdateItems(new List<OrderItem> { new("p1", 1, 10m) });
-        SetEntityId(order.Items[0], "line-1");
-        order.Accept();
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 1)]);
-
-        result.IsSuccess.Should().BeTrue();
-        order.ReturnItems.Should().ContainSingle();
-    }
-
-    [Test]
-    public void RecordReturnItems_succeeds_when_completed()
+    public void Complete_records_return_items_when_processing()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 1, 10m));
-        order.Complete();
 
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 1)]);
+        order.Complete([new OrderReturnItem("line-1", 1)]);
 
-        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Completed);
         order.ReturnItems.Should().ContainSingle();
     }
 
     [Test]
-    public void RecordReturnItems_replaces_whole_list_on_second_call()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 3, 10m));
-
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 2)]);
-
-        result.IsSuccess.Should().BeTrue();
-        order.ReturnItems.Should().ContainSingle();
-        order.ReturnItems[0].Quantity.Should().Be(2);
-        order.NetOfTotalOrderAmount.Should().Be(10m);
-        order.Status.Should().Be(OrderStatus.Processing);
-    }
-
-    [Test]
-    public void RecordReturnItems_keeps_processing_when_all_lines_fully_returned()
+    public void Complete_applies_multiple_lines_in_one_call()
     {
         var order = CreateProcessingOrderWithItems(
             ("line-1", "p1", 2, 10m),
             ("line-2", "p2", 1, 5m));
 
-        var result = order.RecordReturnItems(
-        [
-            new OrderReturnItem("line-1", 2),
-            new OrderReturnItem("line-2", 1)
-        ]);
-
-        result.IsSuccess.Should().BeTrue();
-        order.Status.Should().Be(OrderStatus.Processing);
-    }
-
-    [Test]
-    public void RecordReturnItems_applies_multiple_lines_in_one_call()
-    {
-        var order = CreateProcessingOrderWithItems(
-            ("line-1", "p1", 2, 10m),
-            ("line-2", "p2", 1, 5m));
-
-        var result = order.RecordReturnItems(
+        order.Complete(
         [
             new OrderReturnItem("line-1", 1),
             new OrderReturnItem("line-2", 1)
         ]);
 
-        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Completed);
         order.ReturnItems.Should().HaveCount(2);
         order.NetOfTotalOrderAmount.Should().Be(10m);
-        order.Status.Should().Be(OrderStatus.Processing);
     }
 
     [Test]
-    public void RecordReturnItems_normalizes_batch_sum_per_line()
+    public void Complete_normalizes_batch_sum_per_line()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 3, 10m));
 
-        var result = order.RecordReturnItems(
+        order.Complete(
         [
             new OrderReturnItem("line-1", 1),
             new OrderReturnItem("line-1", 2)
         ]);
 
-        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Completed);
         order.ReturnItems.Should().ContainSingle();
         order.ReturnItems[0].Quantity.Should().Be(3);
         order.NetOfTotalOrderAmount.Should().Be(0m);
-        order.Status.Should().Be(OrderStatus.Processing);
     }
 
     [Test]
-    public void RecordReturnItems_clears_returns_when_list_is_empty()
+    public void Complete_with_empty_returns_records_no_return_items()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
 
-        var result = order.RecordReturnItems([]);
+        order.Complete([]);
 
-        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Completed);
         order.ReturnItems.Should().BeEmpty();
         order.NetOfTotalOrderAmount.Should().Be(order.TotalOrderAmount);
-        order.Status.Should().Be(OrderStatus.Processing);
     }
 
     [Test]
-    public void RecordReturnItems_replaces_existing_returns_on_second_call()
-    {
-        var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
-
-        var result = order.RecordReturnItems([new OrderReturnItem("line-1", 5)]);
-
-        result.IsSuccess.Should().BeTrue();
-        order.ReturnItems.Should().ContainSingle();
-        order.ReturnItems[0].Quantity.Should().Be(5);
-        order.NetOfTotalOrderAmount.Should().Be(0m);
-    }
-
-    [Test]
-    public void Complete_cancels_when_all_items_returned()
+    public void Complete_sets_completed_when_all_items_returned()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 1, 10m));
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
-        order.Status.Should().Be(OrderStatus.Processing);
 
-        order.Complete();
+        order.Complete([new OrderReturnItem("line-1", 1)]);
 
-        order.Status.Should().Be(OrderStatus.Cancelled);
+        order.Status.Should().Be(OrderStatus.Completed);
+        order.NetOfTotalOrderAmount.Should().Be(0m);
     }
 
     [Test]
     public void Complete_sets_completed_when_partial_returns()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 2, 10m));
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
 
-        order.Complete();
+        order.Complete([new OrderReturnItem("line-1", 1)]);
 
         order.Status.Should().Be(OrderStatus.Completed);
         order.NetOfTotalOrderAmount.Should().Be(10m);
     }
 
     [Test]
-    public void RecordReturnItems_refreshes_AmountOutstanding_to_net_total()
+    public void Complete_refreshes_AmountOutstanding_to_net_total()
     {
         var order = CreateProcessingOrderWithItems(("line-1", "p1", 3, 10m));
         order.AmountOutstanding.Should().Be(30m);
 
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
+        order.Complete([new OrderReturnItem("line-1", 1)]);
 
         order.AmountOutstanding.Should().Be(20m);
         order.AmountOutstanding.Should().Be(order.NetOfTotalOrderAmount);

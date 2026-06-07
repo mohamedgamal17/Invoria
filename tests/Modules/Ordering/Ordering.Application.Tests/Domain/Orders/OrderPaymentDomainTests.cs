@@ -29,7 +29,7 @@ public class OrderPaymentDomainTests
     private static void CompleteViaFulfillment(Order order)
     {
         order.Accept();
-        order.Complete();
+        order.Complete([]);
         order.Status.Should().Be(OrderStatus.Completed);
     }
 
@@ -221,9 +221,8 @@ public class OrderPaymentDomainTests
             new OrderItem("p", 2, 50m));
         SetEntityId(order.Items[0], "line-1");
         order.Accept();
-        order.RecordReturnItems([new OrderReturnItem("line-1", 1)]).IsSuccess.Should().BeTrue();
+        order.Complete([new OrderReturnItem("line-1", 1)]);
         order.NetOfTotalOrderAmount.Should().Be(50m);
-        order.Complete();
 
         order.Invoking(o => o.RecordPayment(100m, OrderPaymentMethod.Cash, DateTimeOffset.UtcNow))
             .Should().Throw<InvalidOperationException>();

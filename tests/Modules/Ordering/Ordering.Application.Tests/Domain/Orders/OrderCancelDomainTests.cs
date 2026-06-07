@@ -53,7 +53,7 @@ public class OrderCancelDomainTests
     {
         var order = CreateOrderWithItems("cancel-bad-status");
         order.Accept();
-        order.Complete();
+        order.Complete([]);
 
         var act = () => order.Cancel();
 
