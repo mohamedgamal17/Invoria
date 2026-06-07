@@ -256,10 +256,20 @@ namespace Invoria.Ordering.Domain.Orders
             Status = OrderStatus.Cancelled;
         }
 
-        public Result RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
+        public void Complete(IReadOnlyList<OrderReturnItem>? returnItems)
         {
-            Guard.Against.Null(returnItems);
+            if (Status != OrderStatus.Processing)
+            {
+                throw new InvalidOperationException(
+                    "Order can only be completed when it is Processing.");
+            }
 
+            RecordReturnItems(returnItems ?? []);
+            Status = OrderStatus.Completed;
+        }
+
+        private void RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
+        {
             var normalizedItems = NormalizeReturnItems(returnItems);
             ReturnItems.Clear();
             foreach (var returnItem in normalizedItems)
@@ -268,8 +278,6 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             RefreshPaymentSummary();
-
-            return Result.Success();
         }
 
         private static List<OrderReturnItem> NormalizeReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
@@ -280,34 +288,11 @@ namespace Invoria.Ordering.Domain.Orders
                 .ToList();
         }
 
-        public void Complete()
-        {
-            if (Status != OrderStatus.Processing)
-            {
-                throw new InvalidOperationException(
-                    "Order can only be completed when it is Processing.");
-            }
-
-            if (AllItemsFullyReturned())
-            {
-                Status = OrderStatus.Cancelled;
-                return;
-            }
-
-            Status = OrderStatus.Completed;
-        }
-
         private int ReturnedQuantity(string orderItemId)
         {
             return ReturnItems
                 .Where(r => r.OrderItemId == orderItemId)
                 .Sum(r => r.Quantity);
-        }
-
-        private bool AllItemsFullyReturned()
-        {
-            return Items.Count > 0
-                && Items.All(i => ReturnedQuantity(i.Id) >= i.Quantity);
         }
     }
 }
