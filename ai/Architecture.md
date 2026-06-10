@@ -258,6 +258,9 @@ flowchart LR
   - **`RequestAllocationIntegrationEventConsumer`**
     - File: `Allocations/Consumers/RequestAllocationIntegrationEventConsumer.cs`
     - Handles `RequestAllocationIntegrationEvent`; sends `RequestAllocationCommand` to reserve stock from batches (FIFO) and mark the allocation as `Allocated`.
+  - **`CreateImmediateReturnIntegrationEventConsumer`**
+    - File: `Returns/Consumers/CreateImmediateReturnIntegrationEventConsumer.cs`
+    - Handles `CreateImmediateReturnIntegrationEvent`; sends `CreateImmediateReturnCommand` to create an `ImmediateReturn` aggregate.
 
 - **Domain event handlers**
   - **`AllocationInitiatedDomainEventHandler`**
@@ -274,9 +277,10 @@ flowchart LR
     - Handles `ImmediateReturnCreatedDomainEvent` after save and publishes `ImmediateReturnCreatedIntegrationEvent`.
 
 - **Immediate return flow**
-  1. **`CreateImmediateReturnCommand`** / **`CreateImmediateReturnCommandHandler`** — `Returns/Commands/CreateImmediateReturn/`; creates `ImmediateReturn` (`Pending`) from `OrderId`, `AllocationId`, and line items.
-  2. `ImmediateReturnCreatedDomainEvent` is dispatched after save.
-  3. **`ImmediateReturnCreatedDomainEventHandler`** publishes `ImmediateReturnCreatedIntegrationEvent` (`ReturnId`, `OrderId`, `AllocationId`).
+  1. An external module publishes **`CreateImmediateReturnIntegrationEvent`** (`OrderId`, `AllocationId`, `Lines`); Inventory consumes it via **`CreateImmediateReturnIntegrationEventConsumer`** and sends **`CreateImmediateReturnCommand`**.
+  2. **`CreateImmediateReturnCommandHandler`** — `Returns/Commands/CreateImmediateReturn/`; creates `ImmediateReturn` (`Pending`) from `OrderId`, `AllocationId`, and line items.
+  3. `ImmediateReturnCreatedDomainEvent` is dispatched after save.
+  4. **`ImmediateReturnCreatedDomainEventHandler`** publishes `ImmediateReturnCreatedIntegrationEvent` (`ReturnId`, `OrderId`, `AllocationId`).
 
 - **Order allocation flow**
   1. Ordering publishes `OrderAcceptedIntegrationEvent` when an order is accepted; **`OrderSaga`** transitions to `Allocating` and publishes `AllocateOrderIntegrationEvent` (contract in `Invoria.Inventory.Contracts.Allocations.Events`).
@@ -327,7 +331,7 @@ flowchart LR
 - **Bootstrap**
   - **`InventoryModuleBootStrapper`**
     - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
-    - Subscribes to `RequestAllocationIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, and `DispatchFulfillmentIntegrationEvent` for in-process Rebus handlers.
+    - Subscribes to `RequestAllocationIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, `DispatchFulfillmentIntegrationEvent`, and `CreateImmediateReturnIntegrationEvent` for in-process Rebus handlers.
 
 - **`InventoryModuleInstaller`**
   - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
@@ -349,7 +353,8 @@ flowchart LR
   - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
   - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
   - `Returns/Enums/` — `ReturnType`, `ReturnStatus` (`Invoria.Inventory.Contracts.Returns.Enums`; `ReturnStatus` is the single source of truth used by Domain)
-  - `Returns/Events/` — `ImmediateReturnCreatedIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
+  - `Returns/Events/` — `CreateImmediateReturnIntegrationEvent`, `ImmediateReturnCreatedIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
+  - `Returns/Models/` — `ReturnLineModel` (`Invoria.Inventory.Contracts.Returns.Models`)
   - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
 
 - **Integration events**
@@ -369,6 +374,10 @@ flowchart LR
     - File: `Allocations/Events/AllocationFailedIntegrationEvent.cs`
     - Payload: `AllocationId`, `OrderId`.
     - Published by Inventory when batch reservation cannot fully satisfy the allocation.
+  - **`CreateImmediateReturnIntegrationEvent`**
+    - File: `Returns/Events/CreateImmediateReturnIntegrationEvent.cs`
+    - Payload: `OrderId`, `AllocationId`, `Lines` (`List<ReturnLineModel>`).
+    - Consumed by Inventory via `CreateImmediateReturnIntegrationEventConsumer` to trigger `CreateImmediateReturnCommand`.
   - **`ImmediateReturnCreatedIntegrationEvent`**
     - File: `Returns/Events/ImmediateReturnCreatedIntegrationEvent.cs`
     - Payload: `ReturnId`, `OrderId`, `AllocationId`.
