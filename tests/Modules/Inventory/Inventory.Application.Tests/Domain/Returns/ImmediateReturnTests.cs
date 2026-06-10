@@ -55,4 +55,28 @@ public class ImmediateReturnTests
 
         act.Should().Throw<ArgumentException>();
     }
+
+    [Test]
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase(" ")]
+    public void Create_should_throw_when_order_id_is_invalid(string? orderId)
+    {
+        var returnLines = new[] { ReturnLine.Create("oi-1", "p-1", 1) };
+
+        var act = () => ImmediateReturn.Create("allocation-1", orderId!, returnLines);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Test]
+    public void Create_should_throw_when_order_id_exceeds_max_length()
+    {
+        var orderId = new string('o', ImmediateReturnTableConsts.OrderIdMaxLength + 1);
+        var returnLines = new[] { ReturnLine.Create("oi-1", "p-1", 1) };
+
+        var act = () => ImmediateReturn.Create("allocation-1", orderId, returnLines);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

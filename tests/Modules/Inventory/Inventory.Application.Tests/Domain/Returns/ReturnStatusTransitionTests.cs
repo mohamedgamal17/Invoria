@@ -80,17 +80,15 @@ public class ReturnStatusTransitionTests
     }
 
     private static TestReturn CreateReturn() =>
-        TestReturn.Create(
-            "order-1",
-            [ReturnLine.Create("order-item-1", "product-1", 1)]);
+        TestReturn.Create([ReturnLine.Create("order-item-1", "product-1", 1)]);
 
     private sealed class TestReturn : Return
     {
-        public static TestReturn Create(string orderId, IEnumerable<ReturnLine> returnLines) =>
-            new(orderId, returnLines);
+        public static TestReturn Create(IEnumerable<ReturnLine> returnLines) =>
+            new(returnLines);
 
-        private TestReturn(string orderId, IEnumerable<ReturnLine> returnLines)
-            : base(orderId, returnLines, ReturnType.Immediate)
+        private TestReturn(IEnumerable<ReturnLine> returnLines)
+            : base(returnLines, ReturnType.Immediate)
         {
         }
     }
