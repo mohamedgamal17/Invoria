@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.Inventory.Domain.Returns;
+using Invoria.Inventory.Domain.Returns.Events;
 using ContractReturnStatus = Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Returns;
@@ -30,6 +31,19 @@ public class ImmediateReturnTests
         @return.ReturnLines.Should().ContainSingle(l =>
             l.OrderItemId == "order-item-2" && l.ProductId == "product-2" && l.Quantity == 5);
         @return.ReturnLines.Should().OnlyContain(l => l.ReturnId == @return.Id);
+    }
+
+    [Test]
+    public void Create_should_raise_ImmediateReturnCreatedDomainEvent()
+    {
+        var returnLines = new[] { ReturnLine.Create("order-item-1", "product-1", 3) };
+
+        var @return = ImmediateReturn.Create("allocation-1", "order-1", returnLines);
+
+        @return.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<ImmediateReturnCreatedDomainEvent>();
+        var ev = (ImmediateReturnCreatedDomainEvent)@return.DomainEvents.Single();
+        ev.ImmediateReturn.Should().BeSameAs(@return);
+        ev.ImmediateReturn.Status.Should().Be(ContractReturnStatus.Pending);
     }
 
     [Test]
