@@ -29,6 +29,8 @@ namespace Invoria.Ordering.Domain.Orders
 
         public string? AllocationId { get; private set; }
 
+        public string? ReturnId { get; private set; }
+
         public bool OrderAllocated { get; private set; }
 
         private Order()
@@ -188,13 +190,6 @@ namespace Invoria.Ordering.Domain.Orders
 
         public void RecordAllocation(string allocationId)
         {
-            Guard.Against.NullOrWhiteSpace(allocationId);
-            Guard.Against.OutOfRange(
-                allocationId.Length,
-                nameof(allocationId),
-                1,
-                OrderTableConsts.AllocationIdMaxLength);
-
             if (Status != OrderStatus.Processing)
             {
                 throw new InvalidOperationException(
@@ -202,6 +197,17 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             AllocationId = allocationId;
+        }
+
+        public void RecordReturn(string returnId)
+        {
+            if (Status != OrderStatus.Completed)
+            {
+                throw new InvalidOperationException(
+                    "Order return can only be recorded when the order is Completed.");
+            }
+
+            ReturnId = returnId;
         }
 
         public void Revise()
