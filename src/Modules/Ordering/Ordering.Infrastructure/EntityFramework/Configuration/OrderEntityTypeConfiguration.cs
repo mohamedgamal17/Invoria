@@ -37,6 +37,9 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
             builder.Property(x => x.AllocationId)
                 .HasMaxLength(OrderTableConsts.AllocationIdMaxLength);
 
+            builder.Property(x => x.ReturnId)
+                .HasMaxLength(OrderTableConsts.ReturnIdMaxLength);
+
             builder.Property(x => x.OrderAllocated)
                 .IsRequired();
 
