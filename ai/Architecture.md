@@ -240,10 +240,10 @@ flowchart LR
   - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
   - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
   - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
-  - **`Return`** (`Returns/Return.cs`): abstract aggregate root for order returns; properties `Type` (`ReturnType` discriminator), `Status` (`Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus`, defaults to `Pending`), `OrderId`, and `ReturnLines`. Lifecycle: `Approve()` (`Pending` → `Approved`), `Reject()` (`Pending` → `Rejected`), `Complete()` (`Approved` → `Completed`). Concrete subclasses expose factory methods and set `Type` for EF TPH.
+  - **`Return`** (`Returns/Return.cs`): abstract aggregate root for order returns; properties `Type` (`ReturnType` discriminator), `Status` (`Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus`, defaults to `Pending`), and `ReturnLines`. Lifecycle: `Approve()` (`Pending` → `Approved`), `Reject()` (`Pending` → `Rejected`), `Complete()` (`Approved` → `Completed`). Concrete subclasses expose factory methods and set `Type` for EF TPH.
   - **`ReturnType`** (`Returns/ReturnType.cs`): domain discriminator enum (`Immediate`); values align with `Invoria.Inventory.Contracts.Returns.Enums.ReturnType`.
   - **`ReturnLine`** (`Returns/ReturnLine.cs`): child entity on `Return` with `ReturnId`, `OrderItemId`, `ProductId`, and `Quantity`.
-  - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId`, and `ReturnLines` via `Create`.
+  - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId` (immediate-return only), and `ReturnLines` via `Create`.
 
 ### Application (`Invoria.Inventory.Application`)
 
