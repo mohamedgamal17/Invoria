@@ -1,7 +1,9 @@
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Inventory.Application.Allocations.Consumers;
 using Invoria.Inventory.Application.Batches.Consumers;
+using Invoria.Inventory.Application.Returns.Consumers;
 using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Returns.Events;
 using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Procurement.Contracts.Events;
 using Microsoft.Extensions.Configuration;
@@ -19,5 +21,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
         services.AddTransient<IHandleMessages<PurchaseOrderCompletedIntegrationEvent>, PurchaseOrderCompletedIntegrationEventConsumer>();
         services.AddTransient<IHandleMessages<AllocationCreatedIntegrationEvent>, AllocationCreatedIntegrationEventConsumer>();
         services.AddTransient<IHandleMessages<ReleaseAllocationIntegrationEvent>, ReleaseAllocationIntegrationEventConsumer>();
+        services.AddTransient<IHandleMessages<CreateImmediateReturnIntegrationEvent>, CreateImmediateReturnIntegrationEventConsumer>();
     }
 }

@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Returns.Events;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +27,7 @@ namespace Invoria.Inventory.Infrastructure
                 await bus.Subscribe<AllocateOrderIntegrationEvent>();
                 await bus.Subscribe<AllocationCreatedIntegrationEvent>();
                 await bus.Subscribe<ReleaseAllocationIntegrationEvent>();
+                await bus.Subscribe<CreateImmediateReturnIntegrationEvent>();
             }
         }
     }
