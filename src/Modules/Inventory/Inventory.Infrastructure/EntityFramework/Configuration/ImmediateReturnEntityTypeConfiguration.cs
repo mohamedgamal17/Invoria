@@ -12,6 +12,12 @@ public sealed class ImmediateReturnEntityTypeConfiguration : IEntityTypeConfigur
             .HasMaxLength(ImmediateReturnTableConsts.AllocationIdMaxLength)
             .IsRequired();
 
+        builder.Property(x => x.OrderId)
+            .HasMaxLength(ImmediateReturnTableConsts.OrderIdMaxLength)
+            .IsRequired();
+
         builder.HasIndex(x => x.AllocationId);
+
+        builder.HasIndex(x => x.OrderId);
     }
 }

@@ -16,9 +16,6 @@ public sealed class ReturnEntityTypeConfiguration : IEntityTypeConfiguration<Ret
         builder.Property(x => x.Id)
             .HasMaxLength(ReturnTableConsts.IdMaxLength);
 
-        builder.Property(x => x.OrderId)
-            .HasMaxLength(ReturnTableConsts.OrderIdMaxLength);
-
         builder.Property(x => x.Type)
             .IsRequired();
 
@@ -28,8 +25,6 @@ public sealed class ReturnEntityTypeConfiguration : IEntityTypeConfiguration<Ret
 
         builder.HasDiscriminator(x => x.Type)
             .HasValue<ImmediateReturn>(ReturnType.Immediate);
-
-        builder.HasIndex(x => x.OrderId);
 
         builder
             .Navigation(r => r.ReturnLines)
