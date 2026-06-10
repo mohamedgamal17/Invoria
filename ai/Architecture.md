@@ -243,7 +243,8 @@ flowchart LR
   - **`Return`** (`Returns/Return.cs`): abstract aggregate root for order returns; properties `Type` (`ReturnType` discriminator), `Status` (`Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus`, defaults to `Pending`), and `ReturnLines`. Lifecycle: `Approve()` (`Pending` → `Approved`), `Reject()` (`Pending` → `Rejected`), `Complete()` (`Approved` → `Completed`). Concrete subclasses expose factory methods and set `Type` for EF TPH.
   - **`ReturnType`** (`Returns/ReturnType.cs`): domain discriminator enum (`Immediate`); values align with `Invoria.Inventory.Contracts.Returns.Enums.ReturnType`.
   - **`ReturnLine`** (`Returns/ReturnLine.cs`): child entity on `Return` with `ReturnId`, `OrderItemId`, `ProductId`, and `Quantity`.
-  - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId` (immediate-return only), and `ReturnLines` via `Create`.
+  - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId` (immediate-return only), and `ReturnLines` via `Create`; raises **`ImmediateReturnCreatedDomainEvent`** on create.
+  - **`ImmediateReturnCreatedDomainEvent`** (`Returns/Events/ImmediateReturnCreatedDomainEvent.cs`): raised from `ImmediateReturn.Create` when a new immediate return is created.
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -268,6 +269,14 @@ flowchart LR
   - **`AllocationFailedDomainEventHandler`**
     - File: `Allocations/Handlers/AllocationFailedDomainEventHandler.cs`
     - Handles `AllocationFailedDomainEvent` after save and publishes `AllocationFailedIntegrationEvent`.
+  - **`ImmediateReturnCreatedDomainEventHandler`**
+    - File: `Returns/Handlers/ImmediateReturnCreatedDomainEventHandler.cs`
+    - Handles `ImmediateReturnCreatedDomainEvent` after save and publishes `ImmediateReturnCreatedIntegrationEvent`.
+
+- **Immediate return flow**
+  1. **`CreateImmediateReturnCommand`** / **`CreateImmediateReturnCommandHandler`** — `Returns/Commands/CreateImmediateReturn/`; creates `ImmediateReturn` (`Pending`) from `OrderId`, `AllocationId`, and line items.
+  2. `ImmediateReturnCreatedDomainEvent` is dispatched after save.
+  3. **`ImmediateReturnCreatedDomainEventHandler`** publishes `ImmediateReturnCreatedIntegrationEvent` (`ReturnId`, `OrderId`, `AllocationId`).
 
 - **Order allocation flow**
   1. Ordering publishes `OrderAcceptedIntegrationEvent` when an order is accepted; **`OrderSaga`** transitions to `Allocating` and publishes `AllocateOrderIntegrationEvent` (contract in `Invoria.Inventory.Contracts.Allocations.Events`).
@@ -340,6 +349,7 @@ flowchart LR
   - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
   - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
   - `Returns/Enums/` — `ReturnType`, `ReturnStatus` (`Invoria.Inventory.Contracts.Returns.Enums`; `ReturnStatus` is the single source of truth used by Domain)
+  - `Returns/Events/` — `ImmediateReturnCreatedIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
   - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
 
 - **Integration events**
@@ -359,6 +369,10 @@ flowchart LR
     - File: `Allocations/Events/AllocationFailedIntegrationEvent.cs`
     - Payload: `AllocationId`, `OrderId`.
     - Published by Inventory when batch reservation cannot fully satisfy the allocation.
+  - **`ImmediateReturnCreatedIntegrationEvent`**
+    - File: `Returns/Events/ImmediateReturnCreatedIntegrationEvent.cs`
+    - Payload: `ReturnId`, `OrderId`, `AllocationId`.
+    - Published by Inventory when an immediate return is created via `CreateImmediateReturnCommand`.
 
 ---
 
