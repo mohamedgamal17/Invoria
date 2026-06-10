@@ -1,4 +1,5 @@
 using Ardalis.GuardClauses;
+using Invoria.Inventory.Domain.Returns.Events;
 
 namespace Invoria.Inventory.Domain.Returns;
 
@@ -41,5 +42,7 @@ public class ImmediateReturn : Return
 
         AllocationId = allocationId;
         OrderId = orderId;
+
+        AddDomainEvent(new ImmediateReturnCreatedDomainEvent(this));
     }
 }
