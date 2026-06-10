@@ -266,6 +266,7 @@ namespace Invoria.Ordering.Domain.Orders
 
             RecordReturnItems(returnItems ?? []);
             Status = OrderStatus.Completed;
+            AddDomainEvent(new OrderCompletedDomainEvent(this));
         }
 
         private void RecordReturnItems(IReadOnlyList<OrderReturnItem> returnItems)
