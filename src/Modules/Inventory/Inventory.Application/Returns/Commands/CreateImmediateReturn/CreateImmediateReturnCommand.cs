@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
+using Invoria.Inventory.Contracts.Returns.Events;
 
 namespace Invoria.Inventory.Application.Returns.Commands.CreateImmediateReturn;
 
@@ -10,6 +11,19 @@ public class CreateImmediateReturnCommand : ICommand<Empty>
     public string AllocationId { get; init; } = string.Empty;
 
     public List<CreateImmediateReturnLineItem> Lines { get; init; } = [];
+
+    public static CreateImmediateReturnCommand FromEvent(CreateImmediateReturnIntegrationEvent message) =>
+        new()
+        {
+            OrderId = message.OrderId,
+            AllocationId = message.AllocationId,
+            Lines = (message.Lines ?? []).Select(l => new CreateImmediateReturnLineItem
+            {
+                OrderItemId = l.OrderItemId,
+                ProductId = l.ProductId,
+                Quantity = l.Quantity
+            }).ToList()
+        };
 }
 
 public class CreateImmediateReturnLineItem
