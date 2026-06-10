@@ -22,6 +22,8 @@ public sealed class ReturnEntityTypeConfiguration : IEntityTypeConfiguration<Ret
         builder.Property(x => x.Type)
             .IsRequired();
 
+        builder.Property(x => x.Status);
+
         builder.MapAudited();
 
         builder.HasDiscriminator(x => x.Type)
