@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.Inventory.Domain.Returns;
+using ContractReturnStatus = Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Returns;
 
@@ -19,6 +20,7 @@ public class ReturnTests
         var @return = TestReturn.Create(orderId, returnLines);
 
         @return.Type.Should().Be(ReturnType.Immediate);
+        @return.Status.Should().Be(ContractReturnStatus.Pending);
         @return.OrderId.Should().Be(orderId);
         @return.ReturnLines.Should().HaveCount(2);
         @return.ReturnLines.Should().ContainSingle(l =>
