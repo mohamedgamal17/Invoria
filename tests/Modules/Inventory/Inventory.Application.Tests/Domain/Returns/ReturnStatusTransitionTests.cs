@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.Inventory.Domain.Returns;
+using Invoria.Inventory.Domain.Returns.Events;
 using ContractReturnStatus = Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus;
 
 namespace Invoria.Inventory.Application.Tests.Domain.Returns;
@@ -36,6 +37,31 @@ public class ReturnStatusTransitionTests
         @return.Complete();
 
         @return.Status.Should().Be(ContractReturnStatus.Completed);
+    }
+
+    [Test]
+    public void Approve_should_raise_ReturnApprovedDomainEvent()
+    {
+        var @return = CreateReturn();
+
+        @return.Approve();
+
+        @return.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<ReturnApprovedDomainEvent>();
+        var ev = (ReturnApprovedDomainEvent)@return.DomainEvents.Single();
+        ev.Return.Should().BeSameAs(@return);
+        ev.Return.Status.Should().Be(ContractReturnStatus.Approved);
+    }
+
+    [Test]
+    public void Approve_should_not_raise_domain_event_when_not_pending()
+    {
+        var @return = CreateReturn();
+        @return.Approve();
+
+        var act = () => @return.Approve();
+
+        act.Should().Throw<InvalidOperationException>();
+        @return.DomainEvents.OfType<ReturnApprovedDomainEvent>().Should().ContainSingle();
     }
 
     [Test]
