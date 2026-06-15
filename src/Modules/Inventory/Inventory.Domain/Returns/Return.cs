@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Inventory.Contracts.Returns.Enums;
+using Invoria.Inventory.Domain.Returns.Events;
 
 namespace Invoria.Inventory.Domain.Returns;
 
@@ -44,6 +45,7 @@ public abstract class Return : AuditedAggregateRoot
         }
 
         Status = ReturnStatus.Approved;
+        AddDomainEvent(new ReturnApprovedDomainEvent(this));
     }
 
     public void Reject()
