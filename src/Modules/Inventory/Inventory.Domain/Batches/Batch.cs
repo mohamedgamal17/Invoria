@@ -132,6 +132,12 @@ public class Batch : AuditedAggregateRoot
         }
     }
 
+    public void AddReturn(int amount)
+    {
+        Guard.Against.NegativeOrZero(amount);
+        UpdateQuantity(Quantity + amount);
+    }
+
     public void Enable()
     {
         if (State != BatchState.Disabled)
