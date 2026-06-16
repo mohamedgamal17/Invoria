@@ -299,6 +299,43 @@ public class BatchTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Test]
+    public void AddReturn_increases_quantity_via_UpdateQuantity()
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-add-return");
+
+        batch.AddReturn(3);
+
+        batch.Quantity.Should().Be(8);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void AddReturn_reactivates_depleted_batch()
+    {
+        var batch = new Batch("product-1", 4, 10m);
+        SetEntityId(batch, "batch-add-return-depl");
+        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
+        batch.State.Should().Be(BatchState.Depleted);
+
+        batch.AddReturn(2);
+
+        batch.Quantity.Should().Be(2);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void AddReturn_throws_when_amount_is_not_positive()
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-add-return-bad");
+
+        var act = () => batch.AddReturn(0);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
     private static void SetEntityId(Batch batch, string id)
     {
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(batch, id);
