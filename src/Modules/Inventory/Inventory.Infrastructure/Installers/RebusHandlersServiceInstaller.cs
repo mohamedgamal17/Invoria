@@ -22,5 +22,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
         services.AddTransient<IHandleMessages<AllocationCreatedIntegrationEvent>, AllocationCreatedIntegrationEventConsumer>();
         services.AddTransient<IHandleMessages<ReleaseAllocationIntegrationEvent>, ReleaseAllocationIntegrationEventConsumer>();
         services.AddTransient<IHandleMessages<CreateImmediateReturnIntegrationEvent>, CreateImmediateReturnIntegrationEventConsumer>();
+        services.AddTransient<IHandleMessages<ProcessImmediateReturnIntegrationEvent>, ProcessImmediateReturnIntegrationEventConsumer>();
     }
 }

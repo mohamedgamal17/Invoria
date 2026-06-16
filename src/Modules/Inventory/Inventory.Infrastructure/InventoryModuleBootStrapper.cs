@@ -28,6 +28,7 @@ namespace Invoria.Inventory.Infrastructure
                 await bus.Subscribe<AllocationCreatedIntegrationEvent>();
                 await bus.Subscribe<ReleaseAllocationIntegrationEvent>();
                 await bus.Subscribe<CreateImmediateReturnIntegrationEvent>();
+                await bus.Subscribe<ProcessImmediateReturnIntegrationEvent>();
             }
         }
     }
