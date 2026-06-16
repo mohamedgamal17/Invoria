@@ -233,7 +233,7 @@ flowchart LR
   - `src/Modules/Inventory/Inventory.Domain`
 
 - **Representative types**
-  - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
+  - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer. **`AddReturn`** increases available **`Quantity`** via **`UpdateQuantity`** when returned stock is processed.
   - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Released`), with child **`AllocationLine`** rows per order item.
   - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
   - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation and release across allocation lines and batches.
@@ -246,6 +246,7 @@ flowchart LR
   - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId` (immediate-return only), and `ReturnLines` via `Create`; raises **`ImmediateReturnCreatedDomainEvent`** on create.
   - **`ImmediateReturnCreatedDomainEvent`** (`Returns/Events/ImmediateReturnCreatedDomainEvent.cs`): raised from `ImmediateReturn.Create` when a new immediate return is created.
   - **`ReturnApprovedDomainEvent`** (`Returns/Events/ReturnApprovedDomainEvent.cs`): raised from `Return.Approve` when a return transitions to `Approved`; carries the approved `Return` aggregate.
+  - **`IReturnDomainService`** / **`ReturnDomainService`** (`Returns/Services/`): domain service for cross-aggregate immediate-return processing; **`ProcessImmediateReturn`** restores stock via **`Batch.AddReturn`** (by `BatchAllocation.BatchId` descending), then calls **`Return.Complete()`**.
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -262,6 +263,12 @@ flowchart LR
   - **`CreateImmediateReturnIntegrationEventConsumer`**
     - File: `Returns/Consumers/CreateImmediateReturnIntegrationEventConsumer.cs`
     - Handles `CreateImmediateReturnIntegrationEvent`; sends `CreateImmediateReturnCommand` to create an `ImmediateReturn` aggregate.
+  - **`ProcessImmediateReturnIntegrationEventConsumer`**
+    - File: `Returns/Consumers/ProcessImmediateReturnIntegrationEventConsumer.cs`
+    - Handles `ProcessImmediateReturnIntegrationEvent`; sends `ProcessImmediateReturnCommand` (`ReturnId`).
+  - **`ProcessImmediateReturnCommandHandler`**
+    - File: `Returns/Commands/ProcessImmediateReturn/ProcessImmediateReturnCommandHandler.cs`
+    - Handles `ProcessImmediateReturnCommand`; loads `ImmediateReturn`, `Allocation`, and batches, delegates to **`IReturnDomainService.ProcessImmediateReturn`**, persists via **`IInventoryUnitOfWork`**.
 
 - **Domain event handlers**
   - **`AllocationInitiatedDomainEventHandler`**
@@ -276,12 +283,22 @@ flowchart LR
   - **`ImmediateReturnCreatedDomainEventHandler`**
     - File: `Returns/Handlers/ImmediateReturnCreatedDomainEventHandler.cs`
     - Handles `ImmediateReturnCreatedDomainEvent` after save and publishes `ImmediateReturnCreatedIntegrationEvent`.
+  - **`ReturnApprovedDomainEventHandler`**
+    - File: `Returns/Handlers/ReturnApprovedDomainEventHandler.cs`
+    - Handles `ReturnApprovedDomainEvent` after save; for `ReturnType.Immediate`, publishes `ProcessImmediateReturnIntegrationEvent` (`ReturnId`).
 
 - **Immediate return flow**
   1. An external module publishes **`CreateImmediateReturnIntegrationEvent`** (`OrderId`, `AllocationId`, `Lines`); Inventory consumes it via **`CreateImmediateReturnIntegrationEventConsumer`** and sends **`CreateImmediateReturnCommand`**.
   2. **`CreateImmediateReturnCommandHandler`** — `Returns/Commands/CreateImmediateReturn/`; creates `ImmediateReturn` (`Pending`) from `OrderId`, `AllocationId`, and line items.
   3. `ImmediateReturnCreatedDomainEvent` is dispatched after save.
   4. **`ImmediateReturnCreatedDomainEventHandler`** publishes `ImmediateReturnCreatedIntegrationEvent` (`ReturnId`, `OrderId`, `AllocationId`).
+
+- **Return approval flow**
+  1. **`ApproveReturnCommandHandler`** — `Returns/Commands/ApproveReturn/`; approves a pending return via `Return.Approve()`.
+  2. `ReturnApprovedDomainEvent` is dispatched after save.
+  3. **`ReturnApprovedDomainEventHandler`** publishes `ProcessImmediateReturnIntegrationEvent` (`ReturnId`) when the approved return type is `Immediate`.
+  4. **`ProcessImmediateReturnIntegrationEventConsumer`** sends **`ProcessImmediateReturnCommand`** (`ReturnId`).
+  5. **`ProcessImmediateReturnCommandHandler`** loads aggregates and batches, runs **`IReturnDomainService.ProcessImmediateReturn`**, and persists the completed return with restored batch stock.
 
 - **Order allocation flow**
   1. Ordering publishes `OrderAcceptedIntegrationEvent` when an order is accepted; **`OrderSaga`** transitions to `Allocating` and publishes `AllocateOrderIntegrationEvent` (contract in `Invoria.Inventory.Contracts.Allocations.Events`).
@@ -295,7 +312,7 @@ flowchart LR
 - **Request allocation**
   - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; loads allocation and batches, invokes the domain service, persists via **`IInventoryUnitOfWork`** (no allocation algorithm in the handler).
   - **`IAllocationDomainService`** / **`AllocationDomainService`** — `Allocations/Services/` in Domain; **`Allocate`** (FIFO reservation and failure rollback) and **`Release`** (restore reserved stock and mark allocation released) across `Allocation` and `Batch` aggregates (implements **`IDomainService`** from BuildingBlocks).
-  - **`DomainServiceInstaller`** — `Infrastructure/Installers/`; registers domain services (e.g. **`IAllocationDomainService`**).
+  - **`DomainServiceInstaller`** — `Infrastructure/Installers/`; registers domain services (e.g. **`IAllocationDomainService`**, **`IReturnDomainService`**).
   - **`IInventoryUnitOfWork`** / **`InventoryUnitOfWork`** — module unit-of-work port (`Inventory.Domain`) backed by **`EfUnitOfWork<InventoryDbContext>`**; registered from `EntityFrameworkServiceInstaller` with `AddInvoriaUnitOfWork`.
 
 - **Release allocation**
@@ -354,7 +371,7 @@ flowchart LR
   - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
   - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
   - `Returns/Enums/` — `ReturnType`, `ReturnStatus` (`Invoria.Inventory.Contracts.Returns.Enums`; `ReturnStatus` is the single source of truth used by Domain)
-  - `Returns/Events/` — `CreateImmediateReturnIntegrationEvent`, `ImmediateReturnCreatedIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
+  - `Returns/Events/` — `CreateImmediateReturnIntegrationEvent`, `ImmediateReturnCreatedIntegrationEvent`, `ProcessImmediateReturnIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
   - `Returns/Models/` — `ReturnLineModel` (`Invoria.Inventory.Contracts.Returns.Models`)
   - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
 
@@ -383,6 +400,11 @@ flowchart LR
     - File: `Returns/Events/ImmediateReturnCreatedIntegrationEvent.cs`
     - Payload: `ReturnId`, `OrderId`, `AllocationId`.
     - Published by Inventory when an immediate return is created via `CreateImmediateReturnCommand`.
+  - **`ProcessImmediateReturnIntegrationEvent`**
+    - File: `Returns/Events/ProcessImmediateReturnIntegrationEvent.cs`
+    - Payload: `ReturnId`.
+    - Published by Inventory when an immediate return is approved via `ApproveReturnCommand` and `ReturnApprovedDomainEventHandler`.
+    - Consumed by Inventory via `ProcessImmediateReturnIntegrationEventConsumer` to trigger `ProcessImmediateReturnCommand`.
 
 ---
 
