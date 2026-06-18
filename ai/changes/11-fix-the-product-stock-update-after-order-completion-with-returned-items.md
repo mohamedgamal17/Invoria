@@ -91,7 +91,7 @@ author: ""
 - Removed: `AddReturnItemsEndpoint`, `DispatchOrderEndpoint`, `ShipOrderEndpoint`, `RefuseOrderEndpoint`, `ReopenOrderEndpoint`.
 
 ### Contracts (`Invoria.Ordering.Contracts`)
-- Added: `OrderReturnRequestedIntegrationEvent`, `OrderReturnLineModel`, `OrderRevisionRequestedIntegrationEvent`, `OrderAcceptedIntegrationEvent`, `OrderCompletedDomainEvent` (domain).
+- Added: `OrderReturnRequestedIntegrationEvent`, `OrderReturnLineModel`, `OrderRevisionRequestedIntegrationEvent`, `OrderAcceptedIntegrationEvent`.
 - Reorganized under `Orders/Events`, `Orders/Models`, `Orders/Dtos`, `Orders/Enums` bounded context folders.
 
 ### Testing
