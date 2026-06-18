@@ -173,6 +173,38 @@ author: ""
 
 # Integration and messaging
 
+Flows below mirror [`ai/Architecture.md`](Architecture.md) vocabulary and step order.
+
+## Order completion with returns (Ordering → Inventory)
+
+1. `CompleteOrderCommand` calls `Order.Complete(returnItems)` — records return lines, refreshes payment summary, sets `Completed`, raises **`OrderCompletedDomainEvent`**.
+2. **`OrderCompletedDomainEventHandler`** checks `ReturnItems.Count > 0` and `AllocationId` is set; otherwise no-op.
+3. Publishes **`OrderReturnRequestedIntegrationEvent`** (`OrderId`, `AllocationId`, `Lines`).
+4. **`OrderReturnSaga`** (correlated on `OrderId`, state `Requested`) maps to **`CreateImmediateReturnIntegrationEvent`** and publishes to Inventory.
+5. **`CreateImmediateReturnIntegrationEventConsumer`** → **`CreateImmediateReturnCommand`** → **`ImmediateReturn.Create`** (`Pending`); raises **`ImmediateReturnCreatedDomainEvent`**.
+6. **`ImmediateReturnCreatedDomainEventHandler`** publishes **`ImmediateReturnCreatedIntegrationEvent`** (`ReturnId`, `OrderId`, `AllocationId`).
+7. **`OrderReturnSaga`** (state `Created`) publishes **`RecordOrderReturnSagaActivity`**.
+8. **`RecordOrderReturnSagaActivityHandler`** → **`RecordOrderReturnCommand`** → `Order.RecordReturn(returnId)`.
+
+## Return approval and stock restoration (Inventory)
+
+1. **`ApproveReturnCommandHandler`** — `Returns/Commands/ApproveReturn/`; approves a pending return via `Return.Approve()`.
+2. **`ReturnApprovedDomainEvent`** is dispatched after save.
+3. **`ReturnApprovedDomainEventHandler`** publishes **`ProcessImmediateReturnIntegrationEvent`** (`ReturnId`) when the approved return type is `Immediate`.
+4. **`ProcessImmediateReturnIntegrationEventConsumer`** sends **`ProcessImmediateReturnCommand`** (`ReturnId`).
+5. **`ProcessImmediateReturnCommandHandler`** loads `ImmediateReturn`, `Allocation`, and batches inside **`IInventoryUnitOfWork`** transaction.
+6. **`IReturnDomainService.ProcessImmediateReturn`** restores stock via **`Batch.AddReturn`** (by `BatchAllocation.BatchId` descending), then calls **`Return.Complete()`**.
+
+## Order allocation flow (Ordering ↔ Inventory)
+
+1. Ordering publishes **`OrderAcceptedIntegrationEvent`** when an order is accepted; **`OrderSaga`** publishes **`AllocateOrderIntegrationEvent`**.
+2. Inventory creates `Allocation` (`Pending`) via **`AllocateOrderIntegrationEventConsumer`** → **`CreateAllocateCommand`**.
+3. **`AllocationInitiatedDomainEvent`** → **`AllocationInitiatedDomainEventHandler`** publishes **`RequestAllocationIntegrationEvent`**.
+4. **`RequestAllocationIntegrationEventConsumer`** → **`RequestAllocationCommand`**; handler delegates FIFO reservation to **`IAllocationDomainService.Allocate`** via **`IInventoryUnitOfWork`**.
+5. On success: **`AllocationCompletedDomainEvent`** → **`AllocationSucceededIntegrationEvent`**; Ordering saga records allocation and marks order allocated.
+6. On failure: **`AllocationFailedDomainEvent`** → **`AllocationFailedIntegrationEvent`**; Ordering saga triggers revise flow.
+7. On release: **`ReleaseAllocationIntegrationEvent`** → **`IAllocationDomainService.Release`** → **`AllocationReleasedIntegrationEvent`**.
+
 ```mermaid
 sequenceDiagram
     participant API as CompleteOrder
@@ -215,8 +247,11 @@ sequenceDiagram
 | `ReleaseAllocationIntegrationEvent` | Ordering saga | Inventory |
 
 ## Rebus subscriptions to verify on deploy
-- **Ordering:** saga events + `RecordOrderReturnSagaActivity`, allocation/revision consumers.
-- **Inventory:** `RequestAllocation`, `ReleaseAllocation`, `CreateImmediateReturn`, `ProcessImmediateReturn`, `AllocateOrder`.
+
+Per **`OrderingModuleBootStrapper`** and **`InventoryModuleBootStrapper`**:
+
+- **Ordering:** `OrderCreatedIntegrationEvent`, `OrderAcceptedIntegrationEvent`, `AllocationCreatedIntegrationEvent`, `AllocationFailedIntegrationEvent`, `AllocationSucceededIntegrationEvent`, `AllocationReleasedIntegrationEvent`, `OrderRevisionRequestedIntegrationEvent`, `OrderReturnRequestedIntegrationEvent`, `ImmediateReturnCreatedIntegrationEvent`, saga activities (`RecordOrderAllocationSagaActivity`, `ReviseOrderSagaActivity`, `MarkOrderAllocatedSagaActivity`, `RecordOrderReturnSagaActivity`).
+- **Inventory:** `AllocateOrderIntegrationEvent`, `AllocationCreatedIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, `CreateImmediateReturnIntegrationEvent`, `ProcessImmediateReturnIntegrationEvent`.
 
 # Test plan
 
