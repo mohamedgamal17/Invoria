@@ -1,0 +1,9 @@
+namespace Invoria.Ordering.Domain.Invoices
+{
+    public class InvoiceTableConsts
+    {
+        public const int IdMaxLength = 256;
+        public const int CustomerIdMaxLength = 256;
+        public const int OrderIdMaxLength = 256;
+    }
+}
