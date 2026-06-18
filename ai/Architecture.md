@@ -165,6 +165,13 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - **`OrderAcceptedIntegrationEvent`**
     - File: `Orders/Events/OrderAcceptedIntegrationEvent.cs`
     - Published when an order is accepted (Processing); consumed by **`OrderSaga`** to trigger inventory allocation.
+  - **`OrderReturnRequestedIntegrationEvent`**
+    - File: `Orders/Events/OrderReturnRequestedIntegrationEvent.cs`
+    - Payload: `OrderId`, `AllocationId`, `Lines` (`List<OrderReturnLineModel>`).
+    - Published by **`OrderCompletedDomainEventHandler`** when an order completes with return lines and an `AllocationId`; consumed by **`OrderReturnSaga`** to trigger immediate-return creation in Inventory.
+  - **`OrderRevisionRequestedIntegrationEvent`**
+    - File: `Orders/Events/OrderRevisionRequestedIntegrationEvent.cs`
+    - Published when an allocated processing order requests revision; consumed by **`OrderSaga`** to release allocation and revise the order.
 
 - **Relationships**
   - `Ordering.Contracts` may reference other modules’ contract projects for shared DTO shapes (as configured in `Invoria.Ordering.Contracts.csproj`).
@@ -318,14 +325,6 @@ flowchart LR
 - **Release allocation**
   - **`ReleaseAllocationCommand`** / **`ReleaseAllocationCommandHandler`** — `Allocations/Commands/ReleaseAllocation/`; loads allocation and referenced batches, delegates to **`IAllocationDomainService.Release`**, persists via **`IInventoryUnitOfWork`**.
 
-- **Fulfillment**
-  - **`Fulfillment`** aggregate (`Pending` → `InProgress` → `Completed`); created from an **`Allocated`** allocation.
-  - **`IFulfillmentDomainService`** / **`FulfillmentDomainService`** — `Fulfillments/Services/` in Domain; **`CreateFulfillment`** and **`Dispatch`** (commit reserved batch stock, complete fulfillment).
-  - **`CreateFulfillmentCommand`** — direct MediatR command; creates fulfillment from allocation.
-  - **`RequestDispatchFulfillmentCommand`** — direct MediatR command; moves fulfillment to **`InProgress`**; **`RequestDispatchDomainEventHandler`** publishes **`DispatchFulfillmentIntegrationEvent`**.
-  - **`DispatchFulfillmentCommand`** — system command only (no HTTP endpoint); **`DispatchFulfillmentIntegrationEventConsumer`** handles **`DispatchFulfillmentIntegrationEvent`**; handler loads fulfillment, allocation, and batches, delegates to **`IFulfillmentDomainService.Dispatch`**; **`FulfillmentCompletedDomainEventHandler`** publishes **`FulfillmentCompletedIntegrationEvent`**.
-  - **`Batch.DispatchReservedQuantity`** — commits reserved stock on dispatch (inverse of **`RestoreAllocatedQuantity`**; does not restore available quantity).
-
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
 
@@ -349,7 +348,7 @@ flowchart LR
 - **Bootstrap**
   - **`InventoryModuleBootStrapper`**
     - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
-    - Subscribes to `RequestAllocationIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, `DispatchFulfillmentIntegrationEvent`, and `CreateImmediateReturnIntegrationEvent` for in-process Rebus handlers.
+    - Subscribes to `AllocateOrderIntegrationEvent`, `AllocationCreatedIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, `CreateImmediateReturnIntegrationEvent`, and `ProcessImmediateReturnIntegrationEvent` for in-process Rebus handlers.
 
 - **`InventoryModuleInstaller`**
   - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
@@ -927,7 +926,9 @@ flowchart LR
 
 - **Sagas**
   - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
-  - `OrderSaga` / `OrderSagaState` live in `Ordering.Application/Orders/Sagas/` and orchestrate long-running order ↔ inventory coordination. The saga is **initiated** by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, state moves to `Allocating` and the saga publishes `AllocateOrderIntegrationEvent`. Workflow states are string constants in `OrderSagaProcessState` (`Created`, `Allocating`).
+  - **`OrderSaga`** / **`OrderSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates order ↔ inventory allocation coordination. Initiated by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, publishes `AllocateOrderIntegrationEvent`. Handles `AllocationCreated`, `AllocationSucceeded`, `AllocationFailed`, `AllocationReleased`, and `OrderRevisionRequested` integration events. Workflow states in `OrderSagaProcessState` (`Created`, `RequestAllocation`, `Allocate`, `AllocationFailed`, `AllocationSucceeded`, `RevisionRequested`, `AllocationReleased`).
+  - **`OrderReturnSaga`** / **`OrderReturnSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates immediate-return creation after order completion with return lines. Initiated by `OrderReturnRequestedIntegrationEvent` (correlated on `OrderId`). Publishes `CreateImmediateReturnIntegrationEvent` to Inventory; on `ImmediateReturnCreatedIntegrationEvent`, publishes `RecordOrderReturnSagaActivity` to persist `Order.ReturnId`. Workflow states in `OrderReturnSagaProcessState` (`Requested`, `Created`).
+  - **`OrderCompletedDomainEventHandler`** — publishes `OrderReturnRequestedIntegrationEvent` when `Order.Complete` records return lines and `AllocationId` is set.
 
 - **Cross-module events**
   - Inventory-owned integration events (for example `AllocateOrderIntegrationEvent` in `Invoria.Inventory.Contracts`) are published by Ordering saga handlers and consumed by Inventory when subscriptions and routing match the host setup.
