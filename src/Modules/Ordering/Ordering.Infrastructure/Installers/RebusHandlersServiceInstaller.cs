@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Ordering.Application.Orders.Consumers;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Application.Orders.Sagas;
+using Invoria.Ordering.Application.Orders.Sagas.Activities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Rebus.Handlers;
@@ -11,9 +11,11 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
 {
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
-        services.AddTransient<IHandleMessages<OrderAllocationSucceededIntegrationEvent>, OrderAllocationSucceededIntegrationEventConsumer>();
-        services.AddTransient<IHandleMessages<OrderAllocationFailedIntegrationEvent>, OrderAllocationFailedIntegrationEventConsumer>();
-        services.AddTransient<IHandleMessages<OrderReopenInventoryReleasedIntegrationEvent>, OrderReopenInventoryReleasedIntegrationEventConsumer>();
-        services.AddTransient<IHandleMessages<OrderRefusalInventoryReleasedIntegrationEvent>, OrderRefusalInventoryReleasedIntegrationEventConsumer>();
+        services.AddTransient<OrderSaga>();
+        services.AddTransient<OrderReturnSaga>();
+        services.AddTransient<IHandleMessages<RecordOrderAllocationSagaActivity>, RecordOrderAllocationSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<ReviseOrderSagaActivity>, ReviseOrderSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<MarkOrderAllocatedSagaActivity>, MarkOrderAllocatedSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<RecordOrderReturnSagaActivity>, RecordOrderReturnSagaActivityHandler>();
     }
 }

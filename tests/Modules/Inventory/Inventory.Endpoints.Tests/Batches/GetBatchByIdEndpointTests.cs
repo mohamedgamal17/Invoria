@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 using Invoria.Inventory.Endpoints.Batches.Requests;
 
 namespace Invoria.Inventory.Endpoints.Tests.Batches;

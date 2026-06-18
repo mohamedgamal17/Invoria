@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Reporting.Application.Orders.Consumers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

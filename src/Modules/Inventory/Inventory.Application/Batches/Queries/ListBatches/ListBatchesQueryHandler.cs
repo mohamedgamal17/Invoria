@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Invoria.Inventory.Application.Batches.Factories;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 using Invoria.Inventory.Domain;
 using Invoria.Inventory.Domain.Batches;
 

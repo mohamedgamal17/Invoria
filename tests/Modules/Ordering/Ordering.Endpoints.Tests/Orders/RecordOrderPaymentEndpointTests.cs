@@ -3,9 +3,10 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Domain;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,7 @@ public class RecordOrderPaymentEndpointTests : OrderingTestFixture
     private static decimal SumLines(CreateOrderRequest request) =>
         request.Items.Sum(i => i.Quantity * i.Price);
 
-    /// <summary>HTTP create → accept → allocation succeeded (mediator) → dispatch → complete; returns finalized order.</summary>
+    /// <summary>HTTP create → accept → allocation succeeded (mediator) → dispatch/ship (repository) → complete; returns finalized order.</summary>
     private async Task<OrderDto> CreateAndFullyCompleteOrderAsync(CreateOrderRequest createRequest)
     {
         var createResponse = await Client.PostAsJsonAsync("/orders", createRequest);
@@ -32,16 +33,6 @@ public class RecordOrderPaymentEndpointTests : OrderingTestFixture
 
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
-
-        var mediator = Scope.ServiceProvider.GetRequiredService<IMediator>();
-        await mediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = created.Id,
-            CustomerId = created.CustomerId
-        });
-
-        var dispatchResponse = await Client.PostAsync($"/orders/{created.Id}/dispatch", emptyJson);
-        dispatchResponse.EnsureSuccessStatusCode();
 
         var completeResponse = await Client.PostAsync($"/orders/{created.Id}/complete", emptyJson);
         completeResponse.EnsureSuccessStatusCode();

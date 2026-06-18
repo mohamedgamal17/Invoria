@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Contracts.Orders.Reports;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Orders.OrderPeriodSummary;
@@ -19,7 +19,6 @@ public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryR
             OrderNumber = "o1",
             CustomerId = "c",
             OrderStatus = OrderStatus.Pending,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 10m,
@@ -67,7 +66,6 @@ public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryR
             OrderNumber = "x",
             CustomerId = "c",
             OrderStatus = OrderStatus.Pending,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 1m,
@@ -105,7 +103,6 @@ public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryR
                 OrderNumber = id,
                 CustomerId = "c",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = amountPerOrder,
@@ -146,7 +143,6 @@ public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryR
             OrderNumber = "cancelled",
             CustomerId = "c",
             OrderStatus = OrderStatus.Cancelled,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 5m,
@@ -162,7 +158,6 @@ public sealed class OrderPeriodSummaryRollupRefresherTests : OrderPeriodSummaryR
             OrderNumber = "completed",
             CustomerId = "c",
             OrderStatus = OrderStatus.Completed,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Paid,
             TotalOrderAmount = 8m,

@@ -129,9 +129,6 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("FullfillmentStatus")
-                        .HasColumnType("int");
-
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -167,54 +164,6 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("ReportedOrder", (string)null);
-                });
-
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderFailureDetail", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("ItemId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("QuantityAvailable")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuantityRequested")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReportedOrderId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("Shortage")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.HasIndex("ReportedOrderId");
-
-                    b.ToTable("ReportedOrderFailureDetail", (string)null);
                 });
 
             modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderLine", b =>
@@ -292,45 +241,6 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.ToTable("ReportedOrderPayment", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderStateTransition", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset>("ChangedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("FromFullfillmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FromStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<string>("ReportedOrderId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("ToFullfillmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedAt");
-
-                    b.HasIndex("ReportedOrderId");
-
-                    b.ToTable("ReportedOrderStateTransition", (string)null);
-                });
-
             modelBuilder.Entity("Invoria.Reporting.Domain.Orders.StatusSummary.ReportedOrderStatusByDay", b =>
                 {
                     b.Property<DateOnly>("DayUtc")
@@ -374,17 +284,6 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.HasDiscriminator().HasValue(0);
                 });
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderFailureDetail", b =>
-                {
-                    b.HasOne("Invoria.Reporting.Domain.Orders.ReportedOrder", "ReportedOrder")
-                        .WithMany("FailureDetails")
-                        .HasForeignKey("ReportedOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ReportedOrder");
-                });
-
             modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderLine", b =>
                 {
                     b.HasOne("Invoria.Reporting.Domain.Orders.ReportedOrder", "ReportedOrder")
@@ -407,26 +306,11 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework.Migrations
                     b.Navigation("ReportedOrder");
                 });
 
-            modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrderStateTransition", b =>
-                {
-                    b.HasOne("Invoria.Reporting.Domain.Orders.ReportedOrder", "ReportedOrder")
-                        .WithMany("StateTransitions")
-                        .HasForeignKey("ReportedOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ReportedOrder");
-                });
-
             modelBuilder.Entity("Invoria.Reporting.Domain.Orders.ReportedOrder", b =>
                 {
-                    b.Navigation("FailureDetails");
-
                     b.Navigation("Lines");
 
                     b.Navigation("Payments");
-
-                    b.Navigation("StateTransitions");
                 });
 #pragma warning restore 612, 618
         }

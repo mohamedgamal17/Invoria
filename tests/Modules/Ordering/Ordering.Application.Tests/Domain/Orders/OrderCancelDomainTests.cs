@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Tests.Domain.Orders;
@@ -16,7 +17,7 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_succeeds_when_pending_and_fulfillment_pending()
+    public void Cancel_succeeds_when_pending()
     {
         var order = CreateOrderWithItems("cancel-pending");
 
@@ -26,11 +27,10 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_succeeds_when_accepted_and_fulfillment_on_hold()
+    public void Cancel_succeeds_when_accepted()
     {
-        var order = CreateOrderWithItems("cancel-acc-hold");
+        var order = CreateOrderWithItems("cancel-acc");
         order.Accept();
-        order.FullfillmentStatus = FullfillmentStatus.OnHold;
 
         order.Cancel();
 
@@ -38,11 +38,10 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_succeeds_when_accepted_and_fulfillment_allocated()
+    public void Cancel_succeeds_when_revised()
     {
-        var order = CreateOrderWithItems("cancel-acc-alloc");
-        order.Accept();
-        order.MarkInventoryAllocated();
+        var order = CreateOrderWithItems("cancel-revise");
+        typeof(Order).GetProperty(nameof(Order.Status))!.SetValue(order, OrderStatus.Revision);
 
         order.Cancel();
 
@@ -50,27 +49,11 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_succeeds_when_reopened_and_fulfillment_on_hold()
-    {
-        var order = CreateOrderWithItems("cancel-reopen");
-        order.Accept();
-        order.Reopen();
-        order.CompleteReopenAfterInventoryReleased();
-
-        order.Cancel();
-
-        order.Status.Should().Be(OrderStatus.Cancelled);
-    }
-
-    [Test]
-    public void Cancel_throws_when_completed_even_if_fulfillment_pending()
+    public void Cancel_throws_when_completed()
     {
         var order = CreateOrderWithItems("cancel-bad-status");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-        order.Complete();
+        order.Complete([]);
 
         var act = () => order.Cancel();
 
@@ -78,26 +61,12 @@ public class OrderCancelDomainTests
     }
 
     [Test]
-    public void Cancel_throws_when_accepted_and_fulfillment_allocating()
+    public void Cancel_succeeds_when_processing()
     {
-        var order = CreateOrderWithItems("cancel-allocating");
+        var order = CreateOrderWithItems("cancel-shipped");
         order.Accept();
 
-        var act = () => order.Cancel();
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Test]
-    public void Cancel_throws_when_accepted_and_fulfillment_dispatched()
-    {
-        var order = CreateOrderWithItems("cancel-dispatched");
-        order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-
-        var act = () => order.Cancel();
-
-        act.Should().Throw<InvalidOperationException>();
+        order.Cancel();
+        order.Status.Should().Be(OrderStatus.Cancelled);
     }
 }

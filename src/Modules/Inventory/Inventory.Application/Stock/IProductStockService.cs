@@ -1,4 +1,4 @@
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Stock.Dtos;
 
 namespace Invoria.Inventory.Application.Stock;
 

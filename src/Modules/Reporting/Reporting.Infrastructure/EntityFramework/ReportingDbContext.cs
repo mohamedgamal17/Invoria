@@ -17,10 +17,6 @@ namespace Invoria.Reporting.Infrastructure.EntityFramework
 
         public DbSet<ReportedOrderPayment> ReportedOrderPayments => Set<ReportedOrderPayment>();
 
-        public DbSet<ReportedOrderStateTransition> ReportedOrderStateTransitions => Set<ReportedOrderStateTransition>();
-
-        public DbSet<ReportedOrderFailureDetail> ReportedOrderFailureDetails => Set<ReportedOrderFailureDetail>();
-
         public DbSet<ReportedOrderStatusByDay> ReportedOrderStatusByDays => Set<ReportedOrderStatusByDay>();
 
         public DbSet<OrderPeriodSummary> OrderPeriodSummaries => Set<OrderPeriodSummary>();

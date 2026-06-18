@@ -246,58 +246,6 @@ public class BatchTests
     }
 
     [Test]
-    public void ReleaseReservedForDispatch_reduces_ReservedQuantity_only()
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-r1");
-        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
-
-        batch.ReleaseReservedForDispatch(4);
-
-        batch.Quantity.Should().Be(6);
-        batch.ReservedQuantity.Should().Be(0);
-    }
-
-    [Test]
-    public void ReleaseReservedForDispatch_supports_partial_release()
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-r2");
-        batch.AllocateForOrder("oi-1", 5, DateTimeOffset.UtcNow);
-
-        batch.ReleaseReservedForDispatch(2);
-
-        batch.Quantity.Should().Be(5);
-        batch.ReservedQuantity.Should().Be(3);
-    }
-
-    [Test]
-    public void ReleaseReservedForDispatch_throws_when_amount_exceeds_reserved()
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-r3");
-        batch.AllocateForOrder("oi-1", 3, DateTimeOffset.UtcNow);
-
-        var act = () => batch.ReleaseReservedForDispatch(4);
-
-        act.Should().Throw<InvalidOperationException>();
-    }
-
-    [Test]
-    [TestCase(0)]
-    [TestCase(-1)]
-    public void ReleaseReservedForDispatch_throws_when_amount_not_positive(int amount)
-    {
-        var batch = new Batch("product-1", 10, 10m);
-        SetEntityId(batch, "batch-r4");
-        batch.AllocateForOrder("oi-1", 1, DateTimeOffset.UtcNow);
-
-        var act = () => batch.ReleaseReservedForDispatch(amount);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Test]
     public void RestoreAllocatedQuantity_returns_stock_and_reduces_reserved()
     {
         var batch = new Batch("product-1", 10, 10m);
@@ -349,6 +297,43 @@ public class BatchTests
         var act = () => batch.RestoreAllocatedQuantity(2);
 
         act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Test]
+    public void AddReturn_increases_quantity_via_UpdateQuantity()
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-add-return");
+
+        batch.AddReturn(3);
+
+        batch.Quantity.Should().Be(8);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void AddReturn_reactivates_depleted_batch()
+    {
+        var batch = new Batch("product-1", 4, 10m);
+        SetEntityId(batch, "batch-add-return-depl");
+        batch.AllocateForOrder("oi-1", 4, DateTimeOffset.UtcNow);
+        batch.State.Should().Be(BatchState.Depleted);
+
+        batch.AddReturn(2);
+
+        batch.Quantity.Should().Be(2);
+        batch.State.Should().Be(BatchState.Active);
+    }
+
+    [Test]
+    public void AddReturn_throws_when_amount_is_not_positive()
+    {
+        var batch = new Batch("product-1", 5, 10m);
+        SetEntityId(batch, "batch-add-return-bad");
+
+        var act = () => batch.AddReturn(0);
+
+        act.Should().Throw<ArgumentException>();
     }
 
     private static void SetEntityId(Batch batch, string id)

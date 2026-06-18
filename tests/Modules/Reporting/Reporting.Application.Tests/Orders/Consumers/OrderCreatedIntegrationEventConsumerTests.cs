@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Consumers;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Repositories;
@@ -29,13 +29,12 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
         var message = new OrderCreatedIntegrationEvent
         {
             OccurredOn = occurred,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = "order-1",
                 OrderNumber = "ON-9",
                 CustomerId = "cust-1",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 100m,
@@ -90,7 +89,6 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
             OrderNumber = "ON-9",
             CustomerId = "cust-1",
             OrderStatus = OrderStatus.Pending,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 100m,
@@ -108,13 +106,12 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
         var message = new OrderCreatedIntegrationEvent
         {
             OccurredOn = DateTimeOffset.UtcNow,
-            Order = new OrderIntegrationPayload
+            Order = new OrderModel
             {
                 Id = "order-1",
                 OrderNumber = "ON-9",
                 CustomerId = "cust-1",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 100m,

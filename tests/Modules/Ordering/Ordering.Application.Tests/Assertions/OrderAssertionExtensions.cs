@@ -4,8 +4,8 @@ using Invoria.Catalog.Contracts.Dtos;
 using Invoria.CustomerManagement.Contracts.Dtos;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Orders.Commands.UpdateOrder;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Tests.Assertions
@@ -21,7 +21,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.CustomerId.Should().Be(order.CustomerId);
             dto.Status.Should().Be(order.Status);
-            dto.FullfillmentStatus.Should().Be(order.FullfillmentStatus);
             dto.PaymentType.Should().Be(order.PaymentType);
             dto.AmountPaid.Should().Be(order.AmountPaid);
             dto.AmountOutstanding.Should().Be(order.AmountOutstanding);
@@ -31,8 +30,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.AssertOrderPricing(order);
             dto.ReturnItems.Should().HaveCount(order.ReturnItems.Count);
             dto.Items.Should().HaveCount(order.Items.Count);
-            dto.FailureDetails.Should().HaveCount(order.FailureDetails.Count);
-            dto.StateTransitionHistory.Should().HaveCount(order.StateTransitionHistory.Count);
             foreach (var item in order.Items)
             {
                 var line = dto.Items.Single(i => i.ProductId == item.ProductId);
@@ -49,17 +46,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
                 returnDto.OrderedQuantity.Should().Be(line.Quantity);
                 returnDto.UnitPrice.Should().Be(line.Price);
                 returnDto.LineReturnTotal.Should().Be(line.Price * returnItem.Quantity);
-            }
-
-            for (int i = 0; i < order.StateTransitionHistory.Count; i++)
-            {
-                var expected = order.StateTransitionHistory.ElementAt(i);
-                var actual = dto.StateTransitionHistory[i];
-                actual.FromStatus.Should().Be(expected.FromStatus);
-                actual.ToStatus.Should().Be(expected.ToStatus);
-                actual.FromFullfillmentStatus.Should().Be(expected.FromFullfillmentStatus);
-                actual.ToFullfillmentStatus.Should().Be(expected.ToFullfillmentStatus);
-                actual.Reason.Should().Be(expected.Reason);
             }
 
             var sortedPayments = order.Payments.OrderBy(p => p.PaidAt).ToList();
@@ -88,7 +74,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
             dto.Status.Should().Be(OrderStatus.Pending);
-            dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.PaymentType.Should().Be(command.PaymentType);
             dto.AmountPaid.Should().Be(0);
             dto.Payments.Should().BeEmpty();
@@ -97,8 +82,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
-            dto.FailureDetails.Should().BeEmpty();
-            dto.StateTransitionHistory.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -110,8 +93,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
         {
             dto.Id.Should().Be(command.Id);
             dto.Items.Should().HaveCount(command.Items.Count);
-            dto.FailureDetails.Should().BeEmpty();
-            dto.StateTransitionHistory.Should().BeEmpty();
 
             var lineTotal = SumCreateOrderLines(command.Items);
             dto.AmountOutstanding.Should().Be(lineTotal - dto.AmountPaid);
@@ -132,7 +113,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.OrderNumber.Should().NotBeNullOrWhiteSpace();
             dto.CustomerId.Should().Be(command.CustomerId);
             dto.Status.Should().Be(OrderStatus.Pending);
-            dto.FullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
             dto.PaymentType.Should().Be(command.PaymentType);
             dto.AmountPaid.Should().Be(0);
             dto.Payments.Should().BeEmpty();
@@ -140,8 +120,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.PaymentStatus.Should().Be(OrderPaymentStatus.Unpaid);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.Items.Should().HaveCount(command.Items.Count);
-            dto.FailureDetails.Should().BeEmpty();
-            dto.StateTransitionHistory.Should().BeEmpty();
 
             for (int i = 0; i < command.Items.Count; i++)
             {
@@ -188,9 +166,6 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             page.Data.Count().Should().Be(expectedCount);
         }
 
-        /// <summary>
-        /// Asserts paging info and optionally the number of items in <see cref="PagingDto{T}.Data"/>.
-        /// </summary>
         public static void AssertPagingDto(
             this PagingDto<OrderDto> page,
             int expectedSkip,

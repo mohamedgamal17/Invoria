@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +20,6 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
                 OrderNumber = "a",
                 CustomerId = "c",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 1m,
@@ -36,7 +35,6 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
                 OrderNumber = "b",
                 CustomerId = "c",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 1m,
@@ -51,8 +49,7 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
                 Id = "c",
                 OrderNumber = "c",
                 CustomerId = "c",
-                OrderStatus = OrderStatus.Accepted,
-                FullfillmentStatus = FullfillmentStatus.Pending,
+                OrderStatus = OrderStatus.Processing,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 1m,
@@ -79,7 +76,7 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
             Assert.That(rollup[0].Count, Is.EqualTo(2));
 
             Assert.That(rollup[1].DayUtc, Is.EqualTo(dayOnlyB));
-            Assert.That(rollup[1].OrderStatus, Is.EqualTo(OrderStatus.Accepted));
+            Assert.That(rollup[1].OrderStatus, Is.EqualTo(OrderStatus.Processing));
             Assert.That(rollup[1].Count, Is.EqualTo(1));
         });
     }
@@ -94,7 +91,6 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
             OrderNumber = "x",
             CustomerId = "c",
             OrderStatus = OrderStatus.Pending,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 1m,
@@ -131,7 +127,6 @@ public sealed class ReportedOrderStatusSummaryRollupRefresherTests : ReportedOrd
                 OrderNumber = id,
                 CustomerId = "c",
                 OrderStatus = OrderStatus.Pending,
-                FullfillmentStatus = FullfillmentStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
                 TotalOrderAmount = 1m,

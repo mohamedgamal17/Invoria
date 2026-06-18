@@ -1,5 +1,6 @@
 using Invoria.Inventory.Application.Batches.Commands.ReleaseOrderAllocations;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Contracts.Orders.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Rebus.Bus;

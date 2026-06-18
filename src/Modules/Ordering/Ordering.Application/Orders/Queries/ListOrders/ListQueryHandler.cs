@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Invoria.Ordering.Application.Orders.Factories;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
@@ -54,11 +54,6 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
         if (request.Status.HasValue)
         {
             query = query.Where(o => o.Status == request.Status.Value);
-        }
-
-        if (request.FullfillmentStatus.HasValue)
-        {
-            query = query.Where(o => o.FullfillmentStatus == request.FullfillmentStatus.Value);
         }
 
         query = query.OrderByDescending(o => o.Id);

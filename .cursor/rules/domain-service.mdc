@@ -1,0 +1,43 @@
+---
+description: Domain service pattern for all Invoria modules (cross-aggregate logic, handlers, DI, tests)
+alwaysApply: true
+---
+
+# Domain Service (all modules)
+
+Use domain services when logic spans multiple aggregates or does not belong on a single entity. Domain stays isolated from API, EF, MediatR, and module Contracts.
+
+## Building blocks
+
+- Marker: `IDomainService` in `Invoria.BuildingBlocks.Domain/Services/`.
+- Module contract: `I{Name}DomainService : IDomainService` in `{Module}.Domain/.../Services/`.
+- Implementation: `{Name}DomainService` in the same Domain folder (stateless; prefer instance methods over `static` helpers).
+
+## Application command handlers
+
+Handlers orchestrate only:
+
+1. Transaction via module `IUnitOfWork`
+2. Load aggregates (e.g. `IRepository.Single`; use EF `AutoInclude` in Infrastructure configs instead of handler `.Include` when navigations are always needed)
+3. Load any additional data the domain service needs (e.g. batches dictionary keyed by product or batch id)
+4. Call `I{Name}DomainService` method(s)
+5. `SaveChanges` and commit
+
+Do **not** put FIFO, release/restore, or other cross-aggregate algorithms in handlers.
+
+## Infrastructure
+
+- Register module domain services in `{Module}.Infrastructure/Installers/DomainServiceInstaller.cs` (`IServiceInstaller`), not in `ApplicationServceInstaller`.
+- Use `AddTransient<I{Name}DomainService, {Name}DomainService>()`.
+
+## Tests
+
+- **Domain** (`*.Domain.Tests` or `Domain/` under application tests): cover algorithm paths (FIFO, partial failure, idempotency, rollback).
+- **Handler integration**: black-box only—typically one happy path and one sad path on persisted aggregate outcome; do not assert batch quantities, FIFO order, or per-line allocation details (those belong in domain tests).
+
+## Example (Inventory)
+
+- `IAllocationDomainService.Allocate` / `Release` in `Inventory.Domain/Allocations/Services/`
+- `RequestAllocationCommandHandler` / `ReleaseAllocationCommandHandler` load and persist; `AllocationDomainService` owns reservation and release rules.
+
+Update `ai/Architecture.md` when introducing a new domain service in a module.

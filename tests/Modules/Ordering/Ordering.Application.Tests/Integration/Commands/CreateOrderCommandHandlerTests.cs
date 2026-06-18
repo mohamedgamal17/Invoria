@@ -1,8 +1,8 @@
 using Invoria.Application.Tests.Extensions;
 using Invoria.Ordering.Application.Orders.Commands.CreateOrder;
 using Invoria.Ordering.Application.Tests.Assertions;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Rebus.Bus;
@@ -67,7 +67,6 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands
                         e.Order.OrderNumber == result.Value.OrderNumber &&
                         e.Order.CustomerId == result.Value.CustomerId &&
                         e.Order.OrderStatus == result.Value.Status &&
-                        e.Order.FullfillmentStatus == result.Value.FullfillmentStatus &&
                         e.Order.PaymentType == result.Value.PaymentType &&
                         e.Order.PaymentStatus == result.Value.PaymentStatus &&
                         e.Order.TotalOrderAmount == expectedTotal &&
@@ -76,18 +75,6 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands
                         e.Order.Lines.Count == result.Value.Items.Count),
                     It.IsAny<Dictionary<string, string>>()),
                 Times.Once);
-        }
-
-        [Test]
-        public async Task Should_fail_when_items_is_empty()
-        {
-            var command = new CreateOrderCommand(
-                Guid.NewGuid().ToString(),
-                new List<CreateOrderItemCommand>());
-
-            var result = await Mediator.Send(command);
-
-            result.ShouldBeFailure(typeof(InvalidOperationException));
         }
     }
 }

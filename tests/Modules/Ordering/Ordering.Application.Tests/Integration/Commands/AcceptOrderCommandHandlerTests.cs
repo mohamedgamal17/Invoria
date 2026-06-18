@@ -2,7 +2,8 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -66,62 +67,52 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
             .SingleAsync();
     }
 
-    private static async Task SetFullfillmentStatusAsync(
-        IServiceProvider serviceProvider,
-        string orderId,
-        FullfillmentStatus fullfillmentStatus)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        var rows = await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .ExecuteUpdateAsync(s => s.SetProperty(o => o.FullfillmentStatus, fullfillmentStatus));
-
-        rows.Should().Be(1, $"order id {orderId} should exist for fulfillment update");
-    }
-
-    private static async Task<FullfillmentStatus> GetFullfillmentStatusFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
-    {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
-        return await db.Set<Order>()
-            .Where(o => o.Id == orderId)
-            .Select(o => o.FullfillmentStatus)
-            .SingleAsync();
-    }
-
     private static async Task<Order> LoadOrderWithItemsAsync(IServiceProvider serviceProvider, string orderId)
     {
         await using var scope = serviceProvider.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
         return await db.Set<Order>()
             .Include(o => o.Items)
+            .Include(o => o.Payments)
             .SingleAsync(o => o.Id == orderId);
     }
 
-    private static bool MatchesAllocateEvent(AllocateOrderIntegrationEvent e, Order expected)
+    private static bool MatchesOrderAcceptedEvent(OrderAcceptedIntegrationEvent e, Order expected)
     {
-        if (e.Id != expected.Id || e.OrderNumber != expected.OrderNumber || e.CustomerId != expected.CustomerId)
+        if (e.Order.Id != expected.Id ||
+            e.Order.OrderNumber != expected.OrderNumber ||
+            e.Order.CustomerId != expected.CustomerId)
         {
             return false;
         }
 
-        if (e.Items.Count != expected.Items.Count)
+        if (e.Order.OrderStatus != OrderStatus.Processing ||
+            e.Order.PaymentType != expected.PaymentType ||
+            e.Order.PaymentStatus != expected.PaymentStatus ||
+            e.Order.TotalOrderAmount != expected.TotalOrderAmount ||
+            e.Order.AmountPaid != expected.AmountPaid ||
+            e.Order.AmountOutstanding != expected.AmountOutstanding)
+        {
+            return false;
+        }
+
+        if (e.Order.Lines.Count != expected.Items.Count)
         {
             return false;
         }
 
         var byItemId = expected.Items.ToDictionary(i => i.Id);
-        foreach (var item in e.Items)
+        foreach (var line in e.Order.Lines)
         {
-            if (!byItemId.TryGetValue(item.Id, out var line))
+            if (!byItemId.TryGetValue(line.Id, out var item))
             {
                 return false;
             }
 
-            if (line.ProductId != item.ProductId || line.Quantity != item.Quantity)
+            if (line.ProductId != item.ProductId ||
+                line.Quantity != item.Quantity ||
+                line.UnitPrice != item.Price ||
+                line.LineTotal != item.Price * item.Quantity)
             {
                 return false;
             }
@@ -145,24 +136,21 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         result.Value!.Id.Should().Be(order.Id);
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Accepted);
-
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocating);
+        status.Should().Be(OrderStatus.Processing);
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
-                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.Is<OrderAcceptedIntegrationEvent>(e => MatchesOrderAcceptedEvent(e, expectedSnapshot)),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
 
     [Test]
-    public async Task Should_accept_order_when_reopened()
+    public async Task Should_accept_order_when_revision()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Reopened);
+        await SetOrderStatusAsync(ServiceProvider, order.Id, OrderStatus.Revision);
         var expectedSnapshot = await LoadOrderWithItemsAsync(ServiceProvider, order.Id);
 
         var command = new AcceptOrderCommand(order.Id);
@@ -173,37 +161,32 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         result.Value.Should().NotBeNull();
 
         var status = await GetOrderStatusFromDbAsync(ServiceProvider, order.Id);
-        status.Should().Be(OrderStatus.Accepted);
-
-        var fulfillment = await GetFullfillmentStatusFromDbAsync(ServiceProvider, order.Id);
-        fulfillment.Should().Be(FullfillmentStatus.Allocating);
+        status.Should().Be(OrderStatus.Processing);
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
             b => b.Publish(
-                It.Is<AllocateOrderIntegrationEvent>(e => MatchesAllocateEvent(e, expectedSnapshot)),
+                It.Is<OrderAcceptedIntegrationEvent>(e => MatchesOrderAcceptedEvent(e, expectedSnapshot)),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
 
     [Test]
-    public async Task Should_fail_when_fullfillment_is_not_pending()
+    public async Task Should_fail_when_already_processing()
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetFullfillmentStatusAsync(ServiceProvider, order.Id, FullfillmentStatus.Allocating);
+        await Mediator.Send(new AcceptOrderCommand(order.Id));
 
-        var command = new AcceptOrderCommand(order.Id);
-
-        var result = await Mediator.Send(command);
+        var result = await Mediator.Send(new AcceptOrderCommand(order.Id));
 
         result.ShouldBeFailure(typeof(BusinessLogicException));
     }
 
     [Test]
-    [TestCase(OrderStatus.Accepted)]
+    [TestCase(OrderStatus.Processing)]
     [TestCase(OrderStatus.Completed)]
     [TestCase(OrderStatus.Cancelled)]
-    public async Task Should_fail_when_order_is_not_pending_or_reopened(OrderStatus status)
+    public async Task Should_fail_when_order_is_not_pending_or_revision(OrderStatus status)
     {
         var order = await PersistOneRandomOrderInNewScopeAsync();
         await SetOrderStatusAsync(ServiceProvider, order.Id, status);

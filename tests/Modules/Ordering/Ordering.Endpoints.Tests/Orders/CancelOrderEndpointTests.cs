@@ -3,10 +3,12 @@ using System.Net.Http.Json;
 using System.Text;
 using FluentAssertions;
 using Invoria.BuildingBlocks.Infrastructure.Common;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Endpoints.Orders.Requests;
+using MediatR;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,7 +53,7 @@ public class CancelOrderEndpointTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task Should_cancel_order_when_reopened()
+    public async Task Should_cancel_order_when_revision()
     {
         var productId = Guid.NewGuid().ToString();
         var customerId = Guid.NewGuid().ToString();
@@ -72,21 +74,14 @@ public class CancelOrderEndpointTests : OrderingTestFixture
         var created = createEnvelope!.Result!;
         created.Id.Should().NotBeNullOrEmpty();
 
-        // Accept via HTTP leaves fulfillment Allocating; Reopen then moves to Releasing, which is not cancellable.
-        // Seed Accepted + Pending so Reopen transitions immediately to Reopened with OnHold (same as ReopenOrderCommandHandlerTests).
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
             var rows = await db.Set<Order>()
                 .Where(o => o.Id == created.Id)
-                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Accepted));
+                .ExecuteUpdateAsync(s => s.SetProperty(o => o.Status, OrderStatus.Revision));
             rows.Should().Be(1);
         }
-
-        var reopenResponse = await Client.PostAsync(
-            $"/orders/{created.Id}/reopen",
-            new StringContent("{}", Encoding.UTF8, "application/json"));
-        reopenResponse.IsSuccessStatusCode.Should().BeTrue();
 
         var cancelResponse = await Client.PostAsync(
             $"/orders/{created.Id}/cancel",
@@ -120,6 +115,11 @@ public class CancelOrderEndpointTests : OrderingTestFixture
         var emptyJson = new StringContent("{}", Encoding.UTF8, "application/json");
         var acceptResponse = await Client.PostAsync($"/orders/{created.Id}/accept", emptyJson);
         acceptResponse.EnsureSuccessStatusCode();
+
+        var completeResponse = await Client.PostAsync(
+            $"/orders/{created.Id}/complete",
+            new StringContent("{}", Encoding.UTF8, "application/json"));
+        completeResponse.EnsureSuccessStatusCode();
 
         var cancelResponse = await Client.PostAsync(
             $"/orders/{created.Id}/cancel",

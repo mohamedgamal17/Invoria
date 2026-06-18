@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Materialization.DebtSummary;
 using Invoria.Reporting.Application.Orders.Materialization.OrderPeriodSummary;
 using Invoria.Reporting.Application.Orders.Materialization.StatusSummary;
@@ -39,7 +39,6 @@ public abstract class ReportingOrdersEndpointTestFixture : ReportingTestFixture
             OrderNumber = id,
             CustomerId = customerId,
             OrderStatus = orderStatus,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = paymentType,
             PaymentStatus = paymentStatus,
             TotalOrderAmount = totalOrderAmount,
@@ -48,8 +47,7 @@ public abstract class ReportingOrdersEndpointTestFixture : ReportingTestFixture
             ReplicationVersion = 1,
             SourceLastKnownAt = createdAt,
             CreatedAt = createdAt,
-            Lines = new List<ReportedOrderLine>(),
-            StateTransitions = new List<ReportedOrderStateTransition>()
+            Lines = new List<ReportedOrderLine>()
         };
 
     protected async Task RefreshReportingRollupsAsync(CancellationToken cancellationToken = default)

@@ -22,6 +22,142 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.Allocation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Allocations", (string)null);
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.AllocationLine", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("AllocationId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OrderItemId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ProductId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("QuantityRequested")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllocationId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.ToTable("AllocationLines", (string)null);
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.BatchAllocation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("AllocatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("AllocationLineId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("BatchId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OrderItemId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("QuantityAllocated")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AllocationLineId");
+
+                    b.HasIndex("BatchId");
+
+                    b.HasIndex("OrderItemId");
+
+                    b.ToTable("BatchAllocations", (string)null);
+                });
+
             modelBuilder.Entity("Invoria.Inventory.Domain.Batches.Batch", b =>
                 {
                     b.Property<string>("Id")
@@ -69,17 +205,44 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Migrations
                     b.ToTable("Batches", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Inventory.Domain.Batches.BatchAllocation", b =>
+            modelBuilder.Entity("Invoria.Inventory.Domain.Returns.Return", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset>("AllocatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("BatchId")
-                        .IsRequired()
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Returns", (string)null);
+
+                    b.HasDiscriminator<int>("Type");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Returns.ReturnLine", b =>
+                {
+                    b.Property<string>("Id")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -102,41 +265,94 @@ namespace Invoria.Inventory.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("QuantityAllocated")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BatchId");
-
-                    b.HasIndex("OrderItemId");
-
-                    b.ToTable("BatchAllocations", (string)null);
-                });
-
-            modelBuilder.Entity("Invoria.Inventory.Domain.Batches.OrderDispatchProcessed", b =>
-                {
-                    b.Property<string>("Id")
+                    b.Property<string>("ProductId")
+                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTimeOffset>("ProcessedAt")
-                        .HasColumnType("datetimeoffset");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReturnId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("OrderDispatchProcessed", (string)null);
+                    b.HasIndex("OrderItemId");
+
+                    b.HasIndex("ReturnId");
+
+                    b.ToTable("ReturnLines", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Inventory.Domain.Batches.BatchAllocation", b =>
+            modelBuilder.Entity("Invoria.Inventory.Domain.Returns.ImmediateReturn", b =>
                 {
-                    b.HasOne("Invoria.Inventory.Domain.Batches.Batch", "Batch")
+                    b.HasBaseType("Invoria.Inventory.Domain.Returns.Return");
+
+                    b.Property<string>("AllocationId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("OrderId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasIndex("AllocationId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasDiscriminator().HasValue(0);
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.AllocationLine", b =>
+                {
+                    b.HasOne("Invoria.Inventory.Domain.Allocations.Allocation", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("AllocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.BatchAllocation", b =>
+                {
+                    b.HasOne("Invoria.Inventory.Domain.Allocations.AllocationLine", null)
+                        .WithMany("BatchAllocations")
+                        .HasForeignKey("AllocationLineId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Invoria.Inventory.Domain.Batches.Batch", null)
                         .WithMany()
                         .HasForeignKey("BatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
 
-                    b.Navigation("Batch");
+            modelBuilder.Entity("Invoria.Inventory.Domain.Returns.ReturnLine", b =>
+                {
+                    b.HasOne("Invoria.Inventory.Domain.Returns.Return", null)
+                        .WithMany("ReturnLines")
+                        .HasForeignKey("ReturnId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.Allocation", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Allocations.AllocationLine", b =>
+                {
+                    b.Navigation("BatchAllocations");
+                });
+
+            modelBuilder.Entity("Invoria.Inventory.Domain.Returns.Return", b =>
+                {
+                    b.Navigation("ReturnLines");
                 });
 #pragma warning restore 612, 618
         }

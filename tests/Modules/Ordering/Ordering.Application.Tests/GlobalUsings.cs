@@ -1,2 +1,2 @@
 global using Invoria.Ordering.Application.Tests;
-global using Invoria.Ordering.Contracts.Orders;
+global using Invoria.Ordering.Contracts.Orders.Enums;

@@ -1,4 +1,4 @@
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Stock.Dtos;
 using Invoria.Inventory.Domain;
 using Invoria.Inventory.Domain.Batches;
 using Microsoft.EntityFrameworkCore;

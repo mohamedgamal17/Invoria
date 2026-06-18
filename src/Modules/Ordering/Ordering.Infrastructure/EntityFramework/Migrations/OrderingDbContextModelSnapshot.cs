@@ -28,6 +28,10 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("AllocationId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<decimal>("AmountOutstanding")
                         .HasColumnType("decimal(18,2)");
 
@@ -46,17 +50,15 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<int>("FullfillmentStatus")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(5);
-
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("LastModifiedBy")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("OrderAllocated")
+                        .HasColumnType("bit");
 
                     b.Property<string>("OrderNumber")
                         .IsRequired()
@@ -69,6 +71,10 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.Property<int>("PaymentType")
                         .HasColumnType("int");
 
+                    b.Property<string>("ReturnId")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -77,53 +83,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("Order");
-                });
-
-            modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderFailureDetails", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("ItemId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset?>("LastModifiedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("LastModifiedBy")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("OrderId")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<int>("QuantityAvailable")
-                        .HasColumnType("int");
-
-                    b.Property<int>("QuantityRequested")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Shortage")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderFailureDetails");
                 });
 
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderItem", b =>
@@ -215,45 +174,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.ToTable("OrderReturnItems", (string)null);
                 });
 
-            modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderStateTransitionHistory", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<DateTimeOffset>("ChangedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("FromFullfillmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("FromStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OrderId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("Reason")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<int>("ToFullfillmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ToStatus")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangedAt");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("OrderStateTransitionHistory");
-                });
-
             modelBuilder.Entity("Invoria.Ordering.Infrastructure.EntityFramework.DailyCounter", b =>
                 {
                     b.Property<DateOnly>("Date")
@@ -265,14 +185,6 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                     b.HasKey("Date");
 
                     b.ToTable("DailyCounters", (string)null);
-                });
-
-            modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderFailureDetails", b =>
-                {
-                    b.HasOne("Invoria.Ordering.Domain.Orders.Order", null)
-                        .WithMany("FailureDetails")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderItem", b =>
@@ -303,24 +215,11 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Invoria.Ordering.Domain.Orders.OrderStateTransitionHistory", b =>
-                {
-                    b.HasOne("Invoria.Ordering.Domain.Orders.Order", null)
-                        .WithMany("StateTransitionHistory")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Invoria.Ordering.Domain.Orders.Order", b =>
                 {
-                    b.Navigation("FailureDetails");
-
                     b.Navigation("Items");
 
                     b.Navigation("Payments");
-
-                    b.Navigation("StateTransitionHistory");
 
                     b.Navigation("ReturnItems");
                 });

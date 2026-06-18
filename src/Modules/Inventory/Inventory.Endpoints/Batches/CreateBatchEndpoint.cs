@@ -4,7 +4,7 @@ using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
 using Microsoft.AspNetCore.Http;
 using Invoria.Inventory.Application.Batches.Commands.CreateBatch;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 using Invoria.Inventory.Endpoints.Batches.Requests;
 using MediatR;
 

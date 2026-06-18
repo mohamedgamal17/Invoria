@@ -1,7 +1,7 @@
 using FastEndpoints;
 using FluentValidation;
 using Invoria.BuildingBlocks.Application.Requests;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Ordering.Endpoints.Orders.Requests;
 
@@ -29,9 +29,6 @@ public class ListOrdersRequest : PagingParams
 
     [QueryParam]
     public OrderStatus? Status { get; set; }
-
-    [QueryParam]
-    public FullfillmentStatus? FullfillmentStatus { get; set; }
 }
 
 public class ListOrdersRequestValidator : AbstractValidator<ListOrdersRequest>

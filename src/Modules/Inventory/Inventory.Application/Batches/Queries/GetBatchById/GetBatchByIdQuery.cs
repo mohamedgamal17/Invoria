@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Batches.Dtos;
 
 namespace Invoria.Inventory.Application.Batches.Queries.GetBatchById;
 

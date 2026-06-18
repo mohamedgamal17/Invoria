@@ -2,6 +2,7 @@ using FluentAssertions;
 using Invoria.Inventory.Application.Stock;
 using Invoria.Inventory.Application.Tests.Batches;
 using Invoria.Inventory.Domain;
+using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;

@@ -2,8 +2,8 @@ using System.Reflection;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.Domain.Events;
 using Invoria.Ordering.Application.Orders.Handlers;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
 using Moq;
 using Rebus.Bus;
@@ -48,7 +48,6 @@ public sealed class OrderEntityUpdatedDomainEventHandlerTests
                     e.Order.OrderNumber == "ON-1" &&
                     e.Order.CustomerId == "c1" &&
                     e.Order.OrderStatus == OrderStatus.Pending &&
-                    e.Order.FullfillmentStatus == FullfillmentStatus.Pending &&
                     e.Order.PaymentType == OrderPaymentType.Debt &&
                     e.Order.PaymentStatus == OrderPaymentStatus.Unpaid &&
                     e.Order.TotalOrderAmount == 100m &&

@@ -1,6 +1,7 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Inventory.Domain;
+using Invoria.Inventory.Domain.Allocations;
 using Invoria.Inventory.Domain.Batches;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,18 +37,21 @@ public sealed class ReleaseOrderAllocationsCommandHandler
         }
 
         var allocations = await _allocationRepository.AsQuerable()
-            .Include(a => a.Batch)
             .Where(a => orderItemIds.Contains(a.OrderItemId))
             .ToListAsync(cancellationToken);
+
+        if (allocations.Count == 0)
+        {
+            return Result.Success(Empty.Value);
+        }
+
+        var batchesById = await LoadBatchesByIdAsync(allocations, cancellationToken);
 
         try
         {
             foreach (var allocation in allocations)
             {
-                var batch = allocation.Batch
-                    ?? throw new InvalidOperationException(
-                        $"Batch was not loaded for allocation {allocation.Id}.");
-
+                var batch = batchesById[allocation.BatchId];
                 batch.RestoreAllocatedQuantity(allocation.QuantityAllocated);
                 await _batchRepository.Update(batch, cancellationToken);
                 await _allocationRepository.Delete(allocation, cancellationToken);
@@ -60,5 +64,18 @@ public sealed class ReleaseOrderAllocationsCommandHandler
             return Result.Failure<Empty>(
                 new InvalidOperationException($"Release order allocations failed: {ex.Message}", ex));
         }
+    }
+
+    private async Task<Dictionary<string, Batch>> LoadBatchesByIdAsync(
+        IReadOnlyList<BatchAllocation> allocations,
+        CancellationToken cancellationToken)
+    {
+        var batchIds = allocations.Select(a => a.BatchId).Distinct().ToList();
+
+        var batches = await _batchRepository.AsQuerable()
+            .Where(b => batchIds.Contains(b.Id))
+            .ToListAsync(cancellationToken);
+
+        return batches.ToDictionary(b => b.Id!);
     }
 }

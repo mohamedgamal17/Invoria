@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Reporting.Domain.Orders.StatusSummary;
 

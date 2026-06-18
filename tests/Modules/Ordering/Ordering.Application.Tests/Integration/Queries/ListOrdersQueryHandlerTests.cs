@@ -3,13 +3,10 @@ using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
-using Invoria.Ordering.Application.Orders.Commands.AddReturnItems;
-using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
-using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
+using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
 using Invoria.Ordering.Application.Tests.Assertions;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -44,27 +41,17 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     private static void CompleteOrder(Order order)
     {
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-        order.Complete();
+        order.Complete([]);
     }
 
-    private async Task<string> PrepareShippedOrderWithReturnAsync(Order order)
+    private async Task<string> PrepareCompletedOrderWithReturnAsync(Order order)
     {
         await TestMediator.Send(new AcceptOrderCommand(order.Id));
-        await TestMediator.Send(new RecordOrderAllocationSucceededCommand
-        {
-            OrderId = order.Id,
-            CustomerId = order.CustomerId
-        });
-        await TestMediator.Send(new DispatchOrderCommand(order.Id));
-        await TestMediator.Send(new ShipOrderCommand(order.Id));
 
         var lineId = await GetFirstOrderLineIdAsync(Scope.Resolve<OrderingDbContext>(), order.Id);
-        var recordResult = await TestMediator.Send(
-            new AddReturnItemsCommand(order.Id, [new AddReturnItemLine(lineId, 1)]));
-        recordResult.ShouldBeSuccess();
+        var completeResult = await TestMediator.Send(
+            new CompleteOrderCommand(order.Id, [new CompleteReturnItemLine(lineId, 1)]));
+        completeResult.ShouldBeSuccess();
 
         return lineId;
     }
@@ -125,7 +112,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     {
         var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
         var order = persisted.Single();
-        await PrepareShippedOrderWithReturnAsync(order);
+        await PrepareCompletedOrderWithReturnAsync(order);
 
         var query = new ListOrdersQuery
         {
@@ -150,7 +137,7 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     {
         var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1);
         var order = persisted.Single();
-        var lineId = await PrepareShippedOrderWithReturnAsync(order);
+        var lineId = await PrepareCompletedOrderWithReturnAsync(order);
 
         var query = new ListOrdersQuery
         {
@@ -433,34 +420,6 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_return_failure_details_when_include_order_items_is_true()
-    {
-        var customerId = Guid.NewGuid().ToString();
-        var order = new Order("FAIL-001", customerId);
-        var item = new OrderItem(Guid.NewGuid().ToString(), 4, 10m);
-        order.UpdateItems([item]);
-        order.Accept();
-        order.CancelDueToAllocationFailure("Insufficient stock");
-        order.ReplaceFailureDetails(
-        [
-            new OrderFailureDetails(item.ProductId, 7, 4, 3)
-        ]);
-        await OrderRepository.Add(order, CancellationToken.None);
-
-        var query = new ListOrdersQuery { Skip = 0, Length = 10, IncludeOrderItems = true };
-
-        var result = await TestMediator.Send(query);
-
-        result.ShouldBeSuccess();
-        var dto = result.Value!.Data.Single(d => d.Id == order.Id);
-        dto.FailureDetails.Should().HaveCount(1);
-        dto.FailureDetails[0].ItemId.Should().Be(item.ProductId);
-        dto.FailureDetails[0].QuantityRequested.Should().Be(7);
-        dto.FailureDetails[0].QuantityAvailable.Should().Be(4);
-        dto.FailureDetails[0].Shortage.Should().Be(3);
-    }
-
-    [Test]
     public async Task Should_filter_by_order_status()
     {
         var customerId = Guid.NewGuid().ToString();
@@ -487,35 +446,6 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         var page = result.Value!;
         page.Data.Should().ContainSingle(x => x.Id == pendingOrder.Id);
         page.Data.Should().OnlyContain(x => x.Status == OrderStatus.Pending);
-    }
-
-    [Test]
-    public async Task Should_filter_by_fullfillment_status()
-    {
-        var customerId = Guid.NewGuid().ToString();
-
-        var pendingFulfillmentOrder = new Order("FULFILL-PENDING", customerId);
-        pendingFulfillmentOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 10m)]);
-        await OrderRepository.Add(pendingFulfillmentOrder, CancellationToken.None);
-
-        var allocatingOrder = new Order("FULFILL-ALLOCATING", customerId);
-        allocatingOrder.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 1, 20m)]);
-        allocatingOrder.Accept();
-        await OrderRepository.Add(allocatingOrder, CancellationToken.None);
-
-        var query = new ListOrdersQuery
-        {
-            Skip = 0,
-            Length = 10,
-            FullfillmentStatus = FullfillmentStatus.Pending
-        };
-
-        var result = await TestMediator.Send(query);
-
-        result.ShouldBeSuccess();
-        var page = result.Value!;
-        page.Data.Should().ContainSingle(x => x.Id == pendingFulfillmentOrder.Id);
-        page.Data.Should().OnlyContain(x => x.FullfillmentStatus == FullfillmentStatus.Pending);
     }
 
     [Test]

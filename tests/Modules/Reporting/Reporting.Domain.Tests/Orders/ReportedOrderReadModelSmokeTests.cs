@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Domain.Orders;
 
 namespace Invoria.Reporting.Domain.Tests.Orders;
@@ -16,7 +16,6 @@ public sealed class ReportedOrderReadModelSmokeTests
             OrderNumber = "ON-9",
             CustomerId = "cust-1",
             OrderStatus = OrderStatus.Completed,
-            FullfillmentStatus = FullfillmentStatus.Dispatched,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Partial,
             TotalOrderAmount = 100m,

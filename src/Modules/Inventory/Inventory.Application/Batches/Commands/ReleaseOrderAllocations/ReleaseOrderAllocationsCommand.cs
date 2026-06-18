@@ -1,7 +1,7 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 
 namespace Invoria.Inventory.Application.Batches.Commands.ReleaseOrderAllocations;
 

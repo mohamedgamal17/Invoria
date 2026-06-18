@@ -1,5 +1,5 @@
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Reporting.Domain.Orders;
 
@@ -12,7 +12,6 @@ public class ReportedOrder : IBaseEntity
     public string OrderNumber { get; set; } = null!;
     public string CustomerId { get; set; } = null!;
     public OrderStatus OrderStatus { get; set; }
-    public FullfillmentStatus FullfillmentStatus { get; set; }
     public OrderPaymentType PaymentType { get; set; }
     public OrderPaymentStatus PaymentStatus { get; set; }
     public decimal TotalOrderAmount { get; set; }
@@ -28,6 +27,4 @@ public class ReportedOrder : IBaseEntity
 
     public List<ReportedOrderLine> Lines { get; set; } = new();
     public List<ReportedOrderPayment> Payments { get; set; } = new();
-    public List<ReportedOrderStateTransition> StateTransitions { get; set; } = new();
-    public List<ReportedOrderFailureDetail> FailureDetails { get; set; } = new();
 }

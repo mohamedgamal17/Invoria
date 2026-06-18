@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Queries.GetOrderStatusSummary;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Orders.StatusSummary;
@@ -21,7 +21,6 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
             OrderNumber = id,
             CustomerId = "c1",
             OrderStatus = status,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
             TotalOrderAmount = 1m,

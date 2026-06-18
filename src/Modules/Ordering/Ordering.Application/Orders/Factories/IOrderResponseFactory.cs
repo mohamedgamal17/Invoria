@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Application.Factories;
 using Invoria.BuildingBlocks.Domain.Dtos;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Domain.Orders;
 
 namespace Invoria.Ordering.Application.Orders.Factories

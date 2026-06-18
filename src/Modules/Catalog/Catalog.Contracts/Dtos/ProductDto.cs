@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Entities;
-using Invoria.Inventory.Contracts.Dtos;
+using Invoria.Inventory.Contracts.Stock.Dtos;
 
 namespace Invoria.Catalog.Contracts.Dtos
 {

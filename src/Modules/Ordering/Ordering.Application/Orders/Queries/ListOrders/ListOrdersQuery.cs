@@ -1,8 +1,8 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Application.Requests;
 using Invoria.BuildingBlocks.Domain.Dtos;
-using Invoria.Ordering.Contracts.Dtos;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
 
 namespace Invoria.Ordering.Application.Orders.Queries.ListOrders;
 
@@ -44,9 +44,4 @@ public class ListOrdersQuery : PagingParams, IQuery<PagingDto<OrderDto>>
     /// When set, only orders in this lifecycle status are returned.
     /// </summary>
     public OrderStatus? Status { get; set; }
-
-    /// <summary>
-    /// When set, only orders matching this fulfillment status are returned.
-    /// </summary>
-    public FullfillmentStatus? FullfillmentStatus { get; set; }
 }

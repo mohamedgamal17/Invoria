@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Repositories;
 using Microsoft.Extensions.Logging;
@@ -42,7 +42,6 @@ public sealed class OrderUpdatedIntegrationEventConsumer : IHandleMessages<Order
             existing.OrderNumber = order.OrderNumber;
             existing.CustomerId = order.CustomerId;
             existing.OrderStatus = order.OrderStatus;
-            existing.FullfillmentStatus = order.FullfillmentStatus;
             existing.PaymentType = order.PaymentType;
             existing.PaymentStatus = order.PaymentStatus;
             existing.TotalOrderAmount = order.TotalOrderAmount;
@@ -77,7 +76,6 @@ public sealed class OrderUpdatedIntegrationEventConsumer : IHandleMessages<Order
             OrderNumber = order.OrderNumber,
             CustomerId = order.CustomerId,
             OrderStatus = order.OrderStatus,
-            FullfillmentStatus = order.FullfillmentStatus,
             PaymentType = order.PaymentType,
             PaymentStatus = order.PaymentStatus,
             TotalOrderAmount = order.TotalOrderAmount,

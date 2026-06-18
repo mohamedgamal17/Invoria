@@ -56,7 +56,7 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Application: `Invoria.Ordering.Application`
   - Infrastructure: `Invoria.Ordering.Infrastructure`
   - Presentation / Endpoints: `Invoria.Ordering.Endpoints`
-  - Contracts: `Invoria.Ordering.Contracts` (includes integration events such as `AllocateOrderIntegrationEvent`)
+  - Contracts: `Invoria.Ordering.Contracts` (order integration events); `Invoria.Inventory.Contracts` (allocation integration events such as `AllocateOrderIntegrationEvent`)
 
 - **Inventory Module**
   - Domain: `Invoria.Inventory.Domain`
@@ -152,11 +152,26 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 - **Location**
   - `src/Modules/Ordering/Ordering.Contracts`
 
+- **Layout** (bounded context `Orders/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
+  - `Orders/Enums/` — `OrderStatus`, `OrderPaymentType`, `AllocationReleaseReason`, etc. (`Invoria.Ordering.Contracts.Orders.Enums`)
+  - `Orders/Dtos/` — `OrderDto`, `OrderItemDto`, … (`Invoria.Ordering.Contracts.Orders.Dtos`)
+  - `Orders/Events/` — integration events (`Invoria.Ordering.Contracts.Orders.Events`)
+  - `Orders/Models/` — `OrderModel`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
+
 - **Integration events**
-  - **`AllocateOrderIntegrationEvent`**
-    - File: `Events/AllocateOrderIntegrationEvent.cs`
-    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<OrderItemModel>` from `Ordering.Contracts.Models`).
-    - Published by the Ordering bounded context when an order allocation is integrated; consumed by Inventory (and potentially other modules) via Rebus.
+  - **`OrderCreatedIntegrationEvent`**
+    - File: `Orders/Events/OrderCreatedIntegrationEvent.cs`
+    - Raised from domain event **`OrderCreatedDomainEvent`** (`Ordering.Domain/Orders/Events/`) when `Order.Create` runs; carries the full **`Order`** aggregate. **`OrderCreatedDomainEventHandler`** maps it to `OrderModel` and publishes the integration event.
+  - **`OrderAcceptedIntegrationEvent`**
+    - File: `Orders/Events/OrderAcceptedIntegrationEvent.cs`
+    - Published when an order is accepted (Processing); consumed by **`OrderSaga`** to trigger inventory allocation.
+  - **`OrderReturnRequestedIntegrationEvent`**
+    - File: `Orders/Events/OrderReturnRequestedIntegrationEvent.cs`
+    - Payload: `OrderId`, `AllocationId`, `Lines` (`List<OrderReturnLineModel>`).
+    - Published by **`OrderCompletedDomainEventHandler`** when an order completes with return lines and an `AllocationId`; consumed by **`OrderReturnSaga`** to trigger immediate-return creation in Inventory.
+  - **`OrderRevisionRequestedIntegrationEvent`**
+    - File: `Orders/Events/OrderRevisionRequestedIntegrationEvent.cs`
+    - Published when an allocated processing order requests revision; consumed by **`OrderSaga`** to release allocation and revise the order.
 
 - **Relationships**
   - `Ordering.Contracts` may reference other modules’ contract projects for shared DTO shapes (as configured in `Invoria.Ordering.Contracts.csproj`).
@@ -225,8 +240,20 @@ flowchart LR
   - `src/Modules/Inventory/Inventory.Domain`
 
 - **Representative types**
-  - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer.
-  - **`BatchAllocation`**: child entity under a batch; links an `OrderItemId` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`, and includes standard audited fields (`CreatedAt`, `CreatedBy`, `LastModifiedAt`, `LastModifiedBy`).
+  - **`Batch`** (and related value types such as batch state), used by batch commands and queries in the Application layer. **`AddReturn`** increases available **`Quantity`** via **`UpdateQuantity`** when returned stock is processed.
+  - **`Allocation`**: aggregate for an order allocation request (`Pending` → `Allocated` → `Released`), with child **`AllocationLine`** rows per order item.
+  - **`BatchAllocation`**: links an `AllocationLine` to a `BatchId`, records `QuantityAllocated` and `AllocatedAt`.
+  - **`IAllocationDomainService`** / **`AllocationDomainService`**: domain service for FIFO stock reservation and release across allocation lines and batches.
+  - **`AllocationInitiatedDomainEvent`**: raised from `Allocation.CreateForOrder` when the allocation aggregate is first created (`Allocations/Events/AllocationInitiatedDomainEvent.cs`).
+  - **`AllocationCompletedDomainEvent`**: raised when every line is fully allocated (`Allocations/Events/AllocationCompletedDomainEvent.cs`).
+  - **`AllocationFailedDomainEvent`**: raised when the allocation cannot be fully satisfied (`Allocations/Events/AllocationFailedDomainEvent.cs`).
+  - **`Return`** (`Returns/Return.cs`): abstract aggregate root for order returns; properties `Type` (`ReturnType` discriminator), `Status` (`Invoria.Inventory.Contracts.Returns.Enums.ReturnStatus`, defaults to `Pending`), and `ReturnLines`. Lifecycle: `Approve()` (`Pending` → `Approved`, raises **`ReturnApprovedDomainEvent`**), `Reject()` (`Pending` → `Rejected`), `Complete()` (`Approved` → `Completed`). Concrete subclasses expose factory methods and set `Type` for EF TPH.
+  - **`ReturnType`** (`Returns/ReturnType.cs`): domain discriminator enum (`Immediate`); values align with `Invoria.Inventory.Contracts.Returns.Enums.ReturnType`.
+  - **`ReturnLine`** (`Returns/ReturnLine.cs`): child entity on `Return` with `ReturnId`, `OrderItemId`, `ProductId`, and `Quantity`.
+  - **`ImmediateReturn`** (`Returns/ImmediateReturn.cs`): concrete `Return` with `ReturnType.Immediate`; requires `AllocationId`, `OrderId` (immediate-return only), and `ReturnLines` via `Create`; raises **`ImmediateReturnCreatedDomainEvent`** on create.
+  - **`ImmediateReturnCreatedDomainEvent`** (`Returns/Events/ImmediateReturnCreatedDomainEvent.cs`): raised from `ImmediateReturn.Create` when a new immediate return is created.
+  - **`ReturnApprovedDomainEvent`** (`Returns/Events/ReturnApprovedDomainEvent.cs`): raised from `Return.Approve` when a return transitions to `Approved`; carries the approved `Return` aggregate.
+  - **`IReturnDomainService`** / **`ReturnDomainService`** (`Returns/Services/`): domain service for cross-aggregate immediate-return processing; **`ProcessImmediateReturn`** restores stock via **`Batch.AddReturn`** (by `BatchAllocation.BatchId` descending), then calls **`Return.Complete()`**.
 
 ### Application (`Invoria.Inventory.Application`)
 
@@ -234,10 +261,69 @@ flowchart LR
   - `src/Modules/Inventory/Inventory.Application`
 
 - **Integration consumers (Rebus)**
-  - **`AllocateOrderIntegrationConsumer`**
-    - File: `Batches/Consumers/AllocateOrderIntegrationConsumer.cs`
-    - Implements `Rebus.Handlers.IHandleMessages<Invoria.Ordering.Contracts.Events.AllocateOrderIntegrationEvent>`.
-    - Placeholder handler for order-allocation integration messages (extend with domain/application logic when requirements are defined).
+  - **`AllocateOrderIntegrationEventConsumer`**
+    - File: `Batches/Consumers/AllocateOrderIntegrationEventConsumer.cs`
+    - Handles `AllocateOrderIntegrationEvent` from Ordering; sends `AllocateOrderCommand` to create an `Allocation` aggregate.
+  - **`RequestAllocationIntegrationEventConsumer`**
+    - File: `Allocations/Consumers/RequestAllocationIntegrationEventConsumer.cs`
+    - Handles `RequestAllocationIntegrationEvent`; sends `RequestAllocationCommand` to reserve stock from batches (FIFO) and mark the allocation as `Allocated`.
+  - **`CreateImmediateReturnIntegrationEventConsumer`**
+    - File: `Returns/Consumers/CreateImmediateReturnIntegrationEventConsumer.cs`
+    - Handles `CreateImmediateReturnIntegrationEvent`; sends `CreateImmediateReturnCommand` to create an `ImmediateReturn` aggregate.
+  - **`ProcessImmediateReturnIntegrationEventConsumer`**
+    - File: `Returns/Consumers/ProcessImmediateReturnIntegrationEventConsumer.cs`
+    - Handles `ProcessImmediateReturnIntegrationEvent`; sends `ProcessImmediateReturnCommand` (`ReturnId`).
+  - **`ProcessImmediateReturnCommandHandler`**
+    - File: `Returns/Commands/ProcessImmediateReturn/ProcessImmediateReturnCommandHandler.cs`
+    - Handles `ProcessImmediateReturnCommand`; loads `ImmediateReturn`, `Allocation`, and batches, delegates to **`IReturnDomainService.ProcessImmediateReturn`**, persists via **`IInventoryUnitOfWork`**.
+
+- **Domain event handlers**
+  - **`AllocationInitiatedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationInitiatedDomainEventHandler.cs`
+    - Handles `AllocationInitiatedDomainEvent` after save and publishes `RequestAllocationIntegrationEvent`.
+  - **`AllocationCompletedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationCompletedDomainEventHandler.cs`
+    - Handles `AllocationCompletedDomainEvent` after save and publishes `AllocationSucceededIntegrationEvent`.
+  - **`AllocationFailedDomainEventHandler`**
+    - File: `Allocations/Handlers/AllocationFailedDomainEventHandler.cs`
+    - Handles `AllocationFailedDomainEvent` after save and publishes `AllocationFailedIntegrationEvent`.
+  - **`ImmediateReturnCreatedDomainEventHandler`**
+    - File: `Returns/Handlers/ImmediateReturnCreatedDomainEventHandler.cs`
+    - Handles `ImmediateReturnCreatedDomainEvent` after save and publishes `ImmediateReturnCreatedIntegrationEvent`.
+  - **`ReturnApprovedDomainEventHandler`**
+    - File: `Returns/Handlers/ReturnApprovedDomainEventHandler.cs`
+    - Handles `ReturnApprovedDomainEvent` after save; for `ReturnType.Immediate`, publishes `ProcessImmediateReturnIntegrationEvent` (`ReturnId`).
+
+- **Immediate return flow**
+  1. An external module publishes **`CreateImmediateReturnIntegrationEvent`** (`OrderId`, `AllocationId`, `Lines`); Inventory consumes it via **`CreateImmediateReturnIntegrationEventConsumer`** and sends **`CreateImmediateReturnCommand`**.
+  2. **`CreateImmediateReturnCommandHandler`** — `Returns/Commands/CreateImmediateReturn/`; creates `ImmediateReturn` (`Pending`) from `OrderId`, `AllocationId`, and line items.
+  3. `ImmediateReturnCreatedDomainEvent` is dispatched after save.
+  4. **`ImmediateReturnCreatedDomainEventHandler`** publishes `ImmediateReturnCreatedIntegrationEvent` (`ReturnId`, `OrderId`, `AllocationId`).
+
+- **Return approval flow**
+  1. **`ApproveReturnCommandHandler`** — `Returns/Commands/ApproveReturn/`; approves a pending return via `Return.Approve()`.
+  2. `ReturnApprovedDomainEvent` is dispatched after save.
+  3. **`ReturnApprovedDomainEventHandler`** publishes `ProcessImmediateReturnIntegrationEvent` (`ReturnId`) when the approved return type is `Immediate`.
+  4. **`ProcessImmediateReturnIntegrationEventConsumer`** sends **`ProcessImmediateReturnCommand`** (`ReturnId`).
+  5. **`ProcessImmediateReturnCommandHandler`** loads aggregates and batches, runs **`IReturnDomainService.ProcessImmediateReturn`**, and persists the completed return with restored batch stock.
+
+- **Order allocation flow**
+  1. Ordering publishes `OrderAcceptedIntegrationEvent` when an order is accepted; **`OrderSaga`** transitions to `Allocating` and publishes `AllocateOrderIntegrationEvent` (contract in `Invoria.Inventory.Contracts.Allocations.Events`).
+  2. Inventory creates `Allocation` (`Pending`) via `AllocateOrderCommand`.
+  3. `AllocationInitiatedDomainEvent` is dispatched after save.
+  4. `AllocationInitiatedDomainEventHandler` publishes `RequestAllocationIntegrationEvent`.
+  5. `RequestAllocationIntegrationEventConsumer` runs `RequestAllocationCommand`; **`RequestAllocationCommandHandler`** loads the allocation (lines and batch allocations via EF `AutoInclude`), loads active batches for pending lines (FIFO by `CreatedAt` ascending), delegates reservation to **`IAllocationDomainService`** / **`AllocationDomainService`** (pending-line filtering and FIFO consumption), and persists inside a single transaction via **`IInventoryUnitOfWork`**.
+  6. On success, `AllocationCompletedDomainEvent` is dispatched after save; **`AllocationCompletedDomainEventHandler`** publishes `AllocationSucceededIntegrationEvent` (`AllocationId`, `OrderId`).
+  7. On failure, `AllocationFailedDomainEvent` is dispatched after save; **`AllocationFailedDomainEventHandler`** publishes `AllocationFailedIntegrationEvent` (`AllocationId`, `OrderId`).
+
+- **Request allocation**
+  - **`RequestAllocationCommand`** / **`RequestAllocationCommandHandler`** — `Allocations/Commands/RequestAllocation/`; loads allocation and batches, invokes the domain service, persists via **`IInventoryUnitOfWork`** (no allocation algorithm in the handler).
+  - **`IAllocationDomainService`** / **`AllocationDomainService`** — `Allocations/Services/` in Domain; **`Allocate`** (FIFO reservation and failure rollback) and **`Release`** (restore reserved stock and mark allocation released) across `Allocation` and `Batch` aggregates (implements **`IDomainService`** from BuildingBlocks).
+  - **`DomainServiceInstaller`** — `Infrastructure/Installers/`; registers domain services (e.g. **`IAllocationDomainService`**, **`IReturnDomainService`**).
+  - **`IInventoryUnitOfWork`** / **`InventoryUnitOfWork`** — module unit-of-work port (`Inventory.Domain`) backed by **`EfUnitOfWork<InventoryDbContext>`**; registered from `EntityFrameworkServiceInstaller` with `AddInvoriaUnitOfWork`.
+
+- **Release allocation**
+  - **`ReleaseAllocationCommand`** / **`ReleaseAllocationCommandHandler`** — `Allocations/Commands/ReleaseAllocation/`; loads allocation and referenced batches, delegates to **`IAllocationDomainService.Release`**, persists via **`IInventoryUnitOfWork`**.
 
 - **CQRS**
   - Batch commands, queries, and factories follow the same MediatR / handler patterns as other modules (see batch-related folders under `Batches/`).
@@ -257,10 +343,12 @@ flowchart LR
 
 - **Persistence**
   - **`InventoryDbContext`**, repositories, EF configurations, and migrations under `EntityFramework/`.
+  - Return persistence: TPH on `Returns` with `Type` discriminator (`ReturnEntityTypeConfiguration`); `ImmediateReturn.AllocationId` on the shared table (`ImmediateReturnEntityTypeConfiguration`); child `ReturnLines` with cascade delete (`ReturnLineEntityTypeConfiguration`).
 
 - **Bootstrap**
   - **`InventoryModuleBootStrapper`**
     - Applies pending EF migrations for the Inventory database at startup (`InventoryDbContext`).
+    - Subscribes to `AllocateOrderIntegrationEvent`, `AllocationCreatedIntegrationEvent`, `ReleaseAllocationIntegrationEvent`, `CreateImmediateReturnIntegrationEvent`, and `ProcessImmediateReturnIntegrationEvent` for in-process Rebus handlers.
 
 - **`InventoryModuleInstaller`**
   - Discovers `IServiceInstaller` implementations in the Infrastructure assembly (including `RebusHandlersServiceInstaller`) and registers the Inventory module bootstrapper.
@@ -277,7 +365,45 @@ flowchart LR
 - **Location**
   - `src/Modules/Inventory/Inventory.Contracts`
 
-- DTOs such as `BatchDto` support API and application boundaries.
+- **Layout** (bounded contexts `Allocations/`, `Batches/`, `Returns/`, `Stock/`—see `.cursor/rules/module-contracts.mdc`)
+  - `Allocations/Events/` — allocation integration events (`Invoria.Inventory.Contracts.Allocations.Events`)
+  - `Allocations/Models/` — `AllocateOrderLineModel`, etc. (`Invoria.Inventory.Contracts.Allocations.Models`)
+  - `Batches/Dtos/` — `BatchDto` (`Invoria.Inventory.Contracts.Batches.Dtos`)
+  - `Returns/Enums/` — `ReturnType`, `ReturnStatus` (`Invoria.Inventory.Contracts.Returns.Enums`; `ReturnStatus` is the single source of truth used by Domain)
+  - `Returns/Events/` — `CreateImmediateReturnIntegrationEvent`, `ImmediateReturnCreatedIntegrationEvent`, `ProcessImmediateReturnIntegrationEvent` (`Invoria.Inventory.Contracts.Returns.Events`)
+  - `Returns/Models/` — `ReturnLineModel` (`Invoria.Inventory.Contracts.Returns.Models`)
+  - `Stock/Dtos/` — `StockDto` (`Invoria.Inventory.Contracts.Stock.Dtos`)
+
+- **Integration events**
+  - **`AllocateOrderIntegrationEvent`**
+    - File: `Allocations/Events/AllocateOrderIntegrationEvent.cs`
+    - Payload: `Id`, `OrderNumber`, `CustomerId`, `Items` (`List<AllocateOrderLineModel>`).
+    - Published by **`OrderSaga`** when an order is accepted; consumed by Inventory via `AllocateOrderIntegrationEventConsumer`.
+  - **`RequestAllocationIntegrationEvent`**
+    - File: `Allocations/Events/RequestAllocationIntegrationEvent.cs`
+    - Payload: `AllocationId` only.
+    - Published by Inventory after an allocation aggregate is created; consumed by `RequestAllocationIntegrationEventConsumer`.
+  - **`AllocationSucceededIntegrationEvent`**
+    - File: `Allocations/Events/AllocationSucceededIntegrationEvent.cs`
+    - Payload: `AllocationId`, `OrderId`.
+    - Published by Inventory when batch reservation completes for all lines.
+  - **`AllocationFailedIntegrationEvent`**
+    - File: `Allocations/Events/AllocationFailedIntegrationEvent.cs`
+    - Payload: `AllocationId`, `OrderId`.
+    - Published by Inventory when batch reservation cannot fully satisfy the allocation.
+  - **`CreateImmediateReturnIntegrationEvent`**
+    - File: `Returns/Events/CreateImmediateReturnIntegrationEvent.cs`
+    - Payload: `OrderId`, `AllocationId`, `Lines` (`List<ReturnLineModel>`).
+    - Consumed by Inventory via `CreateImmediateReturnIntegrationEventConsumer` to trigger `CreateImmediateReturnCommand`.
+  - **`ImmediateReturnCreatedIntegrationEvent`**
+    - File: `Returns/Events/ImmediateReturnCreatedIntegrationEvent.cs`
+    - Payload: `ReturnId`, `OrderId`, `AllocationId`.
+    - Published by Inventory when an immediate return is created via `CreateImmediateReturnCommand`.
+  - **`ProcessImmediateReturnIntegrationEvent`**
+    - File: `Returns/Events/ProcessImmediateReturnIntegrationEvent.cs`
+    - Payload: `ReturnId`.
+    - Published by Inventory when an immediate return is approved via `ApproveReturnCommand` and `ReturnApprovedDomainEventHandler`.
+    - Consumed by Inventory via `ProcessImmediateReturnIntegrationEventConsumer` to trigger `ProcessImmediateReturnCommand`.
 
 ---
 
@@ -427,6 +553,8 @@ The `Invoria.BuildingBlocks.*` projects provide shared abstractions and infrastr
     - Marker/contract implemented by entities managed by repositories.
   - **`IRepository<T>`**
     - Generic repository abstraction; extended by module-specific repositories like `ICatalogRepository<T>`.
+  - **`IUnitOfWork`** / **`IUnitOfWorkTransaction`**
+    - Transaction boundary and explicit `SaveChanges` for multi-entity workflows; extended per module (e.g. `IInventoryUnitOfWork`).
   - **`Result<T>`**
     - Operation result type representing success/failure with payload or errors.
     - Used as the return type from application command handlers.
@@ -457,6 +585,8 @@ The `Invoria.BuildingBlocks.*` projects provide shared abstractions and infrastr
   - **`EFCoreRepository<TEntity, TContext>`**
     - Generic EF Core repository implementation.
     - Extended by `CatalogRepository<TEntity>` for the Catalog module.
+  - **`EfUnitOfWork<TContext>`**
+    - EF-backed `IUnitOfWork` implementation; register via `AddInvoriaUnitOfWork<TContext>()` alongside the module DbContext.
   - **`IDbHookEngine`**
     - Hook engine for cross-cutting behaviors during EF operations (e.g., auditing, domain events).
     - Injected into `CatalogDbContext`.
@@ -792,9 +922,16 @@ flowchart LR
 - **Handlers**
   - Modules register `Rebus.Handlers.IHandleMessages<T>` implementations with the DI container.
   - Inventory registers integration event handlers via `RebusHandlersServiceInstaller` in `Invoria.Inventory.Infrastructure`.
+  - Ordering registers `OrderSaga` via `RebusHandlersServiceInstaller` in `Invoria.Ordering.Infrastructure`.
+
+- **Sagas**
+  - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
+  - **`OrderSaga`** / **`OrderSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates order ↔ inventory allocation coordination. Initiated by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, publishes `AllocateOrderIntegrationEvent`. Handles `AllocationCreated`, `AllocationSucceeded`, `AllocationFailed`, `AllocationReleased`, and `OrderRevisionRequested` integration events. Workflow states in `OrderSagaProcessState` (`Created`, `RequestAllocation`, `Allocate`, `AllocationFailed`, `AllocationSucceeded`, `RevisionRequested`, `AllocationReleased`).
+  - **`OrderReturnSaga`** / **`OrderReturnSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates immediate-return creation after order completion with return lines. Initiated by `OrderReturnRequestedIntegrationEvent` (correlated on `OrderId`). Publishes `CreateImmediateReturnIntegrationEvent` to Inventory; on `ImmediateReturnCreatedIntegrationEvent`, publishes `RecordOrderReturnSagaActivity` to persist `Order.ReturnId`. Workflow states in `OrderReturnSagaProcessState` (`Requested`, `Created`).
+  - **`OrderCompletedDomainEventHandler`** — publishes `OrderReturnRequestedIntegrationEvent` when `Order.Complete` records return lines and `AllocationId` is set.
 
 - **Cross-module events**
-  - Integration event types (for example `AllocateOrderIntegrationEvent` in `Invoria.Ordering.Contracts`) are consumed by Inventory handlers when messages are published to the configured transport and routing/subscriptions match the host setup.
+  - Inventory-owned integration events (for example `AllocateOrderIntegrationEvent` in `Invoria.Inventory.Contracts`) are published by Ordering saga handlers and consumed by Inventory when subscriptions and routing match the host setup.
 
 ### Logging and Caching
 
@@ -835,15 +972,18 @@ flowchart LR
     - BuildingBlocks Domain for `IBaseEntity`.
 
 - **Ordering.Contracts**
-  - Holds cross-boundary DTOs and **integration events** (for example `AllocateOrderIntegrationEvent`) referenced by the API host (Rebus routing) and by consumer modules such as Inventory.
+  - Holds order DTOs and **integration events** (`OrderCreatedIntegrationEvent`, `OrderAcceptedIntegrationEvent`, etc.) for Rebus messaging.
+
+- **Inventory.Contracts**
+  - Holds inventory integration events and models (for example `AllocateOrderIntegrationEvent` under `Allocations/Events/`).
 
 - **Inventory (Rebus integration)**
-  - Integration event **contracts** live in **`Invoria.Ordering.Contracts`** (for example `AllocateOrderIntegrationEvent`).
   - **Application** includes `AllocateOrderIntegrationConsumer` (`Batches/Consumers/`), implementing `IHandleMessages<AllocateOrderIntegrationEvent>`.
-  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and may host `AllocateOrderIntegrationEventHandler` under `Events/`. Any project that compiles against `AllocateOrderIntegrationEvent` must reference `Invoria.Ordering.Contracts` in that project file.
+  - **Infrastructure** registers handlers via `RebusHandlersServiceInstaller` and subscribes to `AllocateOrderIntegrationEvent` in `InventoryModuleBootStrapper`.
+  - Consumers reference `Invoria.Inventory.Contracts.Allocations.Events` (and related namespaces).
 
 - **Procurement (layered module)**
   - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
 
-This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using shared contract types in `Ordering.Contracts` and handlers registered in consuming modules (e.g. Inventory).
+This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using contract types in the owning module’s `{Module}.Contracts` project and handlers registered in consuming modules.
 

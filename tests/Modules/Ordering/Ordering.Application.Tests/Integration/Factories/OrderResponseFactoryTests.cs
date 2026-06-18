@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Domain.Dtos;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Catalog.Contracts.Services;
 using Invoria.CustomerManagement.Contracts.Services;
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Application.Orders.Factories;
 using Invoria.Ordering.Tests.Fakes;
 using Invoria.Ordering.Domain.Orders;
@@ -138,27 +138,6 @@ public class OrderResponseFactoryTests : OrderingTestFixture
     }
 
     [Test]
-    public async Task PrepareDto_should_include_state_transition_history()
-    {
-        var order = new Order("HISTORY-1", Guid.NewGuid().ToString());
-        order.UpdateItems(new List<OrderItem> { new(Guid.NewGuid().ToString(), 1, 10m) });
-        order.Accept();
-        order.MarkInventoryAllocated();
-
-        var dto = await Factory.PrepareDto(order);
-
-        dto.StateTransitionHistory.Should().HaveCount(2);
-        dto.StateTransitionHistory[0].FromStatus.Should().Be(OrderStatus.Pending);
-        dto.StateTransitionHistory[0].ToStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[0].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Pending);
-        dto.StateTransitionHistory[0].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
-        dto.StateTransitionHistory[1].FromStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[1].ToStatus.Should().Be(OrderStatus.Accepted);
-        dto.StateTransitionHistory[1].FromFullfillmentStatus.Should().Be(FullfillmentStatus.Allocating);
-        dto.StateTransitionHistory[1].ToFullfillmentStatus.Should().Be(FullfillmentStatus.Allocated);
-    }
-
-    [Test]
     public async Task PrepareDto_should_map_payment_aggregate_and_payment_lines_after_record_payment()
     {
         var customerId = Guid.NewGuid().ToString();
@@ -168,10 +147,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
 
         order.UpdateItems(new List<OrderItem> { new(productId, 1, 100m) });
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-        order.Complete();
+        order.Complete([]);
         order.RecordPayment(25m, OrderPaymentMethod.Cheque, DateTimeOffset.Parse("2026-06-01T10:00:00Z"));
 
         var dto = await Factory.PrepareDto(order);
@@ -204,10 +180,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         SetEntityId(order.Items[0], returnedLineId);
         SetEntityId(order.Items[1], otherLineId);
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-        order.RecordReturnItems([new OrderReturnItem(returnedLineId, 1)]).IsSuccess.Should().BeTrue();
+        order.Complete([new OrderReturnItem(returnedLineId, 1)]);
 
         var paging = new PagingDto<Order>
         {
@@ -244,10 +217,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         SetEntityId(order.Items[0], "line-returned");
         SetEntityId(order.Items[1], "line-other");
         order.Accept();
-        order.MarkInventoryAllocated();
-        order.MarkDispatched();
-        order.MarkShipped();
-        order.RecordReturnItems([new OrderReturnItem("line-returned", 1)]).IsSuccess.Should().BeTrue();
+        order.Complete([new OrderReturnItem("line-returned", 1)]);
 
         var paging = new PagingDto<Order>
         {

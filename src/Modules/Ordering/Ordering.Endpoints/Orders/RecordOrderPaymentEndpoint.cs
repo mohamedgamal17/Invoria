@@ -3,7 +3,7 @@ using Invoria.BuildingBlocks.Infrastructure.Endpoints;
 using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderPayment;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using MediatR;
 using Microsoft.AspNetCore.Http;

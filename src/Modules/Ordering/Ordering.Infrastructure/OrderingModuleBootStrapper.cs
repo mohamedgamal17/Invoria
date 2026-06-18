@@ -1,5 +1,8 @@
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.Ordering.Contracts.Events;
+using Invoria.Inventory.Contracts.Allocations.Events;
+using Invoria.Inventory.Contracts.Returns.Events;
+using Invoria.Ordering.Application.Orders.Sagas.Activities;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,13 +23,20 @@ namespace Invoria.Ordering.Infrastructure
 
             if (bus is not null)
             {
-                await bus.Subscribe<AllocateOrderIntegrationEvent>();
-                await bus.Subscribe<OrderAllocationSucceededIntegrationEvent>();
-                await bus.Subscribe<OrderAllocationFailedIntegrationEvent>();
-                await bus.Subscribe<OrderDispatchedIntegrationEvent>();
+                await bus.Subscribe<OrderCreatedIntegrationEvent>();
+                await bus.Subscribe<OrderAcceptedIntegrationEvent>();
+                await bus.Subscribe<AllocationCreatedIntegrationEvent>();
+                await bus.Subscribe<AllocationFailedIntegrationEvent>();
+                await bus.Subscribe<AllocationSucceededIntegrationEvent>();
+                await bus.Subscribe<AllocationReleasedIntegrationEvent>();
+                await bus.Subscribe<OrderRevisionRequestedIntegrationEvent>();
+                await bus.Subscribe<RecordOrderAllocationSagaActivity>();
+                await bus.Subscribe<ReviseOrderSagaActivity>();
+                await bus.Subscribe<MarkOrderAllocatedSagaActivity>();
                 await bus.Subscribe<ReleaseOrderAllocationsIntegrationEvent>();
-                await bus.Subscribe<OrderReopenInventoryReleasedIntegrationEvent>();
-                await bus.Subscribe<OrderRefusalInventoryReleasedIntegrationEvent>();
+                await bus.Subscribe<OrderReturnRequestedIntegrationEvent>();
+                await bus.Subscribe<ImmediateReturnCreatedIntegrationEvent>();
+                await bus.Subscribe<RecordOrderReturnSagaActivity>();
             }
         }
     }

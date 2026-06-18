@@ -1,8 +1,9 @@
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Inventory.Application.Batches.Consumers;
 using Invoria.Inventory.Application.Batches.Commands.ReleaseOrderAllocations;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Contracts.Orders.Enums;
+using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 using MediatR;
 using Moq;
 using Rebus.Bus;

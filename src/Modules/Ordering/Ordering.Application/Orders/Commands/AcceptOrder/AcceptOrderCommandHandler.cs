@@ -2,7 +2,8 @@ using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Orders.Factories;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Orders;
 using Microsoft.EntityFrameworkCore;
@@ -35,14 +36,13 @@ public class AcceptOrderCommandHandler : IApplicatonRequestHandler<AcceptOrderCo
             return Result.Failure<OrderDto>(new NotFoundException($"Order with ID {request.Id} not found"));
         }
 
-        try
+        if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Revision)
         {
-            order.Accept();
+            return Result.Failure<OrderDto>(new BusinessLogicException(
+                "Order can only be accepted when it is Pending or Revision."));
         }
-        catch (InvalidOperationException ex)
-        {
-            return Result.Failure<OrderDto>(new BusinessLogicException(ex.Message, ex));
-        }
+
+        order.Accept();
 
         await _orderRepository.Update(order, cancellationToken);
 

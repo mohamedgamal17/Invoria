@@ -5,7 +5,7 @@ using Invoria.BuildingBlocks.Infrastructure.OpenApi;
 using Invoria.BuildingBlocks.Infrastructure.Results;
 using Microsoft.AspNetCore.Http;
 using Invoria.Ordering.Application.Orders.Queries.ListOrders;
-using Invoria.Ordering.Contracts.Dtos;
+using Invoria.Ordering.Contracts.Orders.Dtos;
 using Invoria.Ordering.Endpoints.Orders.Requests;
 using MediatR;
 
@@ -55,8 +55,7 @@ public class ListOrdersEndpoint : EndpointBase<ListOrdersRequest, PagingDto<Orde
             IncludeReturnItems = req.IncludeReturnItems,
             PaymentType = req.PaymentType,
             PaymentStatus = req.PaymentStatus,
-            Status = req.Status,
-            FullfillmentStatus = req.FullfillmentStatus
+            Status = req.Status
         };
 
         var result = await _mediator.Send(query, ct);

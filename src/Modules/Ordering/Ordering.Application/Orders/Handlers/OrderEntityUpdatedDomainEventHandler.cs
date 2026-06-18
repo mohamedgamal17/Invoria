@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Domain.Events;
-using Invoria.Ordering.Contracts.Events;
-using Invoria.Ordering.Contracts.Models;
+using Invoria.Ordering.Application.Orders.Extensions;
+using Invoria.Ordering.Contracts.Orders.Events;
 using Invoria.Ordering.Domain.Orders;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -25,29 +25,7 @@ public sealed class OrderEntityUpdatedDomainEventHandler : INotificationHandler<
         var integrationEvent = new OrderUpdatedIntegrationEvent
         {
             OccurredOn = notification.OccurredOn,
-            Order = new OrderIntegrationPayload
-            {
-                Id = order.Id,
-                OrderNumber = order.OrderNumber,
-                CustomerId = order.CustomerId,
-                OrderStatus = order.Status,
-                FullfillmentStatus = order.FullfillmentStatus,
-                PaymentType = order.PaymentType,
-                PaymentStatus = order.PaymentStatus,
-                TotalOrderAmount = order.TotalOrderAmount,
-                AmountPaid = order.AmountPaid,
-                AmountOutstanding = order.AmountOutstanding,
-                Lines = order.Items
-                    .Select(i => new OrderLineModel
-                    {
-                        Id = i.Id,
-                        ProductId = i.ProductId,
-                        Quantity = i.Quantity,
-                        UnitPrice = i.Price,
-                        LineTotal = i.Price * i.Quantity
-                    })
-                    .ToList()
-            }
+            Order = order.ToOrderModel()
         };
 
         _logger.LogDebug(

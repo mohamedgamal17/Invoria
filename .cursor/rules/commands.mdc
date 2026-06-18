@@ -1,0 +1,10 @@
+---
+description: Command class conventions — do not use sealed on ICommand types
+globs: src/Modules/**/Commands/**/*Command.cs
+alwaysApply: false
+---
+
+# Commands
+
+- Do **not** add the `sealed` keyword to command classes (`ICommand<T>`) in any module.
+- Use `public class {Name}Command : ICommand<...>` (handlers may still use `sealed` where appropriate).

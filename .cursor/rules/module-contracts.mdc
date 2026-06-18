@@ -1,0 +1,58 @@
+---
+description: Folder and namespace layout for Invoria module Contracts projects
+alwaysApply: true
+---
+
+# Module Contracts layout
+
+Use this structure in every `{Module}.Contracts` project (e.g. `Invoria.Ordering.Contracts`).
+
+## Bounded context root
+
+Group types by domain area under a context folder (e.g. `Orders/`, `Products/`, `PurchaseOrders/`). Each context has four subfolders:
+
+| Subfolder | Contents | Namespace suffix |
+|-----------|----------|-------------------|
+| `Enums/` | Shared enums for that context | `.{Context}.Enums` |
+| `Dtos/` | API/query/command response shapes | `.{Context}.Dtos` |
+| `Events/` | Integration events (Rebus messages) | `.{Context}.Events` |
+| `Models/` | Nested payloads on events or cross-module messages (not full API DTOs) | `.{Context}.Models` |
+
+**Example (Ordering):**
+
+```
+Ordering.Contracts/
+  AssemblyReference.cs
+  Orders/
+    Enums/       → Invoria.Ordering.Contracts.Orders.Enums
+    Dtos/        → Invoria.Ordering.Contracts.Orders.Dtos
+    Events/      → Invoria.Ordering.Contracts.Orders.Events
+    Models/      → Invoria.Ordering.Contracts.Orders.Models
+```
+
+Full namespace: `Invoria.{Module}.Contracts.{Context}.{Enums|Dtos|Events|Models}`.
+
+**Example (Inventory):**
+
+```
+Inventory.Contracts/
+  AssemblyReference.cs
+  Allocations/
+    Events/      → Invoria.Inventory.Contracts.Allocations.Events
+    Models/      → Invoria.Inventory.Contracts.Allocations.Models
+  Batches/
+    Dtos/        → Invoria.Inventory.Contracts.Batches.Dtos
+  Stock/
+    Dtos/        → Invoria.Inventory.Contracts.Stock.Dtos
+```
+
+## Rules
+
+- Keep only `AssemblyReference.cs` (and similar markers) at the contracts project root—no flat `Dtos/`, `Events/`, or `Models/` at root when a context folder exists.
+- Put enums in `Enums/`, not under `Events/` (even if only used by one event).
+- Folder path must match namespace; update all consumers when moving types.
+- New modules: adopt this layout from the first contract type; do not introduce legacy flat folders.
+
+## Cross-module references
+
+Other modules reference contract namespaces explicitly (e.g. `using Invoria.Ordering.Contracts.Orders.Events`). Register Rebus handlers and map assemblies using the contracts project’s `AssemblyReference`.

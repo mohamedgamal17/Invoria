@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Application.Orders.Queries.GetDebtOverview;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Orders.DebtSummary;
@@ -39,7 +39,6 @@ public sealed class GetDebtOverviewQueryHandlerTests
             OrderNumber = id,
             CustomerId = customerId,
             OrderStatus = orderStatus,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = paymentStatus,
             TotalOrderAmount = total,

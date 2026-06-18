@@ -1,15 +1,12 @@
+using Autofac;
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
-using Invoria.Ordering.Application.Orders.Commands.DispatchOrder;
-using Invoria.Ordering.Application.Orders.Commands.RecordOrderAllocationSucceeded;
 using Invoria.Ordering.Application.Orders.Commands.RecordOrderPayment;
-using Invoria.Ordering.Application.Orders.Commands.ShipOrder;
-using Invoria.Ordering.Domain;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Domain.Orders;
-using Invoria.Ordering.Contracts.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Invoria.Ordering.Tests.Fakes;
 using Microsoft.EntityFrameworkCore;
@@ -22,13 +19,6 @@ namespace Invoria.Ordering.Application.Tests.Integration.Commands;
 [TestFixture]
 public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
 {
-    private async Task<Order> PersistOneRandomOrderInNewScopeAsync()
-    {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var repo = scope.ServiceProvider.GetRequiredService<IOrderingRepository<Order>>();
-        return (await OrderTestData.PersistRandomOrdersAsync(repo, 1)).Single();
-    }
-
     protected override async Task BeforeAnyTestRunAsync()
     {
         await ClearOrdersAsync();
@@ -38,19 +28,15 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
 
     private async Task ClearOrdersAsync()
     {
-        await using var scope = ServiceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var orders = await db.Set<Order>().ToListAsync();
         db.RemoveRange(orders);
         await db.SaveChangesAsync();
     }
 
-    private static async Task<decimal> GetPayableOrderAmountFromDbAsync(
-        IServiceProvider serviceProvider,
-        string orderId)
+    private async Task<decimal> GetPayableOrderAmountFromDbAsync(string orderId)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         var order = await db.Set<Order>()
             .AsNoTracking()
             .Include(o => o.Items)
@@ -59,28 +45,25 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
         return order.NetOfTotalOrderAmount;
     }
 
-    private static async Task SetPaymentTypeDebtAsync(IServiceProvider serviceProvider, string orderId)
+    private async Task SetPaymentTypeDebtAsync(string orderId)
     {
-        await using var scope = serviceProvider.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<OrderingDbContext>();
+        var db = Scope.Resolve<OrderingDbContext>();
         await db.Set<Order>()
             .Where(o => o.Id == orderId)
             .ExecuteUpdateAsync(s => s.SetProperty(o => o.PaymentType, OrderPaymentType.Debt));
+        db.ChangeTracker.Clear();
     }
 
     [Test]
     public async Task Should_record_partial_payment_when_debt_after_completed()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
-        await SetPaymentTypeDebtAsync(ServiceProvider, order.Id);
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
 
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
-        await Mediator.Send(new DispatchOrderCommand(order.Id));
-        await Mediator.Send(new ShipOrderCommand(order.Id));
         await Mediator.Send(new CompleteOrderCommand(order.Id));
+        await SetPaymentTypeDebtAsync(order.Id);
 
-        var payable = await GetPayableOrderAmountFromDbAsync(ServiceProvider, order.Id);
+        var payable = await GetPayableOrderAmountFromDbAsync(order.Id);
         payable.Should().BeGreaterThan(1m);
 
         var result = await Mediator.Send(
@@ -96,15 +79,12 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_record_full_payment_when_immediate_after_completed()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
 
         await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new RecordOrderAllocationSucceededCommand { OrderId = order.Id, CustomerId = order.CustomerId });
-        await Mediator.Send(new DispatchOrderCommand(order.Id));
-        await Mediator.Send(new ShipOrderCommand(order.Id));
         await Mediator.Send(new CompleteOrderCommand(order.Id));
 
-        var payable = await GetPayableOrderAmountFromDbAsync(ServiceProvider, order.Id);
+        var payable = await GetPayableOrderAmountFromDbAsync(order.Id);
 
         var result = await Mediator.Send(
             new RecordOrderPaymentCommand(order.Id, payable, OrderPaymentMethod.BankTransfer));
@@ -118,7 +98,7 @@ public class RecordOrderPaymentCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_fail_when_order_not_completed()
     {
-        var order = await PersistOneRandomOrderInNewScopeAsync();
+        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
         var result = await Mediator.Send(

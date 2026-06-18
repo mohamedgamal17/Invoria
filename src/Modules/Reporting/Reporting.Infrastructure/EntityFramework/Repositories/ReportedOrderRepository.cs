@@ -17,8 +17,6 @@ public sealed class ReportedOrderRepository : ReportingRepository<ReportedOrder>
             .AsSplitQuery()
             .Include(o => o.Lines)
             .Include(o => o.Payments)
-            .Include(o => o.StateTransitions)
-            .Include(o => o.FailureDetails)
             .SingleOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 

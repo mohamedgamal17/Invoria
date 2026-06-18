@@ -1,4 +1,4 @@
-using Invoria.Ordering.Contracts.Orders;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Reporting.Domain.Orders;
 using Invoria.Reporting.Domain.Orders.DebtSummary;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +23,6 @@ public sealed class DebtSummaryRollupRefresherTests : DebtSummaryRollupRefresher
             OrderNumber = id,
             CustomerId = customerId,
             OrderStatus = orderStatus,
-            FullfillmentStatus = FullfillmentStatus.Pending,
             PaymentType = paymentType,
             PaymentStatus = paymentStatus,
             TotalOrderAmount = totalOrderAmount,
