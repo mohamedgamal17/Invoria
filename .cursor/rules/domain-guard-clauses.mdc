@@ -1,0 +1,49 @@
+---
+description: Use Ardalis GuardClauses for domain input/precondition validation instead of manual if/throw
+globs: **/*.Domain/**/*.cs
+alwaysApply: false
+---
+
+# Domain guard clauses
+
+Use **Ardalis GuardClauses** (`Guard.Against.*`) for input and precondition validation in domain factories, constructors, and methods.
+
+Do **not** use manual `if` blocks that throw `InvalidOperationException` for these cases.
+
+## Use Guard for
+
+| Check | Guard |
+|-------|-------|
+| Null reference | `Guard.Against.Null(value)` |
+| Null/empty collection | `Guard.Against.NullOrEmpty(items)` |
+| Null/whitespace string | `Guard.Against.NullOrWhiteSpace(value)` |
+| Negative decimal | `Guard.Against.Negative(amount)` |
+| Negative or zero | `Guard.Against.NegativeOrZero(amount)` |
+| Out of range length | `Guard.Against.OutOfRange(length, paramName, min, max)` |
+
+`NullOrEmpty` covers null collections — do not also call `Null` on the same value.
+
+## Keep InvalidOperationException for
+
+Business rules and **state/lifecycle** violations only (wrong status, illegal transition), e.g. `Order.Accept()` when not Pending.
+
+## Tests
+
+Domain tests for guard failures should expect `ArgumentException`, not `InvalidOperationException` with custom messages.
+
+## Example
+
+```csharp
+// ❌ BAD — manual precondition checks
+if (subtotal < 0m)
+    throw new InvalidOperationException("Subtotal cannot be negative.");
+if (items.Count <= 0)
+    throw new InvalidOperationException("Invoice items must have one or more item.");
+
+// ✅ GOOD
+Guard.Against.Negative(subtotal);
+Guard.Against.Negative(totalPrice);
+Guard.Against.NullOrEmpty(items);
+```
+
+Reference: `Invoice.Create`, `Batch`, `Allocation`, `ImmediateReturn`, `OrderPayment`.
