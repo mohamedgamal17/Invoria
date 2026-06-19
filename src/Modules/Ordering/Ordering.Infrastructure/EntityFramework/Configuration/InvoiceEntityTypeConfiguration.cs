@@ -16,6 +16,10 @@ public sealed class InvoiceEntityTypeConfiguration : IEntityTypeConfiguration<In
         builder.Property(x => x.Id)
             .HasMaxLength(InvoiceTableConsts.IdMaxLength);
 
+        builder.Property(x => x.InvoiceNumber)
+            .HasMaxLength(InvoiceTableConsts.InvoiceNumberMaxLength)
+            .IsRequired();
+
         builder.Property(x => x.CustomerId)
             .HasMaxLength(InvoiceTableConsts.CustomerIdMaxLength)
             .IsRequired();
