@@ -19,7 +19,7 @@ public class OrderReturnSagaStateTests
     }
 
     [Test]
-    public void ApplyCreated_sets_return_id_and_created_state()
+    public void ApplyCompleted_sets_return_id_and_completed_state()
     {
         var state = new OrderReturnSagaState
         {
@@ -27,10 +27,10 @@ public class OrderReturnSagaStateTests
             State = OrderReturnSagaProcessState.Requested
         };
 
-        state.ApplyCreated("return-9");
+        state.ApplyCompleted("return-9");
 
         state.ReturnId.Should().Be("return-9");
-        state.State.Should().Be(OrderReturnSagaProcessState.Created);
+        state.State.Should().Be(OrderReturnSagaProcessState.Completed);
         state.OrderId.Should().Be("order-1");
     }
 }
