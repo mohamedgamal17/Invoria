@@ -145,18 +145,38 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 
 ---
 
-## Ordering Module (integration contracts)
+## Ordering Module
+
+### Domain (`Invoria.Ordering.Domain`)
+
+- **Location**
+  - `src/Modules/Ordering/Ordering.Domain`
+
+- **Invoices**
+  - **`Invoice`** (`Invoices/Invoice.cs`) — aggregate root with `CustomerId`, `OrderId`, `Subtotal`, `TotalPrice`, and child **`InvoiceItem`** rows.
+  - **`InvoiceItem`** (`Invoices/InvoiceItem.cs`) — line entity with `OrderItemId`, `ProductId`, `Quantity`, and `Price` (unit price from the order line).
+  - **`IInvoiceDomainService`** / **`InvoiceDomainService`** (`Invoices/Services/`) — builds an invoice from an **`Order`** using billable quantities only (ordered quantity minus returned quantity per line); throws when no billable lines remain.
+  - **One-to-one with `Order`** — `Order.InvoiceId` (nullable) ↔ `Invoice.OrderId` (unique); **`Order.RecordInvoice(invoiceId)`** links the order after invoice creation; duplicate create attempts return **`ConflictException`**.
+
+- **Billable quantity (invoicing)**
+  - **`Order.GetBillableItems()`** — yields `(OrderItem, BillableQuantity)` for each line where `BillableQuantity = max(0, ordered − returned)`; uses the same return math as **`Order.NetOfTotalOrderAmount`** and **`OrderReturnItem`** recorded at completion.
+  - Fully returned lines are omitted from the invoice; header totals equal the sum of billable line amounts.
+
+### Application (`Invoria.Ordering.Application`)
+
+- **`CreateInvoiceCommand`** / **`CreateInvoiceCommandHandler`** — `Invoices/Commands/CreateInvoice/`; loads order (items + return items), rejects when **`Order.InvoiceId`** is already set, delegates to **`IInvoiceDomainService.CreateFromOrder`**, calls **`Order.RecordInvoice`**, persists **`Invoice`** and updated **`Order`**, returns **`InvoiceDto`** via **`IInvoiceResponseFactory`**.
 
 ### Contracts (`Invoria.Ordering.Contracts`)
 
 - **Location**
   - `src/Modules/Ordering/Ordering.Contracts`
 
-- **Layout** (bounded context `Orders/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
+- **Layout** (bounded contexts `Orders/`, `Invoices/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
   - `Orders/Enums/` — `OrderStatus`, `OrderPaymentType`, `AllocationReleaseReason`, etc. (`Invoria.Ordering.Contracts.Orders.Enums`)
   - `Orders/Dtos/` — `OrderDto`, `OrderItemDto`, … (`Invoria.Ordering.Contracts.Orders.Dtos`)
   - `Orders/Events/` — integration events (`Invoria.Ordering.Contracts.Orders.Events`)
   - `Orders/Models/` — `OrderModel`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
+  - `Invoices/Dtos/` — `InvoiceDto`, `InvoiceItemDto` (`Invoria.Ordering.Contracts.Invoices.Dtos`)
 
 - **Integration events**
   - **`OrderCreatedIntegrationEvent`**
@@ -184,6 +204,7 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 - **Layout**
   - **Root**: shared test harness — `OrderingTestFixture.cs`, `OrderingTestModuleInstaller.cs`, `GlobalUsings.cs`.
   - **`Domain/Orders/`**: pure domain tests (e.g. `OrderAllocationSuccessDomainTests`, `OrderAllocationFailureDomainTests`).
+  - **`Domain/Invoices/`**: invoice and billable-quantity domain tests (e.g. `InvoiceDomainServiceTests`, `OrderBillableItemsDomainTests`).
   - **`Integration/`**: handler and integration tests — `Commands/`, `Queries/`, `Factories/`, `Consumers/` (e.g. allocation consumer), plus `OrderTestFixture.cs`.
   - **`Infrastructure/Services/`**: infrastructure-focused tests (e.g. `OrderNumberGeneratorTests`, `OrderNumberGeneratorIntegrationTests`).
   - **`Assertions/`**: shared assertion helpers (e.g. `OrderAssertionExtensions.cs`).
