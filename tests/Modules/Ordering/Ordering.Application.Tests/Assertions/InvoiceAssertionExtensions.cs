@@ -22,4 +22,16 @@ public static class InvoiceAssertionExtensions
             page.Data.Count().Should().Be(expectedDataCount.Value);
         }
     }
+
+    public static void AssertInvoiceDto(
+        this InvoiceDto dto,
+        string expectedId,
+        string expectedOrderId,
+        string expectedCustomerId)
+    {
+        dto.Id.Should().Be(expectedId);
+        dto.OrderId.Should().Be(expectedOrderId);
+        dto.CustomerId.Should().Be(expectedCustomerId);
+        dto.Items.Should().NotBeEmpty();
+    }
 }
