@@ -15,4 +15,6 @@ public static class OrderSagaProcessState
     public const string RevisionRequested = "RevisionRequested";
 
     public const string AllocationReleased = "AllocationReleased";
+
+    public const string Completed = "Completed";
 }

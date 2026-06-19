@@ -1,5 +1,5 @@
+using Invoria.Ordering.Application.Orders.Extensions;
 using Invoria.Ordering.Contracts.Orders.Events;
-using Invoria.Ordering.Contracts.Orders.Models;
 using Invoria.Ordering.Domain.Orders.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -22,38 +22,12 @@ public sealed class OrderCompletedDomainEventHandler : INotificationHandler<Orde
 
     public async Task Handle(OrderCompletedDomainEvent notification, CancellationToken cancellationToken)
     {
-        var order = notification.Order;
-
-        if (order.ReturnItems.Count == 0 || string.IsNullOrEmpty(order.AllocationId))
-        {
-            return;
-        }
-
-        var lines = order.ReturnItems
-            .Select(returnItem =>
-            {
-                var orderLine = order.Items.Single(i => i.Id == returnItem.OrderItemId);
-                return new OrderReturnLineModel
-                {
-                    OrderItemId = returnItem.OrderItemId,
-                    ProductId = orderLine.ProductId,
-                    Quantity = returnItem.Quantity
-                };
-            })
-            .ToList();
-
-        var integrationEvent = new OrderReturnRequestedIntegrationEvent
-        {
-            OrderId = order.Id,
-            AllocationId = order.AllocationId,
-            Lines = lines
-        };
+        var integrationEvent = notification.Order.ToOrderCompletedIntegrationEvent(notification.OccurredOn);
 
         _logger.LogDebug(
-            "Publishing integration event {EventName} for OrderId={OrderId} AllocationId={AllocationId}",
-            nameof(OrderReturnRequestedIntegrationEvent),
-            integrationEvent.OrderId,
-            integrationEvent.AllocationId);
+            "Publishing integration event {EventName} for OrderId={OrderId}",
+            nameof(OrderCompletedIntegrationEvent),
+            integrationEvent.OrderId);
         await _bus.Publish(integrationEvent);
     }
 }

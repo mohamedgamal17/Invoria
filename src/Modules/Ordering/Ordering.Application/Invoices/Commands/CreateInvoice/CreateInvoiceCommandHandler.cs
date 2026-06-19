@@ -38,10 +38,8 @@ public class CreateInvoiceCommandHandler : IApplicatonRequestHandler<CreateInvoi
             .SingleAsync(o => o.Id == request.OrderId, cancellationToken);
 
         var invoice = _invoiceDomainService.CreateFromOrder(order);
-        order.RecordInvoice(invoice.Id);
 
         await _invoiceRepository.Add(invoice, cancellationToken);
-        await _orderRepository.Update(order, cancellationToken);
 
         var dto = await _invoiceResponseFactory.PrepareDto(invoice);
 
