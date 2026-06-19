@@ -19,15 +19,16 @@ public class InvoiceTests
             orderId,
             subtotal,
             totalPrice,
-            [new InvoiceItem("p1", 2, 10m)]);
+            [new InvoiceItem("line-1", "p1", 2, 10m)]);
 
         invoice.Id.Should().NotBeNullOrWhiteSpace();
         invoice.CustomerId.Should().Be(customerId);
         invoice.OrderId.Should().Be(orderId);
         invoice.Subtotal.Should().Be(subtotal);
         invoice.TotalPrice.Should().Be(totalPrice);
-        invoice.Items.Should().ContainSingle()
-            .Which.ProductId.Should().Be("p1");
+        invoice.Items.Should().ContainSingle();
+        invoice.Items[0].OrderItemId.Should().Be("line-1");
+        invoice.Items[0].ProductId.Should().Be("p1");
     }
 
     [Test]
@@ -51,7 +52,7 @@ public class InvoiceTests
             "order-1",
             -1m,
             10m,
-            [new InvoiceItem("p1", 1, 10m)]);
+            [new InvoiceItem("line-1", "p1", 1, 10m)]);
 
         actSubtotal.Should().Throw<ArgumentException>();
 
@@ -60,7 +61,7 @@ public class InvoiceTests
             "order-1",
             10m,
             -1m,
-            [new InvoiceItem("p1", 1, 10m)]);
+            [new InvoiceItem("line-1", "p1", 1, 10m)]);
 
         actTotalPrice.Should().Throw<ArgumentException>();
     }
