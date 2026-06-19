@@ -5,6 +5,7 @@ namespace Invoria.Ordering.Domain.Invoices
 {
     public class Invoice : AuditedAggregateRoot
     {
+        public string InvoiceNumber { get; private set; }
         public string CustomerId { get; private set; }
         public string OrderId { get; private set; }
         public decimal Subtotal { get; private set; }
@@ -18,12 +19,14 @@ namespace Invoria.Ordering.Domain.Invoices
 
         private Invoice(
             string id,
+            string invoiceNumber,
             string customerId,
             string orderId,
             decimal subtotal,
             decimal totalPrice)
         {
             Id = id;
+            InvoiceNumber = invoiceNumber;
             CustomerId = customerId;
             OrderId = orderId;
             Subtotal = subtotal;
@@ -32,6 +35,7 @@ namespace Invoria.Ordering.Domain.Invoices
         }
 
         public static Invoice Create(
+            string invoiceNumber,
             string customerId,
             string orderId,
             decimal subtotal,
@@ -46,6 +50,7 @@ namespace Invoria.Ordering.Domain.Invoices
 
             var invoice = new Invoice(
                 Guid.NewGuid().ToString("N"),
+                invoiceNumber,
                 customerId,
                 orderId,
                 subtotal,

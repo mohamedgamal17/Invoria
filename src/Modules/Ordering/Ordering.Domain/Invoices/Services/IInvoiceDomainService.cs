@@ -5,5 +5,5 @@ namespace Invoria.Ordering.Domain.Invoices.Services;
 
 public interface IInvoiceDomainService : IDomainService
 {
-    Invoice CreateFromOrder(Order order);
+    Invoice CreateFromOrder(Order order, string invoiceNumber);
 }

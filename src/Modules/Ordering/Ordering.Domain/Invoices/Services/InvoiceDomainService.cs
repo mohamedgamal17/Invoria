@@ -5,9 +5,10 @@ namespace Invoria.Ordering.Domain.Invoices.Services;
 
 public class InvoiceDomainService : IInvoiceDomainService
 {
-    public Invoice CreateFromOrder(Order order)
+    public Invoice CreateFromOrder(Order order, string invoiceNumber)
     {
         Guard.Against.Null(order);
+        Guard.Against.NullOrWhiteSpace(invoiceNumber);
 
         var billableItems = order.GetBillableItems().ToList();
         if (billableItems.Count == 0)
@@ -21,6 +22,6 @@ public class InvoiceDomainService : IInvoiceDomainService
 
         var total = items.Sum(i => i.Price * i.Quantity);
 
-        return Invoice.Create(order.CustomerId, order.Id, total, total, items);
+        return Invoice.Create(invoiceNumber, order.CustomerId, order.Id, total, total, items);
     }
 }
