@@ -40,6 +40,9 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
             builder.Property(x => x.ReturnId)
                 .HasMaxLength(OrderTableConsts.ReturnIdMaxLength);
 
+            builder.Property(x => x.InvoiceId)
+                .HasMaxLength(OrderTableConsts.InvoiceIdMaxLength);
+
             builder.Property(x => x.OrderAllocated)
                 .IsRequired();
 
