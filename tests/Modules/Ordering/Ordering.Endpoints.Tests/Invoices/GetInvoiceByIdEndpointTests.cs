@@ -30,6 +30,7 @@ public class GetInvoiceByIdEndpointTests : OrderingTestFixture
         envelope!.IsSuccess.Should().BeTrue();
         envelope.Result.Should().NotBeNull();
         envelope.Result!.Id.Should().Be(invoiceId);
+        envelope.Result.InvoiceNumber.Should().NotBeNullOrEmpty();
         envelope.Result.OrderId.Should().Be(orderId);
         envelope.Result.CustomerId.Should().Be(customerId);
         envelope.Result.Items.Should().NotBeEmpty();

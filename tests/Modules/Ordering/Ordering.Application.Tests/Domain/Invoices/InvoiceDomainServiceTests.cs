@@ -10,6 +10,8 @@ public class InvoiceDomainServiceTests
 {
     private readonly InvoiceDomainService _sut = new();
 
+    private const string InvoiceNumber = "2506190001";
+
     private static void SetEntityId(Entity<string> entity, string id)
     {
         typeof(Entity<string>).GetProperty(nameof(Entity<string>.Id))!.SetValue(entity, id);
@@ -36,8 +38,9 @@ public class InvoiceDomainServiceTests
     {
         var order = CreateCompletedOrderWithItems(("line-1", "p1", 2, 10m));
 
-        var invoice = _sut.CreateFromOrder(order);
+        var invoice = _sut.CreateFromOrder(order, InvoiceNumber);
 
+        invoice.InvoiceNumber.Should().Be(InvoiceNumber);
         invoice.CustomerId.Should().Be("cust-invoice");
         invoice.OrderId.Should().Be("order-inv-1");
         invoice.Items.Should().ContainSingle();
@@ -59,8 +62,9 @@ public class InvoiceDomainServiceTests
         order.Accept();
         order.Complete([new OrderReturnItem("line-1", 1)]);
 
-        var invoice = _sut.CreateFromOrder(order);
+        var invoice = _sut.CreateFromOrder(order, InvoiceNumber);
 
+        invoice.InvoiceNumber.Should().Be(InvoiceNumber);
         invoice.Items.Should().ContainSingle();
         invoice.Items[0].Quantity.Should().Be(2);
         invoice.TotalPrice.Should().Be(20m);
@@ -77,7 +81,7 @@ public class InvoiceDomainServiceTests
         order.Accept();
         order.Complete([new OrderReturnItem("line-1", 1)]);
 
-        var act = () => _sut.CreateFromOrder(order);
+        var act = () => _sut.CreateFromOrder(order, InvoiceNumber);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*no billable items*");

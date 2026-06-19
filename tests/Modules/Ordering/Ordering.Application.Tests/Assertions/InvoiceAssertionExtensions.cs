@@ -26,10 +26,12 @@ public static class InvoiceAssertionExtensions
     public static void AssertInvoiceDto(
         this InvoiceDto dto,
         string expectedId,
+        string expectedInvoiceNumber,
         string expectedOrderId,
         string expectedCustomerId)
     {
         dto.Id.Should().Be(expectedId);
+        dto.InvoiceNumber.Should().Be(expectedInvoiceNumber);
         dto.OrderId.Should().Be(expectedOrderId);
         dto.CustomerId.Should().Be(expectedCustomerId);
         dto.Items.Should().NotBeEmpty();

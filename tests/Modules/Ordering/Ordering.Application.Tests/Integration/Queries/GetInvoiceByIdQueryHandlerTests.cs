@@ -54,7 +54,7 @@ public class GetInvoiceByIdQueryHandlerTests : OrderTestFixture
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.AssertInvoiceDto(createResult.Value.Id, order.Id, order.CustomerId);
+        result.Value!.AssertInvoiceDto(createResult.Value.Id, createResult.Value.InvoiceNumber, order.Id, order.CustomerId);
     }
 
     [Test]

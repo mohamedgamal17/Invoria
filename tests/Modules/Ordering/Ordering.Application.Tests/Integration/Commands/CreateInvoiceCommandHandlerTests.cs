@@ -47,7 +47,8 @@ public class CreateInvoiceCommandHandlerTests : OrderTestFixture
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.OrderId.Should().Be(order.Id);
+        result.Value!.InvoiceNumber.Should().NotBeNullOrEmpty();
+        result.Value.OrderId.Should().Be(order.Id);
         result.Value.Items.Should().NotBeEmpty();
         result.Value.TotalPrice.Should().Be(result.Value.Items.Sum(i => i.LineTotal));
         result.Value.Subtotal.Should().Be(result.Value.TotalPrice);

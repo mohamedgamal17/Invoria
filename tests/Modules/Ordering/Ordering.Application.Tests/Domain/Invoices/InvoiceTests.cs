@@ -9,12 +9,14 @@ public class InvoiceTests
     [Test]
     public void Create_sets_header_and_items()
     {
+        const string invoiceNumber = "2506190001";
         const string customerId = "cust-invoice-1";
         const string orderId = "order-invoice-1";
         const decimal subtotal = 20m;
         const decimal totalPrice = 22m;
 
         var invoice = Invoice.Create(
+            invoiceNumber,
             customerId,
             orderId,
             subtotal,
@@ -22,6 +24,7 @@ public class InvoiceTests
             [new InvoiceItem("line-1", "p1", 2, 10m)]);
 
         invoice.Id.Should().NotBeNullOrWhiteSpace();
+        invoice.InvoiceNumber.Should().Be(invoiceNumber);
         invoice.CustomerId.Should().Be(customerId);
         invoice.OrderId.Should().Be(orderId);
         invoice.Subtotal.Should().Be(subtotal);
@@ -35,6 +38,7 @@ public class InvoiceTests
     public void Create_requires_at_least_one_item()
     {
         var act = () => Invoice.Create(
+            "INV2506190001",
             "cust-1",
             "order-1",
             10m,
@@ -48,6 +52,7 @@ public class InvoiceTests
     public void Create_rejects_negative_subtotal_or_total_price()
     {
         var actSubtotal = () => Invoice.Create(
+            "INV2506190001",
             "cust-1",
             "order-1",
             -1m,
@@ -57,6 +62,7 @@ public class InvoiceTests
         actSubtotal.Should().Throw<ArgumentException>();
 
         var actTotalPrice = () => Invoice.Create(
+            "INV2506190001",
             "cust-1",
             "order-1",
             10m,
