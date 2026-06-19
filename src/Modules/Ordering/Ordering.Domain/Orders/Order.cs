@@ -31,6 +31,8 @@ namespace Invoria.Ordering.Domain.Orders
 
         public string? ReturnId { get; private set; }
 
+        public string? InvoiceId { get; private set; }
+
         public bool OrderAllocated { get; private set; }
 
         private Order()
@@ -210,6 +212,18 @@ namespace Invoria.Ordering.Domain.Orders
             ReturnId = returnId;
         }
 
+        public void RecordInvoice(string invoiceId)
+        {
+            Guard.Against.NullOrWhiteSpace(invoiceId);
+
+            if (!string.IsNullOrEmpty(InvoiceId))
+            {
+                throw new InvalidOperationException("Order already has an invoice.");
+            }
+
+            InvoiceId = invoiceId;
+        }
+
         public void Revise()
         {
             if (Status != OrderStatus.Processing && Status != OrderStatus.RevisionPending)
@@ -293,6 +307,18 @@ namespace Invoria.Ordering.Domain.Orders
                 .GroupBy(r => r.OrderItemId)
                 .Select(g => new OrderReturnItem(g.Key, g.Sum(r => r.Quantity)))
                 .ToList();
+        }
+
+        public IEnumerable<(OrderItem Line, int BillableQuantity)> GetBillableItems()
+        {
+            foreach (var item in Items)
+            {
+                var billableQuantity = Math.Max(0, item.Quantity - ReturnedQuantity(item.Id));
+                if (billableQuantity > 0)
+                {
+                    yield return (item, billableQuantity);
+                }
+            }
         }
 
         private int ReturnedQuantity(string orderItemId)
