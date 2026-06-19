@@ -4,7 +4,7 @@ using Invoria.Application.Tests.Extensions;
 using Invoria.Ordering.Application.Invoices.Commands.CreateInvoice;
 using Invoria.Ordering.Application.Orders.Commands.AcceptOrder;
 using Invoria.Ordering.Application.Orders.Commands.CompleteOrder;
-using Invoria.Ordering.Contracts.Invoices.Dtos;
+using Invoria.Ordering.Application.Orders.Commands.RecordOrderInvoice;
 using Invoria.Ordering.Domain.Invoices;
 using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
@@ -64,7 +64,7 @@ public class CreateInvoiceCommandHandlerTests : OrderTestFixture
             .AsNoTracking()
             .SingleAsync(o => o.Id == order.Id);
 
-        orderFromDb.InvoiceId.Should().Be(result.Value.Id);
+        orderFromDb.InvoiceId.Should().BeNull();
     }
 
     [Test]
@@ -93,21 +93,24 @@ public class CreateInvoiceCommandHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_set_order_invoice_id_after_create()
+    public async Task Should_set_order_invoice_id_via_RecordOrderInvoice()
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
         await Mediator.Send(new AcceptOrderCommand(order.Id));
         await Mediator.Send(new CompleteOrderCommand(order.Id));
 
-        var result = await Mediator.Send(new CreateInvoiceCommand(order.Id));
+        var createResult = await Mediator.Send(new CreateInvoiceCommand(order.Id));
+        createResult.ShouldBeSuccess();
 
-        result.ShouldBeSuccess();
+        var recordResult = await Mediator.Send(
+            new RecordOrderInvoiceCommand(order.Id, createResult.Value!.Id));
+        recordResult.ShouldBeSuccess();
 
         var orderFromDb = await Scope.Resolve<OrderingDbContext>()
             .Set<Order>()
             .AsNoTracking()
             .SingleAsync(o => o.Id == order.Id);
 
-        orderFromDb.InvoiceId.Should().Be(result.Value!.Id);
+        orderFromDb.InvoiceId.Should().Be(createResult.Value.Id);
     }
 }

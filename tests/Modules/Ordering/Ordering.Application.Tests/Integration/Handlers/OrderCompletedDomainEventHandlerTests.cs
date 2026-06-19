@@ -22,7 +22,7 @@ public class OrderCompletedDomainEventHandlerTests
     }
 
     [Test]
-    public async Task Publishes_OrderReturnRequestedIntegrationEvent_when_order_has_return_items()
+    public async Task Publishes_OrderCompletedIntegrationEvent_with_return_lines_and_allocation()
     {
         var bus = new Mock<IBus>();
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
@@ -43,19 +43,20 @@ public class OrderCompletedDomainEventHandlerTests
 
         bus.Verify(
             b => b.Publish(
-                It.Is<OrderReturnRequestedIntegrationEvent>(e =>
+                It.Is<OrderCompletedIntegrationEvent>(e =>
                     e.OrderId == "o1" &&
                     e.AllocationId == "alloc-1" &&
-                    e.Lines.Count == 1 &&
-                    e.Lines[0].OrderItemId == "i1" &&
-                    e.Lines[0].ProductId == "p1" &&
-                    e.Lines[0].Quantity == 1),
+                    e.ReturnLines.Count == 1 &&
+                    e.ReturnLines[0].OrderItemId == "i1" &&
+                    e.ReturnLines[0].ProductId == "p1" &&
+                    e.ReturnLines[0].Quantity == 1 &&
+                    e.HasBillableItems),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
 
     [Test]
-    public async Task Does_not_publish_OrderReturnRequestedIntegrationEvent_when_no_return_items()
+    public async Task Publishes_OrderCompletedIntegrationEvent_with_empty_return_lines_when_no_returns()
     {
         var bus = new Mock<IBus>();
         bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
@@ -75,8 +76,99 @@ public class OrderCompletedDomainEventHandlerTests
         await handler.Handle(ev, CancellationToken.None);
 
         bus.Verify(
-            b => b.Publish(It.IsAny<OrderReturnRequestedIntegrationEvent>(), It.IsAny<Dictionary<string, string>>()),
-            Times.Never);
+            b => b.Publish(
+                It.Is<OrderCompletedIntegrationEvent>(e =>
+                    e.OrderId == "o1" &&
+                    e.AllocationId == "alloc-1" &&
+                    e.ReturnLines.Count == 0 &&
+                    e.HasBillableItems),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Publishes_OrderCompletedIntegrationEvent_with_HasBillableItems_when_no_returns()
+    {
+        var bus = new Mock<IBus>();
+        bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = new OrderCompletedDomainEventHandler(
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderCompletedDomainEventHandler>>());
+
+        var order = CreateProcessingOrder("o1", "ON-1", "c1", "i1", "p1", 2);
+        order.Complete([]);
+        order.ClearDomainEvents();
+
+        var ev = new OrderCompletedDomainEvent(order);
+
+        await handler.Handle(ev, CancellationToken.None);
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<OrderCompletedIntegrationEvent>(e =>
+                    e.OrderId == "o1" &&
+                    e.HasBillableItems),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Publishes_OrderCompletedIntegrationEvent_with_HasBillableItems_when_partial_returns()
+    {
+        var bus = new Mock<IBus>();
+        bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = new OrderCompletedDomainEventHandler(
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderCompletedDomainEventHandler>>());
+
+        var order = CreateProcessingOrder("o1", "ON-1", "c1", "i1", "p1", 2);
+        order.RecordAllocation("alloc-1");
+        order.Complete([new OrderReturnItem("i1", 1)]);
+        order.ClearDomainEvents();
+
+        var ev = new OrderCompletedDomainEvent(order);
+
+        await handler.Handle(ev, CancellationToken.None);
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<OrderCompletedIntegrationEvent>(e =>
+                    e.OrderId == "o1" &&
+                    e.HasBillableItems),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task Publishes_OrderCompletedIntegrationEvent_without_HasBillableItems_when_all_items_returned()
+    {
+        var bus = new Mock<IBus>();
+        bus.Setup(b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = new OrderCompletedDomainEventHandler(
+            bus.Object,
+            Mock.Of<Microsoft.Extensions.Logging.ILogger<OrderCompletedDomainEventHandler>>());
+
+        var order = CreateProcessingOrder("o1", "ON-1", "c1", "i1", "p1", 2);
+        order.Complete([new OrderReturnItem("i1", 2)]);
+        order.ClearDomainEvents();
+
+        var ev = new OrderCompletedDomainEvent(order);
+
+        await handler.Handle(ev, CancellationToken.None);
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<OrderCompletedIntegrationEvent>(e =>
+                    e.OrderId == "o1" &&
+                    !e.HasBillableItems),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
     }
 
     private static Order CreateProcessingOrder(

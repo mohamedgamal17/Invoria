@@ -454,6 +454,138 @@ public class OrderSagaTests
             Times.Never);
     }
 
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_publishes_create_order_return_saga_activity_when_returns_and_allocation()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            AllocationId = "alloc-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted(
+            "order-1",
+            "alloc-1",
+            [new OrderReturnLineModel { OrderItemId = "line-1", ProductId = "p1", Quantity = 1 }],
+            hasBillableItems: true));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<CreateOrderReturnSagaActivity>(a =>
+                    a.OrderId == "order-1" &&
+                    a.AllocationId == "alloc-1" &&
+                    a.Lines.Count == 1 &&
+                    a.Lines[0].OrderItemId == "line-1" &&
+                    a.Lines[0].ProductId == "p1" &&
+                    a.Lines[0].Quantity == 1),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_does_not_publish_create_order_return_saga_activity_when_no_returns()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            AllocationId = "alloc-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", "alloc-1", [], hasBillableItems: true));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<CreateOrderReturnSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_publishes_create_order_invoice_saga_activity_when_billable_items()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: true));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<CreateOrderInvoiceSagaActivity>(a => a.OrderId == "order-1"),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_does_not_publish_create_order_invoice_saga_activity_when_no_billable_items()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: false));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<CreateOrderInvoiceSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_completes_saga()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: false));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        fixture.Data
+            .OfType<OrderSagaState>()
+            .Should()
+            .BeEmpty();
+    }
+
     private static Mock<IBus> CreateBus()
     {
         var bus = new Mock<IBus>();
@@ -609,5 +741,19 @@ public class OrderSagaTests
         {
             OrderId = orderId,
             AllocationId = allocationId
+        };
+
+    private static OrderCompletedIntegrationEvent BuildOrderCompleted(
+        string orderId,
+        string? allocationId,
+        List<OrderReturnLineModel> returnLines,
+        bool hasBillableItems) =>
+        new()
+        {
+            OrderId = orderId,
+            OccurredOn = DateTimeOffset.UtcNow,
+            AllocationId = allocationId,
+            ReturnLines = returnLines,
+            HasBillableItems = hasBillableItems
         };
 }
