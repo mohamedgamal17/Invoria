@@ -35,7 +35,7 @@ public sealed class OrderReturnSaga : Saga<OrderReturnSagaState>,
 
     public async Task Handle(ImmediateReturnCreatedIntegrationEvent message)
     {
-        Data.ApplyCreated(message.ReturnId);
+        Data.ApplyCompleted(message.ReturnId);
 
         await _bus.Publish(new RecordOrderReturnSagaActivity(message.OrderId, message.ReturnId));
     }

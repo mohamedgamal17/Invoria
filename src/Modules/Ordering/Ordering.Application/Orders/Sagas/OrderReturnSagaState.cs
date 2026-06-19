@@ -20,9 +20,9 @@ public sealed class OrderReturnSagaState : ISagaData
         State = OrderReturnSagaProcessState.Requested;
     }
 
-    public void ApplyCreated(string returnId)
+    public void ApplyCompleted(string returnId)
     {
         ReturnId = returnId;
-        State = OrderReturnSagaProcessState.Created;
+        State = OrderReturnSagaProcessState.Completed;
     }
 }
