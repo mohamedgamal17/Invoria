@@ -153,7 +153,7 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - `src/Modules/Ordering/Ordering.Domain`
 
 - **Invoices**
-  - **`Invoice`** (`Invoices/Invoice.cs`) — aggregate root with `CustomerId`, `OrderId`, `Subtotal`, `TotalPrice`, and child **`InvoiceItem`** rows.
+  - **`Invoice`** (`Invoices/Invoice.cs`) — aggregate root with `InvoiceNumber`, `CustomerId`, `OrderId`, `Subtotal`, `TotalPrice`, and child **`InvoiceItem`** rows.
   - **`InvoiceItem`** (`Invoices/InvoiceItem.cs`) — line entity with `OrderItemId`, `ProductId`, `Quantity`, and `Price` (unit price from the order line).
   - **`IInvoiceDomainService`** / **`InvoiceDomainService`** (`Invoices/Services/`) — builds an invoice from an **`Order`** using billable quantities only (ordered quantity minus returned quantity per line); throws when no billable lines remain.
   - **One-to-one with `Order`** — `Order.InvoiceId` (nullable) ↔ `Invoice.OrderId` (unique); **`Order.RecordInvoice(invoiceId)`** links the order after invoice creation.
@@ -164,7 +164,8 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 
 ### Application (`Invoria.Ordering.Application`)
 
-- **`CreateInvoiceCommand`** / **`CreateInvoiceCommandHandler`** — `Invoices/Commands/CreateInvoice/`; loads order (items + return items), delegates to **`IInvoiceDomainService.CreateFromOrder`**, persists **`Invoice`**, returns **`InvoiceDto`** via **`IInvoiceResponseFactory`**.
+- **`IInvoiceNumberGenerator`** / **`InvoiceNumberGenerator`** — `Invoices/Services/` and `Invoria.Ordering.Infrastructure/Services/`; generates invoice numbers using the same daily counter pattern (`yyMMdd` + D4 sequence) as order numbers via **`ICounterRepository`**.
+- **`CreateInvoiceCommand`** / **`CreateInvoiceCommandHandler`** — `Invoices/Commands/CreateInvoice/`; loads order (items + return items), generates **`InvoiceNumber`** via **`IInvoiceNumberGenerator`**, delegates to **`IInvoiceDomainService.CreateFromOrder`**, persists **`Invoice`**, returns **`InvoiceDto`** via **`IInvoiceResponseFactory`**.
 - **`ListInvoicesQuery`** / **`ListInvoicesQueryHandler`** — `Invoices/Queries/ListInvoices/`; paged read of invoices with optional **`CustomerId`** and **`OrderId`** filters; returns **`PagingDto<InvoiceDto>`** ordered by invoice id descending (newest first).
 - **`GetInvoiceByIdQuery`** / **`GetInvoiceByIdQueryHandler`** — `Invoices/Queries/GetInvoiceById/`; single-invoice read by id with line items; returns **`InvoiceDto`** or **`NotFoundException`** when missing.
 - **`ListInvoicesEndpoint`** — `Invoria.Ordering.Endpoints/Invoices/`; **`GET /invoices`** with **`Skip`** / **`Length`** paging and optional **`customerId`** / **`orderId`** query parameters.
