@@ -165,6 +165,8 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 ### Application (`Invoria.Ordering.Application`)
 
 - **`CreateInvoiceCommand`** / **`CreateInvoiceCommandHandler`** — `Invoices/Commands/CreateInvoice/`; loads order (items + return items), delegates to **`IInvoiceDomainService.CreateFromOrder`**, persists **`Invoice`**, returns **`InvoiceDto`** via **`IInvoiceResponseFactory`**.
+- **`ListInvoicesQuery`** / **`ListInvoicesQueryHandler`** — `Invoices/Queries/ListInvoices/`; paged read of invoices with optional **`CustomerId`** and **`OrderId`** filters; returns **`PagingDto<InvoiceDto>`** ordered by invoice id descending (newest first).
+- **`ListInvoicesEndpoint`** — `Invoria.Ordering.Endpoints/Invoices/`; **`GET /invoices`** with **`Skip`** / **`Length`** paging and optional **`customerId`** / **`orderId`** query parameters.
 - **`RecordOrderInvoiceCommand`** / **`RecordOrderInvoiceCommandHandler`** — `Orders/Commands/RecordOrderInvoice/`; links **`Order.InvoiceId`** via **`Order.RecordInvoice`** (invoked from saga activity).
 - **`OrderInvoiceSaga`** / **`OrderInvoiceSagaState`** — `Invoices/Sagas/`; orchestrates invoice creation after order completion. Initiated by **`OrderInvoiceRequestIntegrationEvent`** (correlated on `OrderId`). Publishes **`CreateOrderInvoiceIntegrationEvent`**; on **`OrderInvoiceCreatedIntegrationEvent`**, publishes **`RecordOrderInvoiceSagaActivity`**. Workflow states in **`OrderInvoiceSagaProcessState`** (`Requested`, `Completed`).
 - **`CreateOrderInvoiceIntegrationEventConsumer`** — `Invoices/Consumers/`; handles **`CreateOrderInvoiceIntegrationEvent`**, sends **`CreateInvoiceCommand`**, publishes **`OrderInvoiceCreatedIntegrationEvent`**.
