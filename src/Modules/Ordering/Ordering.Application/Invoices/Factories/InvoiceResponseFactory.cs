@@ -11,6 +11,7 @@ public class InvoiceResponseFactory : ResponseFactory<Invoice, InvoiceDto>, IInv
         var dto = new InvoiceDto
         {
             Id = view.Id,
+            InvoiceNumber = view.InvoiceNumber,
             CustomerId = view.CustomerId,
             OrderId = view.OrderId,
             Subtotal = view.Subtotal,

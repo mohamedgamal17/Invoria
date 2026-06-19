@@ -1,6 +1,7 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Primitives;
 using Invoria.Ordering.Application.Invoices.Factories;
+using Invoria.Ordering.Application.Invoices.Services;
 using Invoria.Ordering.Contracts.Invoices.Dtos;
 using Invoria.Ordering.Domain;
 using Invoria.Ordering.Domain.Invoices;
@@ -16,17 +17,20 @@ public class CreateInvoiceCommandHandler : IApplicatonRequestHandler<CreateInvoi
     private readonly IOrderingRepository<Invoice> _invoiceRepository;
     private readonly IInvoiceDomainService _invoiceDomainService;
     private readonly IInvoiceResponseFactory _invoiceResponseFactory;
+    private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
 
     public CreateInvoiceCommandHandler(
         IOrderingRepository<Order> orderRepository,
         IOrderingRepository<Invoice> invoiceRepository,
         IInvoiceDomainService invoiceDomainService,
-        IInvoiceResponseFactory invoiceResponseFactory)
+        IInvoiceResponseFactory invoiceResponseFactory,
+        IInvoiceNumberGenerator invoiceNumberGenerator)
     {
         _orderRepository = orderRepository;
         _invoiceRepository = invoiceRepository;
         _invoiceDomainService = invoiceDomainService;
         _invoiceResponseFactory = invoiceResponseFactory;
+        _invoiceNumberGenerator = invoiceNumberGenerator;
     }
 
     public async Task<Result<InvoiceDto>> Handle(CreateInvoiceCommand request, CancellationToken cancellationToken)
@@ -37,7 +41,9 @@ public class CreateInvoiceCommandHandler : IApplicatonRequestHandler<CreateInvoi
             .Include(o => o.ReturnItems)
             .SingleAsync(o => o.Id == request.OrderId, cancellationToken);
 
-        var invoice = _invoiceDomainService.CreateFromOrder(order);
+        var invoiceNumber = await _invoiceNumberGenerator.GenerateAsync(cancellationToken);
+
+        var invoice = _invoiceDomainService.CreateFromOrder(order, invoiceNumber);
 
         await _invoiceRepository.Add(invoice, cancellationToken);
 
