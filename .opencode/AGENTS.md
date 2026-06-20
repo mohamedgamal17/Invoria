@@ -32,6 +32,7 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - `ai/Architecture.md` — detailed module wiring, migrations, Rebus flow.
 - `ai/Branch-Changes.md` — PR documentation template for feature branches.
 - `ai/TDD-Prompt-Examples.md` — example prompts.
+- `ai/Test-Conventions.md` — test folder structure conventions.
 
 ## Conventions to follow
 

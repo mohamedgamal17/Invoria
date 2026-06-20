@@ -232,7 +232,8 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - **Root**: shared test harness — `OrderingTestFixture.cs`, `OrderingTestModuleInstaller.cs`, `GlobalUsings.cs`.
   - **`Domain/Orders/`**: pure domain tests (e.g. `OrderAllocationSuccessDomainTests`, `OrderAllocationFailureDomainTests`).
   - **`Domain/Invoices/`**: invoice and billable-quantity domain tests (e.g. `InvoiceDomainServiceTests`, `OrderBillableItemsDomainTests`).
-  - **`Integration/`**: handler and integration tests — `Commands/`, `Queries/`, `Factories/`, `Consumers/` (e.g. allocation consumer), plus `OrderTestFixture.cs`.
+  - **`Orders/`**: order-specific integration tests — `Commands/`, `Queries/`, `Factories/`, `Handlers/`, `Sagas/`, plus `OrderTestFixture.cs`.
+- **`Invoices/`**: invoice-specific tests — `Commands/`, `Queries/`, `Consumers/`, `Sagas/`.
   - **`Infrastructure/Services/`**: infrastructure-focused tests (e.g. `OrderNumberGeneratorTests`, `OrderNumberGeneratorIntegrationTests`).
   - **`Assertions/`**: shared assertion helpers (e.g. `OrderAssertionExtensions.cs`).
 
@@ -240,13 +241,20 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 flowchart TB
   root[Ordering.Application.Tests root]
   root --> Domain[Domain/Orders]
-  root --> Integration[Integration]
+  root --> Orders[Orders]
+  root --> Invoices[Invoices]
   root --> Infra[Infrastructure/Services]
   root --> Assertions[Assertions]
-  Integration --> Cmd[Commands]
-  Integration --> Qry[Queries]
-  Integration --> Fact[Factories]
-  Integration --> Cons[Consumers]
+  Orders --> OCmd[Commands]
+  Orders --> OQry[Queries]
+  Orders --> OFact[Factories]
+  Orders --> OHandler[Handlers]
+  Orders --> OSagas[Sagas]
+  Orders --> OFixture[OrderTestFixture]
+  Invoices --> ICmd[Commands]
+  Invoices --> IQry[Queries]
+  Invoices --> ICons[Consumers]
+  Invoices --> ISagas[Sagas]
 ```
 
 ---
