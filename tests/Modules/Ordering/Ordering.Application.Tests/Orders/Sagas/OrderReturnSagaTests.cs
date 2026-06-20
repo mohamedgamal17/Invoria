@@ -44,7 +44,7 @@ public class OrderReturnSagaTests
     }
 
     [Test]
-    public void Deliver_ImmediateReturnCreatedIntegrationEvent_sets_created_state_and_return_id()
+    public void Deliver_ImmediateReturnCreatedIntegrationEvent_sets_completed_state_and_return_id()
     {
         var bus = CreateBus();
         using var fixture = SagaFixture.For(() => new OrderReturnSaga(bus.Object));
@@ -58,7 +58,7 @@ public class OrderReturnSagaTests
             .OfType<OrderReturnSagaState>()
             .Single(d => d.OrderId == "order-1");
 
-        data.State.Should().Be(OrderReturnSagaProcessState.Created);
+        data.State.Should().Be(OrderReturnSagaProcessState.Completed);
         data.ReturnId.Should().Be("return-1");
 
         bus.Verify(

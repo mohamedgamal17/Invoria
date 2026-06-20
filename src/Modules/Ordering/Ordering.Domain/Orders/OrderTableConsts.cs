@@ -7,5 +7,6 @@
         public const int CustomerIdMaxLength = 256;
         public const int AllocationIdMaxLength = 256;
         public const int ReturnIdMaxLength = 256;
+        public const int InvoiceIdMaxLength = 256;
     }
 }

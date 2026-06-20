@@ -145,18 +145,49 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 
 ---
 
-## Ordering Module (integration contracts)
+## Ordering Module
+
+### Domain (`Invoria.Ordering.Domain`)
+
+- **Location**
+  - `src/Modules/Ordering/Ordering.Domain`
+
+- **Invoices**
+  - **`Invoice`** (`Invoices/Invoice.cs`) — aggregate root with `InvoiceNumber`, `CustomerId`, `OrderId`, `Subtotal`, `TotalPrice`, and child **`InvoiceItem`** rows.
+  - **`InvoiceItem`** (`Invoices/InvoiceItem.cs`) — line entity with `OrderItemId`, `ProductId`, `Quantity`, and `Price` (unit price from the order line).
+  - **`IInvoiceDomainService`** / **`InvoiceDomainService`** (`Invoices/Services/`) — builds an invoice from an **`Order`** using billable quantities only (ordered quantity minus returned quantity per line); throws when no billable lines remain.
+  - **One-to-one with `Order`** — `Order.InvoiceId` (nullable) ↔ `Invoice.OrderId` (unique); **`Order.RecordInvoice(invoiceId)`** links the order after invoice creation.
+
+- **Billable quantity (invoicing)**
+  - **`Order.GetBillableItems()`** — yields `(OrderItem, BillableQuantity)` for each line where `BillableQuantity = max(0, ordered − returned)`; uses the same return math as **`Order.NetOfTotalOrderAmount`** and **`OrderReturnItem`** recorded at completion.
+  - Fully returned lines are omitted from the invoice; header totals equal the sum of billable line amounts.
+
+### Application (`Invoria.Ordering.Application`)
+
+- **`IInvoiceNumberGenerator`** / **`InvoiceNumberGenerator`** — `Invoices/Services/` and `Invoria.Ordering.Infrastructure/Services/`; generates invoice numbers using the same daily counter pattern (`yyMMdd` + D4 sequence) as order numbers via **`ICounterRepository`**.
+- **`CreateInvoiceCommand`** / **`CreateInvoiceCommandHandler`** — `Invoices/Commands/CreateInvoice/`; loads order (items + return items), generates **`InvoiceNumber`** via **`IInvoiceNumberGenerator`**, delegates to **`IInvoiceDomainService.CreateFromOrder`**, persists **`Invoice`**, returns **`InvoiceDto`** via **`IInvoiceResponseFactory`**.
+- **`ListInvoicesQuery`** / **`ListInvoicesQueryHandler`** — `Invoices/Queries/ListInvoices/`; paged read of invoices with optional **`CustomerId`** and **`OrderId`** filters; returns **`PagingDto<InvoiceDto>`** ordered by invoice id descending (newest first).
+- **`GetInvoiceByIdQuery`** / **`GetInvoiceByIdQueryHandler`** — `Invoices/Queries/GetInvoiceById/`; single-invoice read by id with line items; returns **`InvoiceDto`** or **`NotFoundException`** when missing.
+- **`ListInvoicesEndpoint`** — `Invoria.Ordering.Endpoints/Invoices/`; **`GET /invoices`** with **`Skip`** / **`Length`** paging and optional **`customerId`** / **`orderId`** query parameters.
+- **`GetInvoiceByIdEndpoint`** — `Invoria.Ordering.Endpoints/Invoices/`; **`GET /invoices/{id}`**.
+- **`RecordOrderInvoiceCommand`** / **`RecordOrderInvoiceCommandHandler`** — `Orders/Commands/RecordOrderInvoice/`; links **`Order.InvoiceId`** via **`Order.RecordInvoice`** (invoked from saga activity).
+- **`OrderInvoiceSaga`** / **`OrderInvoiceSagaState`** — `Invoices/Sagas/`; orchestrates invoice creation after order completion. Initiated by **`OrderInvoiceRequestIntegrationEvent`** (correlated on `OrderId`). Publishes **`CreateOrderInvoiceIntegrationEvent`**; on **`OrderInvoiceCreatedIntegrationEvent`**, publishes **`RecordOrderInvoiceSagaActivity`**. Workflow states in **`OrderInvoiceSagaProcessState`** (`Requested`, `Completed`).
+- **`CreateOrderInvoiceIntegrationEventConsumer`** — `Invoices/Consumers/`; handles **`CreateOrderInvoiceIntegrationEvent`**, sends **`CreateInvoiceCommand`**, publishes **`OrderInvoiceCreatedIntegrationEvent`**.
+- **`OrderCompletedDomainEventHandler`** — on **`OrderCompletedDomainEvent`**, maps the order to **`OrderCompletedIntegrationEvent`** and publishes it (orchestration is owned by **`OrderSaga`**).
+- **`CreateOrderReturnSagaActivity`** / **`CreateOrderInvoiceSagaActivity`** — `Orders/Sagas/Activities/`; fan-out from **`OrderSaga`** completion to **`OrderReturnRequestedIntegrationEvent`** and **`OrderInvoiceRequestIntegrationEvent`** respectively.
 
 ### Contracts (`Invoria.Ordering.Contracts`)
 
 - **Location**
   - `src/Modules/Ordering/Ordering.Contracts`
 
-- **Layout** (bounded context `Orders/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
+- **Layout** (bounded contexts `Orders/`, `Invoices/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
   - `Orders/Enums/` — `OrderStatus`, `OrderPaymentType`, `AllocationReleaseReason`, etc. (`Invoria.Ordering.Contracts.Orders.Enums`)
   - `Orders/Dtos/` — `OrderDto`, `OrderItemDto`, … (`Invoria.Ordering.Contracts.Orders.Dtos`)
   - `Orders/Events/` — integration events (`Invoria.Ordering.Contracts.Orders.Events`)
   - `Orders/Models/` — `OrderModel`, `OrderItemModel`, `OrderLineModel` (`Invoria.Ordering.Contracts.Orders.Models`)
+  - `Invoices/Dtos/` — `InvoiceDto`, `InvoiceItemDto` (`Invoria.Ordering.Contracts.Invoices.Dtos`)
+  - `Invoices/Events/` — `OrderInvoiceRequestIntegrationEvent`, `OrderInvoiceCreatedIntegrationEvent`, `CreateOrderInvoiceIntegrationEvent` (`Invoria.Ordering.Contracts.Invoices.Events`)
 
 - **Integration events**
   - **`OrderCreatedIntegrationEvent`**
@@ -165,10 +196,26 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
   - **`OrderAcceptedIntegrationEvent`**
     - File: `Orders/Events/OrderAcceptedIntegrationEvent.cs`
     - Published when an order is accepted (Processing); consumed by **`OrderSaga`** to trigger inventory allocation.
+  - **`OrderCompletedIntegrationEvent`**
+    - File: `Orders/Events/OrderCompletedIntegrationEvent.cs`
+    - Payload: `OrderId`, `OccurredOn`, `AllocationId`, `ReturnLines`, `HasBillableItems`.
+    - Published by **`OrderCompletedDomainEventHandler`** when an order completes; consumed by **`OrderSaga`** to mark the saga complete and fan out return/invoice activities.
   - **`OrderReturnRequestedIntegrationEvent`**
     - File: `Orders/Events/OrderReturnRequestedIntegrationEvent.cs`
     - Payload: `OrderId`, `AllocationId`, `Lines` (`List<OrderReturnLineModel>`).
-    - Published by **`OrderCompletedDomainEventHandler`** when an order completes with return lines and an `AllocationId`; consumed by **`OrderReturnSaga`** to trigger immediate-return creation in Inventory.
+    - Published by **`CreateOrderReturnSagaActivity`** when an order completes with return lines and an `AllocationId`; consumed by **`OrderReturnSaga`** to trigger immediate-return creation in Inventory.
+  - **`CreateOrderInvoiceIntegrationEvent`**
+    - File: `Invoices/Events/CreateOrderInvoiceIntegrationEvent.cs`
+    - Payload: `OrderId`.
+    - Published by **`OrderInvoiceSaga`** when invoice creation is requested; consumed by **`CreateOrderInvoiceIntegrationEventConsumer`** to send **`CreateInvoiceCommand`**.
+  - **`OrderInvoiceRequestIntegrationEvent`**
+    - File: `Invoices/Events/OrderInvoiceRequestIntegrationEvent.cs`
+    - Payload: `OrderId`.
+    - Published by **`CreateOrderInvoiceSagaActivity`** when an order completes with billable items; consumed by **`OrderInvoiceSaga`**.
+  - **`OrderInvoiceCreatedIntegrationEvent`**
+    - File: `Invoices/Events/OrderInvoiceCreatedIntegrationEvent.cs`
+    - Payload: `OrderId`, `InvoiceId`.
+    - Published by **`CreateOrderInvoiceIntegrationEventConsumer`** after invoice persistence; consumed by **`OrderInvoiceSaga`** to trigger **`RecordOrderInvoiceSagaActivity`**.
   - **`OrderRevisionRequestedIntegrationEvent`**
     - File: `Orders/Events/OrderRevisionRequestedIntegrationEvent.cs`
     - Published when an allocated processing order requests revision; consumed by **`OrderSaga`** to release allocation and revise the order.
@@ -184,7 +231,9 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 - **Layout**
   - **Root**: shared test harness — `OrderingTestFixture.cs`, `OrderingTestModuleInstaller.cs`, `GlobalUsings.cs`.
   - **`Domain/Orders/`**: pure domain tests (e.g. `OrderAllocationSuccessDomainTests`, `OrderAllocationFailureDomainTests`).
-  - **`Integration/`**: handler and integration tests — `Commands/`, `Queries/`, `Factories/`, `Consumers/` (e.g. allocation consumer), plus `OrderTestFixture.cs`.
+  - **`Domain/Invoices/`**: invoice and billable-quantity domain tests (e.g. `InvoiceDomainServiceTests`, `OrderBillableItemsDomainTests`).
+  - **`Orders/`**: order-specific integration tests — `Commands/`, `Queries/`, `Factories/`, `Handlers/`, `Sagas/`, plus `OrderTestFixture.cs`.
+- **`Invoices/`**: invoice-specific tests — `Commands/`, `Queries/`, `Consumers/`, `Sagas/`.
   - **`Infrastructure/Services/`**: infrastructure-focused tests (e.g. `OrderNumberGeneratorTests`, `OrderNumberGeneratorIntegrationTests`).
   - **`Assertions/`**: shared assertion helpers (e.g. `OrderAssertionExtensions.cs`).
 
@@ -192,13 +241,20 @@ Other business modules (CustomerManagement, Ordering, Procurement, Inventory, an
 flowchart TB
   root[Ordering.Application.Tests root]
   root --> Domain[Domain/Orders]
-  root --> Integration[Integration]
+  root --> Orders[Orders]
+  root --> Invoices[Invoices]
   root --> Infra[Infrastructure/Services]
   root --> Assertions[Assertions]
-  Integration --> Cmd[Commands]
-  Integration --> Qry[Queries]
-  Integration --> Fact[Factories]
-  Integration --> Cons[Consumers]
+  Orders --> OCmd[Commands]
+  Orders --> OQry[Queries]
+  Orders --> OFact[Factories]
+  Orders --> OHandler[Handlers]
+  Orders --> OSagas[Sagas]
+  Orders --> OFixture[OrderTestFixture]
+  Invoices --> ICmd[Commands]
+  Invoices --> IQry[Queries]
+  Invoices --> ICons[Consumers]
+  Invoices --> ISagas[Sagas]
 ```
 
 ---
@@ -926,9 +982,10 @@ flowchart LR
 
 - **Sagas**
   - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
-  - **`OrderSaga`** / **`OrderSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates order ↔ inventory allocation coordination. Initiated by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, publishes `AllocateOrderIntegrationEvent`. Handles `AllocationCreated`, `AllocationSucceeded`, `AllocationFailed`, `AllocationReleased`, and `OrderRevisionRequested` integration events. Workflow states in `OrderSagaProcessState` (`Created`, `RequestAllocation`, `Allocate`, `AllocationFailed`, `AllocationSucceeded`, `RevisionRequested`, `AllocationReleased`).
-  - **`OrderReturnSaga`** / **`OrderReturnSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates immediate-return creation after order completion with return lines. Initiated by `OrderReturnRequestedIntegrationEvent` (correlated on `OrderId`). Publishes `CreateImmediateReturnIntegrationEvent` to Inventory; on `ImmediateReturnCreatedIntegrationEvent`, publishes `RecordOrderReturnSagaActivity` to persist `Order.ReturnId`. Workflow states in `OrderReturnSagaProcessState` (`Requested`, `Created`).
-  - **`OrderCompletedDomainEventHandler`** — publishes `OrderReturnRequestedIntegrationEvent` when `Order.Complete` records return lines and `AllocationId` is set.
+  - **`OrderSaga`** / **`OrderSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates order ↔ inventory allocation coordination and completion fan-out. Initiated by `OrderCreatedIntegrationEvent` (correlated on `Order.Id` → `OrderSagaState.OrderId`). On `OrderAcceptedIntegrationEvent`, publishes `AllocateOrderIntegrationEvent`. Handles `AllocationCreated`, `AllocationSucceeded`, `AllocationFailed`, `AllocationReleased`, `OrderRevisionRequested`, and `OrderCompletedIntegrationEvent`. On completion, marks the saga complete and conditionally publishes `CreateOrderReturnSagaActivity` and `CreateOrderInvoiceSagaActivity`. Workflow states in `OrderSagaProcessState` (`Created`, `RequestAllocation`, `Allocate`, `AllocationFailed`, `AllocationSucceeded`, `RevisionRequested`, `AllocationReleased`, `Completed`).
+  - **`OrderReturnSaga`** / **`OrderReturnSagaState`** — `Ordering.Application/Orders/Sagas/`; orchestrates immediate-return creation after order completion with return lines. Initiated by `OrderReturnRequestedIntegrationEvent` (correlated on `OrderId`). Publishes `CreateImmediateReturnIntegrationEvent` to Inventory; on `ImmediateReturnCreatedIntegrationEvent`, publishes `RecordOrderReturnSagaActivity` to persist `Order.ReturnId`. Workflow states in `OrderReturnSagaProcessState` (`Requested`, `Completed`).
+  - **`OrderInvoiceSaga`** / **`OrderInvoiceSagaState`** — `Ordering.Application/Invoices/Sagas/`; orchestrates invoice creation after order completion with billable items. Initiated by `OrderInvoiceRequestIntegrationEvent` (correlated on `OrderId`). Publishes `CreateOrderInvoiceIntegrationEvent`; on `OrderInvoiceCreatedIntegrationEvent`, publishes `RecordOrderInvoiceSagaActivity` to persist `Order.InvoiceId`. Workflow states in `OrderInvoiceSagaProcessState` (`Requested`, `Completed`).
+  - **`OrderCompletedDomainEventHandler`** — maps `OrderCompletedDomainEvent` to **`OrderCompletedIntegrationEvent`** only; return and invoice orchestration is handled by **`OrderSaga`** via saga activities.
 
 - **Cross-module events**
   - Inventory-owned integration events (for example `AllocateOrderIntegrationEvent` in `Invoria.Inventory.Contracts`) are published by Ordering saga handlers and consumed by Inventory when subscriptions and routing match the host setup.

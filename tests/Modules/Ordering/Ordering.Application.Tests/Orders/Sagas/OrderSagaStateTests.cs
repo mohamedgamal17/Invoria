@@ -69,6 +69,16 @@ public class OrderSagaStateTests
         state.AllocationId.Should().Be("alloc-1");
     }
 
+    [Test]
+    public void ApplyCompleted_sets_completed_state()
+    {
+        var state = CreateState(OrderSagaProcessState.AllocationSucceeded);
+
+        state.ApplyCompleted();
+
+        state.State.Should().Be(OrderSagaProcessState.Completed);
+    }
+
     private static OrderSagaState CreateState(string sagaState) =>
         new()
         {

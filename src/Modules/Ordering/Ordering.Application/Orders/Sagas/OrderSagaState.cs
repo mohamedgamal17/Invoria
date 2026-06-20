@@ -64,4 +64,9 @@ public sealed class OrderSagaState : ISagaData
         AllocationId = allocationId;
         State = OrderSagaProcessState.AllocationReleased;
     }
+
+    public void ApplyCompleted()
+    {
+        State = OrderSagaProcessState.Completed;
+    }
 }

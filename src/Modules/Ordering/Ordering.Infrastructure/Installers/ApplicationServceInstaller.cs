@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Ordering.Application.Invoices.Services;
 using Invoria.Ordering.Application.Orders.Services;
 using Invoria.Ordering.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ namespace Invoria.Ordering.Infrastructure.Installers
                 .RegisterFactoriesFromAssembly(Application.AssemblyReference.Assembly);
 
             services.AddTransient<IOrderNumberGenerator, OrderNumberGenerator>();
+            services.AddTransient<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
         }
     }
 }

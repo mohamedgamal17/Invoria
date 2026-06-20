@@ -16,7 +16,8 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
     IHandleMessages<AllocationFailedIntegrationEvent>,
     IHandleMessages<AllocationSucceededIntegrationEvent>,
     IHandleMessages<OrderRevisionRequestedIntegrationEvent>,
-    IHandleMessages<AllocationReleasedIntegrationEvent>
+    IHandleMessages<AllocationReleasedIntegrationEvent>,
+    IHandleMessages<OrderCompletedIntegrationEvent>
 {
     private readonly IBus _bus;
 
@@ -34,6 +35,7 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         config.Correlate<AllocationSucceededIntegrationEvent>(m => m.OrderId, d => d.OrderId);
         config.Correlate<OrderRevisionRequestedIntegrationEvent>(m => m.Order.Id, d => d.OrderId);
         config.Correlate<AllocationReleasedIntegrationEvent>(m => m.OrderId, d => d.OrderId);
+        config.Correlate<OrderCompletedIntegrationEvent>(m => m.OrderId, d => d.OrderId);
     }
 
     public Task Handle(OrderCreatedIntegrationEvent message)
@@ -88,5 +90,25 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         Data.ApplyAllocationReleased(message.AllocationId);
 
         await _bus.Publish(new ReviseOrderSagaActivity(message.OrderId));
+    }
+
+    public async Task Handle(OrderCompletedIntegrationEvent message)
+    {
+        Data.ApplyCompleted();
+
+        MarkAsComplete();
+
+        if (message.ReturnLines.Count > 0 && !string.IsNullOrEmpty(message.AllocationId))
+        {
+            await _bus.Publish(new CreateOrderReturnSagaActivity(
+                message.OrderId,
+                message.AllocationId,
+                message.ReturnLines));
+        }
+
+        if (message.HasBillableItems)
+        {
+            await _bus.Publish(new CreateOrderInvoiceSagaActivity(message.OrderId));
+        }
     }
 }
