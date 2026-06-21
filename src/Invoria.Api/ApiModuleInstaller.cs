@@ -4,6 +4,7 @@ using Invoria.Api.Infrastructure;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Infrastructure.Endpoints;
+using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Invoria.Catalog.Infrastructure;
 using Invoria.CustomerManagement.Infrastructure;
@@ -25,6 +26,8 @@ namespace Invoria.Api
         public void Install(IServiceCollection services, IConfiguration configuration)
         {
             AddInvoriaRebus(services, configuration);
+
+            services.AddInvoriaDbHooks();
 
             services.InstallModule<CatalogModuleInstaller>(configuration)
                 .AddApplicationInfrastructure();
