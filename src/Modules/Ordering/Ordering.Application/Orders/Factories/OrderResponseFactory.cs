@@ -108,6 +108,10 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
+                AllocationId = view.AllocationId,
+                ReturnId = view.ReturnId,
+                InvoiceId = view.InvoiceId,
+                OrderAllocated = view.OrderAllocated,
                 Payments = new List<OrderPaymentDto>(),
                 Items = new List<OrderItemDto>()
             };
@@ -166,6 +170,10 @@ namespace Invoria.Ordering.Application.Orders.Factories
                 CustomerId = view.CustomerId,
                 Customer = customerById.GetValueOrDefault(view.CustomerId),
                 Status = view.Status,
+                AllocationId = view.AllocationId,
+                ReturnId = view.ReturnId,
+                InvoiceId = view.InvoiceId,
+                OrderAllocated = view.OrderAllocated,
                 Items = view.Items
                     .Select(item => new OrderItemDto
                     {
