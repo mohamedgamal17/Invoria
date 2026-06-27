@@ -26,7 +26,7 @@ public static class InvoiceAssertionExtensions
     public static void AssertInvoiceDto(
         this InvoiceDto dto,
         string expectedId,
-        string expectedInvoiceNumber,
+        string? expectedInvoiceNumber,
         string expectedOrderId,
         string expectedCustomerId)
     {
