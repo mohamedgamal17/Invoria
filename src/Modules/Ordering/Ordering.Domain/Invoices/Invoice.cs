@@ -5,7 +5,7 @@ namespace Invoria.Ordering.Domain.Invoices
 {
     public class Invoice : AuditedAggregateRoot
     {
-        public string InvoiceNumber { get; private set; }
+        public string? InvoiceNumber { get; private set; }
         public string CustomerId { get; private set; }
         public string OrderId { get; private set; }
         public decimal Subtotal { get; private set; }
