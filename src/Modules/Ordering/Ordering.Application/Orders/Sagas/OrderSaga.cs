@@ -1,7 +1,9 @@
 using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Ordering.Application.Orders.Extensions;
 using Invoria.Ordering.Application.Orders.Sagas.Activities;
+using Invoria.Ordering.Contracts.Orders.Enums;
 using Invoria.Ordering.Contracts.Orders.Events;
+using Invoria.Ordering.Contracts.Orders.Models;
 using Rebus.Bus;
 using Rebus.Handlers;
 using Rebus.Sagas;
@@ -79,9 +81,18 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
     {
         Data.ApplyRevisionRequested(message.AllocationId);
 
-        await _bus.Publish(new ReleaseAllocationIntegrationEvent
+        await _bus.Publish(new ReleaseOrderAllocationsIntegrationEvent
         {
-            AllocationId = message.AllocationId
+            Id = message.Order.Id,
+            OrderNumber = message.Order.OrderNumber,
+            CustomerId = message.Order.CustomerId,
+            Items = message.Order.Lines?.Select(l => new OrderItemModel
+            {
+                Id = l.Id,
+                ProductId = l.ProductId,
+                Quantity = l.Quantity
+            }).ToList() ?? [],
+            ReleaseReason = AllocationReleaseReason.Reopen
         });
     }
 
