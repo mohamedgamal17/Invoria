@@ -38,7 +38,6 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<MarkOrderAllocatedSagaActivity>();
                 await bus.Subscribe<CreateOrderReturnSagaActivity>();
                 await bus.Subscribe<CreateOrderInvoiceSagaActivity>();
-                await bus.Subscribe<ReleaseOrderAllocationsIntegrationEvent>();
                 await bus.Subscribe<OrderReturnRequestedIntegrationEvent>();
                 await bus.Subscribe<ImmediateReturnCreatedIntegrationEvent>();
                 await bus.Subscribe<RecordOrderReturnSagaActivity>();
