@@ -42,6 +42,8 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - **Contracts layout**: Each bounded context has `Enums/`, `Dtos/`, `Events/`, `Models/` subfolders — never flat at root.
 - **Repository**: Module-specific like `IOrderingRepository<T>` with `.AsQuerable()` (note: not `.AsQueryable()`).
 - **Domain aggregates**: Inherit from `AuditedAggregateRoot`. DTOs inherit from `AuditedEntityDto`.
+- **Intermediate variables**: Always assign method results to named variables before further use — no inline chaining like `GetFoo().DoBar()`. Applies to production and test code.
+- **Nested loops over LINQ grouping**: Iterate lines → batch allocations explicitly rather than `SelectMany` + `GroupBy` for batch-allocation operations. See `ai/CodingStyle.md`.
 
 ## Testing patterns (NUnit + FluentAssertions)
 
