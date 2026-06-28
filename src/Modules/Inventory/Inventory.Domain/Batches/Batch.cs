@@ -138,6 +138,24 @@ public class Batch : AuditedAggregateRoot
         UpdateQuantity(Quantity + amount);
     }
 
+    public void SettleAllocatedQuantity(int amount)
+    {
+        Guard.Against.NegativeOrZero(amount);
+
+        if (ReservedQuantity < amount)
+        {
+            throw new InvalidOperationException(
+                "Cannot settle more quantity than is currently reserved on this batch.");
+        }
+
+        if (State == BatchState.Disabled)
+        {
+            throw new InvalidOperationException("Cannot settle allocation on a disabled batch.");
+        }
+
+        ReservedQuantity -= amount;
+    }
+
     public void Enable()
     {
         if (State != BatchState.Disabled)

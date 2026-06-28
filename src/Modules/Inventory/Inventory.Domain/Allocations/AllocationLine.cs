@@ -15,11 +15,11 @@ public class AllocationLine : AuditedEntity
 
     public AllocationLineStatus Status { get; private set; }
 
-    public ICollection<BatchAllocation> BatchAllocations { get; private set; } = null!;
+    public List<BatchAllocation> BatchAllocations { get; private set; } = null!;
 
     private AllocationLine()
     {
-        BatchAllocations = new HashSet<BatchAllocation>();
+        BatchAllocations = new List<BatchAllocation>();
     }
 
     public AllocationLine(
@@ -45,7 +45,7 @@ public class AllocationLine : AuditedEntity
         ProductId = productId;
         QuantityRequested = quantityRequested;
         Status = AllocationLineStatus.Pending;
-        BatchAllocations = new HashSet<BatchAllocation>();
+        BatchAllocations = new List<BatchAllocation>();
     }
 
     public int QuantityAllocated => BatchAllocations.Sum(a => a.QuantityAllocated);
@@ -118,5 +118,16 @@ public class AllocationLine : AuditedEntity
         }
 
         Status = AllocationLineStatus.Released;
+    }
+
+    public void MarkAsCompleted()
+    {
+        if (Status != AllocationLineStatus.Allocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation line {Id} must be in {AllocationLineStatus.Allocated} state to mark as completed.");
+        }
+
+        Status = AllocationLineStatus.Completed;
     }
 }
