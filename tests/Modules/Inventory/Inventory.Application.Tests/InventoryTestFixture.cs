@@ -1,6 +1,8 @@
 using Invoria.Application.Tests;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
+using Invoria.Catalog.Contracts.Services;
+using Invoria.Inventory.Application.Tests.Fakes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -21,6 +23,13 @@ namespace Invoria.Inventory.Application.Tests
                 .Returns(Task.CompletedTask);
             bus.Setup(b => b.Subscribe(It.IsAny<Type>())).Returns(Task.CompletedTask);
             services.AddSingleton(bus.Object);
+
+            RegisterProductService(services);
+        }
+
+        protected virtual void RegisterProductService(IServiceCollection services)
+        {
+            services.AddTransient<IProductService, FakeProductService>();
         }
 
         protected override async Task BeforeAllTestRunAsync()
