@@ -26,6 +26,11 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(configure);
 
+        if (!services.Any(sd => sd.ServiceType == typeof(IDbHookEngine)))
+        {
+            services.AddInvoriaDbHooks();
+        }
+
         services.AddDbContext<TContext>((sp, options) =>
         {
             configure(options);
