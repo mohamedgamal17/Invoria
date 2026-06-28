@@ -42,6 +42,9 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - **Contracts layout**: Each bounded context has `Enums/`, `Dtos/`, `Events/`, `Models/` subfolders — never flat at root.
 - **Repository**: Module-specific like `IOrderingRepository<T>` with `.AsQuerable()` (note: not `.AsQueryable()`).
 - **Domain aggregates**: Inherit from `AuditedAggregateRoot`. DTOs inherit from `AuditedEntityDto`.
+- **Intermediate variables**: Always assign method results to named variables before further use — no inline chaining like `GetFoo().DoBar()`. Applies to production and test code.
+- **Nested loops over LINQ grouping**: Iterate lines → batch allocations explicitly rather than `SelectMany` + `GroupBy` for batch-allocation operations. See `ai/CodingStyle.md`.
+- **DTO factory completeness**: When writing a `PrepareDto` or `MapTo*` method in a response factory, explicitly list **every** property of the DTO and the entity being mapped — including inherited properties like `Id`. Cross-check against the full inheritance chain of both types (`Entity`→`AuditedAggregateRoot`→`Return` vs `EntityDto`→`AuditedEntityDto`) to catch unmapped members. Do not rely on default values. For nested DTOs (e.g., line items) that don't inherit `AuditedEntityDto`, auditing fields may be omitted intentionally.
 
 ## Testing patterns (NUnit + FluentAssertions)
 

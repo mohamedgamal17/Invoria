@@ -12,4 +12,8 @@ public interface IAllocationDomainService : IDomainService
     void Release(
         Allocation allocation,
         IReadOnlyDictionary<string, Batch> batchesById);
+
+    void Complete(
+        Allocation allocation,
+        IReadOnlyDictionary<string, Batch> batchesById);
 }

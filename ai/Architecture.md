@@ -1,5 +1,7 @@
 ## Invoria Architecture
 
+> **Coding style conventions** → see [CodingStyle.md](CodingStyle.md)
+
 This document describes the current architecture of the Invoria solution based on the existing codebase. It follows a modular clean architecture style with clearly separated layers per module.
 
 - **Host/API**: `Invoria.Api`

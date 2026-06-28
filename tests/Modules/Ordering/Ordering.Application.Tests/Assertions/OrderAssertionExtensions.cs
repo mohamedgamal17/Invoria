@@ -25,6 +25,10 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.AmountPaid.Should().Be(order.AmountPaid);
             dto.AmountOutstanding.Should().Be(order.AmountOutstanding);
             dto.PaymentStatus.Should().Be(order.PaymentStatus);
+            dto.AllocationId.Should().Be(order.AllocationId);
+            dto.ReturnId.Should().Be(order.ReturnId);
+            dto.InvoiceId.Should().Be(order.InvoiceId);
+            dto.OrderAllocated.Should().Be(order.OrderAllocated);
             dto.Payments.Should().HaveCount(order.Payments.Count);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.AssertOrderPricing(order);

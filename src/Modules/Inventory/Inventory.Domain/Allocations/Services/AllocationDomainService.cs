@@ -79,26 +79,50 @@ public sealed class AllocationDomainService : IAllocationDomainService
             return;
         }
 
-        var batchAllocationsToRelease = allocation.Lines
-            .Where(l => l.Status == AllocationLineStatus.Allocated)
-            .SelectMany(l => l.BatchAllocations)
-            .GroupBy(a => a.Id)
-            .Select(g => g.First())
-            .ToList();
-
-        foreach (var group in batchAllocationsToRelease.GroupBy(a => a.BatchId))
+        foreach (var line in allocation.Lines)
         {
-            batchesById[group.Key].RestoreAllocatedQuantity(group.Sum(a => a.QuantityAllocated));
+            if (line.Status != AllocationLineStatus.Allocated)
+            {
+                continue;
+            }
+
+            foreach (var batchAllocation in line.BatchAllocations)
+            {
+                var batch = batchesById[batchAllocation.BatchId];
+                batch.RestoreAllocatedQuantity(batchAllocation.QuantityAllocated);
+            }
         }
 
         allocation.MarkAsReleased();
+    }
+
+    public void Complete(
+        Allocation allocation,
+        IReadOnlyDictionary<string, Batch> batchesById)
+    {
+        if (allocation.Status == AllocationStatus.Completed)
+        {
+            return;
+        }
+
+        foreach (var line in allocation.Lines)
+        {
+            foreach (var batchAllocation in line.BatchAllocations)
+            {
+                var batch = batchesById[batchAllocation.BatchId];
+                batch.SettleAllocatedQuantity(batchAllocation.QuantityAllocated);
+            }
+        }
+
+        allocation.MarkAsCompleted();
     }
 
     private void ReleaseLineStock(AllocationLine line, IReadOnlyDictionary<string, Batch> batchesById)
     {
         foreach (var batchAllocation in line.BatchAllocations)
         {
-            batchesById[batchAllocation.BatchId].RestoreAllocatedQuantity(batchAllocation.QuantityAllocated);
+            var batch = batchesById[batchAllocation.BatchId];
+            batch.RestoreAllocatedQuantity(batchAllocation.QuantityAllocated);
         }
     }
 

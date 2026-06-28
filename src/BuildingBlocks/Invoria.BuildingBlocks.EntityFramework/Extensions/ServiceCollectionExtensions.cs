@@ -8,6 +8,17 @@ namespace Invoria.BuildingBlocks.EntityFramework.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddInvoriaDbHooks(this IServiceCollection services)
+    {
+        services.AddScoped<IDbHookEngine, DbHookEngine>();
+        services.AddScoped<IEntityCrudChangeAccumulator, EntityCrudChangeAccumulator>();
+        services.AddTransient<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
+        services.AddScoped<IBeforeDbHookSave, EntityCrudCaptureBeforeSaveHook>();
+        services.AddScoped<IAfterDbHookSave, DispatchDomainEventsAfterSaveHook>();
+        services.AddScoped<IAfterDbHookSave, DispatchEntityCrudDomainEventsAfterSaveHook>();
+        return services;
+    }
+
     public static IServiceCollection AddInvoriaDbContext<TContext>(
         this IServiceCollection services,
         Action<DbContextOptionsBuilder> configure)
@@ -15,21 +26,10 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(configure);
 
-
-        if(services.SingleOrDefault(x=> x.ServiceType == typeof(IDbHookEngine) ) == null)
+        if (!services.Any(sd => sd.ServiceType == typeof(IDbHookEngine)))
         {
-            services.AddScoped<IDbHookEngine, DbHookEngine>();
+            services.AddInvoriaDbHooks();
         }
-
-        services.AddScoped<IEntityCrudChangeAccumulator, EntityCrudChangeAccumulator>();
-
-        services.AddTransient<IBeforeDbHookSave, AuditAndIdBeforeSaveHook>();
-
-        services.AddScoped<IBeforeDbHookSave, EntityCrudCaptureBeforeSaveHook>();
-
-        services.AddScoped<IAfterDbHookSave, DispatchDomainEventsAfterSaveHook>();
-
-        services.AddScoped<IAfterDbHookSave, DispatchEntityCrudDomainEventsAfterSaveHook>();
 
         services.AddDbContext<TContext>((sp, options) =>
         {

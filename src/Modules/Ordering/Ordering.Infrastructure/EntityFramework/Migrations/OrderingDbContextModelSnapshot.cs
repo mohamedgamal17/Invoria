@@ -40,6 +40,10 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<DateTimeOffset?>("LastModifiedAt")
                         .HasColumnType("datetimeoffset");
 

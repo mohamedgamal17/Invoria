@@ -99,8 +99,6 @@ public class CreateInvoiceCommandHandlerTests : OrderTestFixture
     public async Task Should_set_order_invoice_id_via_RecordOrderInvoice()
     {
         var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
-        await Mediator.Send(new AcceptOrderCommand(order.Id));
-        await Mediator.Send(new CompleteOrderCommand(order.Id));
 
         var createResult = await Mediator.Send(new CreateInvoiceCommand(order.Id));
         createResult.ShouldBeSuccess();

@@ -5,6 +5,7 @@
     <ProjectReference Include="..\..\Procurement\Procurement.Contracts\Invoria.Procurement.Contracts.csproj" />
     <ProjectReference Include="..\Inventory.Contracts\Invoria.Inventory.Contracts.csproj" />
     <ProjectReference Include="..\Inventory.Domain\Invoria.Inventory.Domain.csproj" />
+    <ProjectReference Include="..\..\Catalog\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Application\Invoria.BuildingBlocks.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
   </ItemGroup>

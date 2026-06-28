@@ -383,7 +383,15 @@ public class OrderSagaTests
 
         bus.Verify(
             b => b.Publish(
-                It.Is<ReleaseAllocationIntegrationEvent>(e => e.AllocationId == "alloc-1"),
+                It.Is<ReleaseOrderAllocationsIntegrationEvent>(e =>
+                    e.Id == "order-1"
+                    && e.OrderNumber == "ON-1"
+                    && e.CustomerId == "cust-1"
+                    && e.Items.Count == 1
+                    && e.Items[0].Id == "line-1"
+                    && e.Items[0].ProductId == "p1"
+                    && e.Items[0].Quantity == 2
+                    && e.ReleaseReason == AllocationReleaseReason.Reopen),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
@@ -406,7 +414,7 @@ public class OrderSagaTests
         fixture.HandlerExceptions.Should().BeEmpty();
 
         bus.Verify(
-            b => b.Publish(It.IsAny<ReleaseAllocationIntegrationEvent>(), It.IsAny<Dictionary<string, string>>()),
+            b => b.Publish(It.IsAny<ReleaseOrderAllocationsIntegrationEvent>(), It.IsAny<Dictionary<string, string>>()),
             Times.Never);
     }
 

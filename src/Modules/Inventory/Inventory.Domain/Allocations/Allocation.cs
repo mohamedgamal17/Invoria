@@ -130,4 +130,21 @@ public class Allocation : AuditedAggregateRoot
         Status = AllocationStatus.Released;
         AddDomainEvent(new AllocationReleasedDomainEvent(this));
     }
+
+    public void MarkAsCompleted()
+    {
+        if (Status != AllocationStatus.Allocated)
+        {
+            throw new InvalidOperationException(
+                $"Allocation {Id} must be in {AllocationStatus.Allocated} state to mark as completed.");
+        }
+
+        foreach (var line in _lines)
+        {
+            line.MarkAsCompleted();
+        }
+
+        Status = AllocationStatus.Completed;
+        AddDomainEvent(new AllocationSettledDomainEvent(this));
+    }
 }

@@ -20,5 +20,9 @@ namespace Invoria.Ordering.Contracts.Orders.Dtos
         public decimal NetOfTotalOrderAmount { get; set; }
         public decimal ReturnsTotal { get; set; }
         public List<OrderPaymentDto> Payments { get; set; } = new();
+        public string? AllocationId { get; set; }
+        public string? ReturnId { get; set; }
+        public string? InvoiceId { get; set; }
+        public bool OrderAllocated { get; set; }
     }
 }
