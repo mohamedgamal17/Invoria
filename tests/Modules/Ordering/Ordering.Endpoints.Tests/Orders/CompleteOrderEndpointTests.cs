@@ -61,7 +61,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var completeRequest = new CompleteOrderRequest
         {
             Id = created.Id,
-            Items = []
+            ReturnItems = []
         };
 
         var completeResponse = await Client.PostAsJsonAsync($"/orders/{created.Id}/complete", completeRequest);
@@ -124,7 +124,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var completeRequest = new CompleteOrderRequest
         {
             Id = created.Id,
-            Items = [new CompleteReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
+            ReturnItems = [new CompleteReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
         };
 
         var completeResponse = await Client.PostAsJsonAsync($"/orders/{created.Id}/complete", completeRequest);
@@ -163,7 +163,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var completeRequest = new CompleteOrderRequest
         {
             Id = created.Id,
-            Items =
+            ReturnItems =
             [
                 new CompleteReturnLineItemRequest { OrderItemId = lines[0].Id, Quantity = 1 },
                 new CompleteReturnLineItemRequest { OrderItemId = lines[1].Id, Quantity = 1 }

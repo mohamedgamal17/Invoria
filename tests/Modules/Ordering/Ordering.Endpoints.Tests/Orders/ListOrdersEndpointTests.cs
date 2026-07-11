@@ -118,7 +118,7 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         var completeRequest = new CompleteOrderRequest
         {
             Id = createdOrder.Id,
-            Items = [new CompleteReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
+            ReturnItems = [new CompleteReturnLineItemRequest { OrderItemId = lineId, Quantity = 1 }]
         };
         (await Client.PostAsJsonAsync($"/orders/{createdOrder.Id}/complete", completeRequest))
             .EnsureSuccessStatusCode();

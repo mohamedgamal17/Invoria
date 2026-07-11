@@ -9,7 +9,7 @@ public class CompleteOrderRequest
     [RouteParam]
     public string Id { get; set; } = string.Empty;
 
-    public List<CompleteReturnLineItemRequest>? Items { get; set; }
+    public List<CompleteReturnLineItemRequest>? ReturnItems { get; set; }
 }
 
 public class CompleteReturnLineItemRequest
@@ -26,7 +26,7 @@ public class CompleteOrderRequestValidator : AbstractValidator<CompleteOrderRequ
         RuleFor(x => x.Id)
             .NotEmpty();
 
-        RuleForEach(x => x.Items).SetValidator(new CompleteReturnLineItemRequestValidator());
+        RuleForEach(x => x.ReturnItems).SetValidator(new CompleteReturnLineItemRequestValidator());
     }
 }
 
