@@ -3,6 +3,7 @@ using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.Inventory.Application.Returns.Commands.ApproveReturn;
 using Invoria.Inventory.Application.Returns.Commands.CreateImmediateReturn;
 using Invoria.Inventory.Application.Tests.Batches;
+using Invoria.Inventory.Contracts.Returns.Dtos;
 using Invoria.Inventory.Domain.Returns;
 using Invoria.Inventory.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
@@ -45,11 +46,10 @@ public class ApproveReturnCommandHandlerTests : BatchTestFixture
         var result = await Mediator.Send(new ApproveReturnCommand(returnId));
 
         result.IsSuccess.Should().BeTrue();
-
-        await using var verifyScope = ServiceProvider.CreateAsyncScope();
-        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<InventoryDbContext>();
-        var approvedReturn = await verifyDb.Set<ImmediateReturn>().SingleAsync(r => r.Id == returnId);
-        approvedReturn.Status.Should().Be(ContractReturnStatus.Approved);
+        result.Value.Should().NotBeNull();
+        result.Value!.Id.Should().Be(returnId);
+        result.Value.Status.Should().Be(ContractReturnStatus.Approved);
+        result.Value.ReturnLines.Should().HaveCount(1);
     }
 
     [Test]
