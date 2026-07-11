@@ -16,11 +16,6 @@ namespace Invoria.Ordering.Domain.Orders
         public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
 
-        public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
-
-        public decimal NetOfTotalOrderAmount => Items.Sum(i =>
-            i.Price * Math.Max(0, i.Quantity - ReturnedQuantity(i.Id)));
-
         public decimal AmountPaid { get; private set; }
 
         public decimal AmountOutstanding { get; private set; }
@@ -34,6 +29,11 @@ namespace Invoria.Ordering.Domain.Orders
         public string? InvoiceId { get; private set; }
 
         public bool OrderAllocated { get; private set; }
+
+        public decimal TotalOrderAmount => Items.Sum(i => i.Price * i.Quantity);
+
+        public decimal NetOfTotalOrderAmount => Items.Sum(i =>
+            i.Price * Math.Max(0, i.Quantity - ReturnedQuantity(i.Id)));
 
         private Order()
         {

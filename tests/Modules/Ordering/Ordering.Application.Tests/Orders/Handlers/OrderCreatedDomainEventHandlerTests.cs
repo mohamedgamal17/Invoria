@@ -51,7 +51,7 @@ public class OrderCreatedDomainEventHandlerTests : OrderTestFixture
                     e.Order.OrderStatus == OrderStatus.Pending &&
                     e.Order.PaymentType == OrderPaymentType.Debt &&
                     e.Order.PaymentStatus == OrderPaymentStatus.Unpaid &&
-                    e.Order.TotalOrderAmount == 100m &&
+                    e.Order.SubtotalAmount == 100m &&
                     e.Order.AmountPaid == 0m &&
                     e.Order.AmountOutstanding == 100m &&
                     e.OccurredOn == ev.OccurredOn &&

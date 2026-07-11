@@ -13,7 +13,7 @@ public static class OrderMappingExtensions
         OrderStatus = order.Status,
         PaymentType = order.PaymentType,
         PaymentStatus = order.PaymentStatus,
-        TotalOrderAmount = order.TotalOrderAmount,
+        SubtotalAmount = order.TotalOrderAmount,
         AmountPaid = order.AmountPaid,
         AmountOutstanding = order.AmountOutstanding,
         Lines = order.Items.Select(i => i.ToOrderLineModel()).ToList()

@@ -101,9 +101,9 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.Items.Should().BeEmpty();
             dto.ReturnItems.Should().BeEmpty();
-            dto.TotalOrderAmount.Should().Be(0);
-            dto.NetOfTotalOrderAmount.Should().Be(0);
-            dto.ReturnsTotal.Should().Be(0);
+            dto.SubtotalAmount.Should().Be(0);
+            dto.NetOrderAmount.Should().Be(0);
+            dto.ReturnsAmount.Should().Be(0);
         }
     }
 
@@ -128,8 +128,8 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         var dto = result.Value!.Data.Single(d => d.Id == order.Id);
         dto.Items.Should().HaveCount(order.Items.Count);
         dto.ReturnItems.Should().BeEmpty();
-        dto.TotalOrderAmount.Should().Be(0);
-        dto.NetOfTotalOrderAmount.Should().Be(0);
+        dto.SubtotalAmount.Should().Be(0);
+        dto.NetOrderAmount.Should().Be(0);
     }
 
     [Test]
@@ -153,8 +153,8 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
         dto.Items.Should().BeEmpty();
         dto.ReturnItems.Should().ContainSingle();
         dto.ReturnItems[0].OrderItemId.Should().Be(lineId);
-        dto.NetOfTotalOrderAmount.Should().BeLessThan(dto.TotalOrderAmount);
-        dto.ReturnsTotal.Should().BeGreaterThan(0);
+        dto.NetOrderAmount.Should().BeLessThan(dto.SubtotalAmount);
+        dto.ReturnsAmount.Should().BeGreaterThan(0);
     }
 
     [Test]

@@ -152,6 +152,6 @@ public class CompleteOrderCommandHandlerTests : OrderTestFixture
 
         var status = await GetOrderStatusFromDbAsync(order.Id);
         status.Should().Be(OrderStatus.Completed);
-        result.Value!.NetOfTotalOrderAmount.Should().Be(0m);
+        result.Value!.NetOrderAmount.Should().Be(0m);
     }
 }

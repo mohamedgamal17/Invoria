@@ -133,7 +133,7 @@ public class CompleteOrderEndpointTests : OrderingTestFixture
         var envelope = await completeResponse.Content.ReadFromJsonAsync<Envelope<OrderDto>>();
         envelope!.Result!.ReturnItems.Should().ContainSingle();
         envelope.Result.ReturnItems[0].OrderItemId.Should().Be(lineId);
-        envelope.Result.NetOfTotalOrderAmount.Should().BeLessThan(envelope.Result.TotalOrderAmount);
+        envelope.Result.NetOrderAmount.Should().BeLessThan(envelope.Result.SubtotalAmount);
     }
 
     [Test]

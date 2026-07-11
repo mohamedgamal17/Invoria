@@ -97,7 +97,7 @@ public class OrderSagaStateTests
             OrderStatus = OrderStatus.Processing,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 100m,
+            SubtotalAmount = 100m,
             AmountPaid = 0m,
             AmountOutstanding = 100m,
             Lines = []

@@ -232,9 +232,17 @@ namespace Invoria.Ordering.Application.Orders.Factories
 
         private static void ApplyPricingScalars(Order view, OrderDto dto)
         {
-            dto.TotalOrderAmount = view.TotalOrderAmount;
-            dto.NetOfTotalOrderAmount = view.NetOfTotalOrderAmount;
-            dto.ReturnsTotal = view.TotalOrderAmount - view.NetOfTotalOrderAmount;
+            var returnsAmount = 0m;
+            foreach (var returnItem in view.ReturnItems)
+            {
+                var item = view.Items.First(i => i.Id == returnItem.OrderItemId);
+                returnsAmount += item.Price * returnItem.Quantity;
+            }
+
+            dto.SubtotalAmount = view.TotalOrderAmount;
+            dto.ReturnsAmount = returnsAmount;
+            dto.NetOrderAmount = view.NetOfTotalOrderAmount;
+            dto.AmountDue = view.NetOfTotalOrderAmount;
         }
 
         private List<OrderPaymentDto> MapPayments(IReadOnlyCollection<OrderPayment> payments)

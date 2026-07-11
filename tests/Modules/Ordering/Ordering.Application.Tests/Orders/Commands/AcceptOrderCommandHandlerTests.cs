@@ -89,7 +89,7 @@ public class AcceptOrderCommandHandlerTests : OrderTestFixture
         if (e.Order.OrderStatus != OrderStatus.Processing ||
             e.Order.PaymentType != expected.PaymentType ||
             e.Order.PaymentStatus != expected.PaymentStatus ||
-            e.Order.TotalOrderAmount != expected.TotalOrderAmount ||
+            e.Order.SubtotalAmount != expected.TotalOrderAmount ||
             e.Order.AmountPaid != expected.AmountPaid ||
             e.Order.AmountOutstanding != expected.AmountOutstanding)
         {

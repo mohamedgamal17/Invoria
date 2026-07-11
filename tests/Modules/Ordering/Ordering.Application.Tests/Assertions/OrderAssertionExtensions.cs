@@ -134,9 +134,10 @@ namespace Invoria.Ordering.Application.Tests.Assertions
 
         public static void AssertOrderPricing(this OrderDto dto, Order order)
         {
-            dto.TotalOrderAmount.Should().Be(order.TotalOrderAmount);
-            dto.NetOfTotalOrderAmount.Should().Be(order.NetOfTotalOrderAmount);
-            dto.ReturnsTotal.Should().Be(order.TotalOrderAmount - order.NetOfTotalOrderAmount);
+            dto.SubtotalAmount.Should().Be(order.TotalOrderAmount);
+            dto.ReturnsAmount.Should().Be(order.TotalOrderAmount - order.NetOfTotalOrderAmount);
+            dto.NetOrderAmount.Should().Be(order.NetOfTotalOrderAmount);
+            dto.AmountDue.Should().Be(order.NetOfTotalOrderAmount);
             dto.AmountOutstanding.Should().Be(order.AmountOutstanding);
         }
 

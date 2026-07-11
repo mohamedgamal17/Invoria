@@ -143,7 +143,7 @@ public class ListOrdersEndpointTests : OrderingTestFixture
         dto.Items.Should().BeEmpty();
         dto.ReturnItems.Should().ContainSingle();
         dto.ReturnItems[0].OrderItemId.Should().Be(lineId);
-        dto.NetOfTotalOrderAmount.Should().BeLessThan(dto.TotalOrderAmount);
+        dto.NetOrderAmount.Should().BeLessThan(dto.SubtotalAmount);
     }
 
     [Test]

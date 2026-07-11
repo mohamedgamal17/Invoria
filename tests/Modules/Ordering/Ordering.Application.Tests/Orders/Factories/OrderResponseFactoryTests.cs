@@ -284,8 +284,8 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         d.Items.Should().ContainSingle();
         d.Items[0].Product!.Id.Should().Be(pid);
         d.ReturnItems.Should().BeEmpty();
-        d.TotalOrderAmount.Should().Be(0);
-        d.NetOfTotalOrderAmount.Should().Be(0);
-        d.ReturnsTotal.Should().Be(0);
+        d.SubtotalAmount.Should().Be(0);
+        d.NetOrderAmount.Should().Be(0);
+        d.ReturnsAmount.Should().Be(0);
     }
 }

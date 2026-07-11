@@ -20,7 +20,7 @@ public class OrderModel
 
     public OrderPaymentStatus PaymentStatus { get; set; }
 
-    public decimal TotalOrderAmount { get; set; }
+    public decimal SubtotalAmount { get; set; }
 
     public decimal AmountPaid { get; set; }
 

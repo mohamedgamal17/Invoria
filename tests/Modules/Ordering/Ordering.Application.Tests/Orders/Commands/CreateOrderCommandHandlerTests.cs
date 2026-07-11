@@ -69,7 +69,7 @@ namespace Invoria.Ordering.Application.Tests.Orders.Commands
                         e.Order.OrderStatus == result.Value.Status &&
                         e.Order.PaymentType == result.Value.PaymentType &&
                         e.Order.PaymentStatus == result.Value.PaymentStatus &&
-                        e.Order.TotalOrderAmount == expectedTotal &&
+                        e.Order.SubtotalAmount == expectedTotal &&
                         e.Order.AmountPaid == result.Value.AmountPaid &&
                         e.Order.AmountOutstanding == result.Value.AmountOutstanding &&
                         e.Order.Lines.Count == result.Value.Items.Count),
