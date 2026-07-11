@@ -41,7 +41,7 @@ public sealed class GetDebtOverviewQueryHandlerTests
             OrderStatus = orderStatus,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = paymentStatus,
-            TotalOrderAmount = total,
+            SubtotalAmount = total,
             AmountPaid = amountPaid,
             AmountOutstanding = total - amountPaid,
             ReplicationVersion = 1,

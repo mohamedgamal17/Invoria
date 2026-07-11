@@ -38,7 +38,7 @@ public sealed class ListOrderPeriodSummaryQueryHandlerTests
             OrderStatus = status,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = total,
+            SubtotalAmount = total,
             AmountPaid = 0m,
             AmountOutstanding = total,
             ReplicationVersion = 1,

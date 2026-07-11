@@ -14,7 +14,7 @@ public class ReportedOrder : IBaseEntity
     public OrderStatus OrderStatus { get; set; }
     public OrderPaymentType PaymentType { get; set; }
     public OrderPaymentStatus PaymentStatus { get; set; }
-    public decimal TotalOrderAmount { get; set; }
+    public decimal SubtotalAmount { get; set; }
     public decimal AmountPaid { get; set; }
     public decimal AmountOutstanding { get; set; }
     public long ReplicationVersion { get; set; }

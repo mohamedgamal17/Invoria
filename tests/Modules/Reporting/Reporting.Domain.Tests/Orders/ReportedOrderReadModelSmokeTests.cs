@@ -18,7 +18,7 @@ public sealed class ReportedOrderReadModelSmokeTests
             OrderStatus = OrderStatus.Completed,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Partial,
-            TotalOrderAmount = 100m,
+            SubtotalAmount = 100m,
             AmountPaid = 40m,
             AmountOutstanding = 60m,
             ReplicationVersion = 3,
@@ -54,7 +54,7 @@ public sealed class ReportedOrderReadModelSmokeTests
         Assert.Multiple(() =>
         {
             Assert.That(order.Id, Is.EqualTo("order-1"));
-            Assert.That(order.TotalOrderAmount, Is.EqualTo(100m));
+            Assert.That(order.SubtotalAmount, Is.EqualTo(100m));
             Assert.That(order.Lines, Has.Count.EqualTo(1));
             Assert.That(order.Lines[0].LineTotal, Is.EqualTo(100m));
             Assert.That(order.Payments[0].PaidAmount, Is.EqualTo(40m));

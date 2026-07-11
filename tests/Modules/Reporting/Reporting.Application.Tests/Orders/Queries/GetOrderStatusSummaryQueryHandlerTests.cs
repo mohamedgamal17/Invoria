@@ -23,7 +23,7 @@ public sealed class GetOrderStatusSummaryQueryHandlerTests
             OrderStatus = status,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 1m,
+            SubtotalAmount = 1m,
             AmountPaid = 0m,
             AmountOutstanding = 1m,
             ReplicationVersion = 1,

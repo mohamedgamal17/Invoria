@@ -24,7 +24,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
                 OrderStatus = OrderStatus.Processing,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
-                TotalOrderAmount = 200m,
+                SubtotalAmount = 200m,
                 AmountPaid = 0m,
                 AmountOutstanding = 200m,
                 Lines =
@@ -55,7 +55,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
             OrderStatus = OrderStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 100m,
+            SubtotalAmount = 100m,
             AmountPaid = 0m,
             AmountOutstanding = 100m,
             ReplicationVersion = 1,
@@ -98,7 +98,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
             Assert.That(upserted!.OrderNumber, Is.EqualTo("ON-9"));
             Assert.That(upserted.CustomerId, Is.EqualTo("cust-1"));
             Assert.That(upserted.OrderStatus, Is.EqualTo(OrderStatus.Processing));
-            Assert.That(upserted.TotalOrderAmount, Is.EqualTo(200m));
+            Assert.That(upserted.SubtotalAmount, Is.EqualTo(200m));
             Assert.That(upserted.ReplicationVersion, Is.EqualTo(2));
             Assert.That(upserted.SourceLastKnownAt, Is.EqualTo(occurred));
             Assert.That(upserted.LastModifiedAt, Is.EqualTo(occurred));
@@ -122,7 +122,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
             OrderStatus = OrderStatus.Processing,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 200m,
+            SubtotalAmount = 200m,
             AmountPaid = 0m,
             AmountOutstanding = 200m,
             ReplicationVersion = 2,
@@ -189,7 +189,7 @@ public sealed class OrderUpdatedIntegrationEventConsumerTests
             OrderStatus = OrderStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 100m,
+            SubtotalAmount = 100m,
             AmountPaid = 0m,
             AmountOutstanding = 100m,
             ReplicationVersion = 5,

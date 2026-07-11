@@ -44,7 +44,7 @@ public sealed class OrderUpdatedIntegrationEventConsumer : IHandleMessages<Order
             existing.OrderStatus = order.OrderStatus;
             existing.PaymentType = order.PaymentType;
             existing.PaymentStatus = order.PaymentStatus;
-            existing.TotalOrderAmount = order.TotalOrderAmount;
+            existing.SubtotalAmount = order.SubtotalAmount;
             existing.AmountPaid = order.AmountPaid;
             existing.AmountOutstanding = order.AmountOutstanding;
             existing.ReplicationVersion = existing.ReplicationVersion + 1;
@@ -78,7 +78,7 @@ public sealed class OrderUpdatedIntegrationEventConsumer : IHandleMessages<Order
             OrderStatus = order.OrderStatus,
             PaymentType = order.PaymentType,
             PaymentStatus = order.PaymentStatus,
-            TotalOrderAmount = order.TotalOrderAmount,
+            SubtotalAmount = order.SubtotalAmount,
             AmountPaid = order.AmountPaid,
             AmountOutstanding = order.AmountOutstanding,
             ReplicationVersion = 1,

@@ -39,7 +39,7 @@ public sealed class ListCustomerDebtOverviewQueryHandlerTests
             OrderStatus = OrderStatus.Completed,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = total,
+            SubtotalAmount = total,
             AmountPaid = amountPaid,
             AmountOutstanding = total - amountPaid,
             ReplicationVersion = 1,

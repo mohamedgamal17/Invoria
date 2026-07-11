@@ -153,7 +153,7 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
         var slices = await chunk
             .Select(o => new OrderSlice(
                 o.CreatedAt,
-                o.TotalOrderAmount,
+                o.SubtotalAmount,
                 o.AmountPaid,
                 o.OrderStatus))
             .ToListAsync(cancellationToken);
@@ -179,7 +179,7 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
                     first.PeriodStart,
                     first.PeriodEnd,
                     g.Count(),
-                    g.Sum(x => x.Slice.TotalOrderAmount),
+                    g.Sum(x => x.Slice.SubtotalAmount),
                     g.Sum(x => x.Slice.AmountPaid),
                     g.Count(x => x.Slice.OrderStatus == OrderStatus.Cancelled),
                     g.Count(x => x.Slice.OrderStatus == OrderStatus.Completed));
@@ -191,7 +191,7 @@ public sealed class OrderPeriodSummaryRollupRefresher : IOrderPeriodSummaryRollu
 
     private sealed record OrderSlice(
         DateTimeOffset CreatedAt,
-        decimal TotalOrderAmount,
+        decimal SubtotalAmount,
         decimal AmountPaid,
         OrderStatus OrderStatus);
 }

@@ -37,7 +37,7 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
                 OrderStatus = OrderStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
-                TotalOrderAmount = 100m,
+                SubtotalAmount = 100m,
                 AmountPaid = 0m,
                 AmountOutstanding = 100m,
                 Lines =
@@ -91,7 +91,7 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
             OrderStatus = OrderStatus.Pending,
             PaymentType = OrderPaymentType.Debt,
             PaymentStatus = OrderPaymentStatus.Unpaid,
-            TotalOrderAmount = 100m,
+            SubtotalAmount = 100m,
             AmountPaid = 0m,
             AmountOutstanding = 100m,
             ReplicationVersion = 1,
@@ -114,7 +114,7 @@ public sealed class OrderCreatedIntegrationEventConsumerTests
                 OrderStatus = OrderStatus.Pending,
                 PaymentType = OrderPaymentType.Debt,
                 PaymentStatus = OrderPaymentStatus.Unpaid,
-                TotalOrderAmount = 100m,
+                SubtotalAmount = 100m,
                 AmountPaid = 0m,
                 AmountOutstanding = 100m,
                 Lines = []

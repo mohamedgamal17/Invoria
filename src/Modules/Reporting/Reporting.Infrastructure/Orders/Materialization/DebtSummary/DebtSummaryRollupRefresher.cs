@@ -82,7 +82,7 @@ public sealed class DebtSummaryRollupRefresher : IDebtSummaryRollupRefresher
             {
                 TotalOutstanding = g.Sum(x => x.AmountOutstanding),
                 TotalPaid = g.Sum(x => x.AmountPaid),
-                TotalOrderValue = g.Sum(x => x.TotalOrderAmount),
+                TotalOrderValue = g.Sum(x => x.SubtotalAmount),
                 DebtOrderCount = g.Count(),
                 PartiallyPaidCount = g.Count(x => x.PaymentStatus == OrderPaymentStatus.Partial),
                 UnpaidCount = g.Count(x => x.PaymentStatus == OrderPaymentStatus.Unpaid),
@@ -229,7 +229,7 @@ public sealed class DebtSummaryRollupRefresher : IDebtSummaryRollupRefresher
             .Take(take)
             .Select(o => new DebtOrderSlice(
                 o.CustomerId,
-                o.TotalOrderAmount,
+                o.SubtotalAmount,
                 o.AmountPaid,
                 o.AmountOutstanding,
                 o.PaymentStatus,
@@ -248,7 +248,7 @@ public sealed class DebtSummaryRollupRefresher : IDebtSummaryRollupRefresher
             customerId,
             list.Sum(x => x.AmountOutstanding),
             list.Sum(x => x.AmountPaid),
-            list.Sum(x => x.TotalOrderAmount),
+            list.Sum(x => x.SubtotalAmount),
             list.Count,
             list.Count(x => x.PaymentStatus == OrderPaymentStatus.Partial),
             list.Count(x => x.PaymentStatus == OrderPaymentStatus.Unpaid),
@@ -302,7 +302,7 @@ public sealed class DebtSummaryRollupRefresher : IDebtSummaryRollupRefresher
 
     private sealed record DebtOrderSlice(
         string CustomerId,
-        decimal TotalOrderAmount,
+        decimal SubtotalAmount,
         decimal AmountPaid,
         decimal AmountOutstanding,
         OrderPaymentStatus PaymentStatus,

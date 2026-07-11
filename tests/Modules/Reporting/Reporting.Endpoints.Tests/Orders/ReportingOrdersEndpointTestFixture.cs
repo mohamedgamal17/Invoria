@@ -41,7 +41,7 @@ public abstract class ReportingOrdersEndpointTestFixture : ReportingTestFixture
             OrderStatus = orderStatus,
             PaymentType = paymentType,
             PaymentStatus = paymentStatus,
-            TotalOrderAmount = totalOrderAmount,
+            SubtotalAmount = totalOrderAmount,
             AmountPaid = amountPaid,
             AmountOutstanding = totalOrderAmount - amountPaid,
             ReplicationVersion = 1,

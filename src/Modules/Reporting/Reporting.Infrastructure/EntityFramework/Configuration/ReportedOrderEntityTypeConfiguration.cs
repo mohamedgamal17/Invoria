@@ -27,7 +27,7 @@ public sealed class ReportedOrderEntityTypeConfiguration : IEntityTypeConfigurat
         builder.Property(x => x.PaymentType).IsRequired();
         builder.Property(x => x.PaymentStatus).IsRequired();
 
-        builder.Property(x => x.TotalOrderAmount).HasColumnType("decimal(18,2)");
+        builder.Property(x => x.SubtotalAmount).HasColumnType("decimal(18,2)");
         builder.Property(x => x.AmountPaid).HasColumnType("decimal(18,2)");
         builder.Property(x => x.AmountOutstanding).HasColumnType("decimal(18,2)");
 

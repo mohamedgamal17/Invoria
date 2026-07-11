@@ -25,7 +25,7 @@ public sealed class DebtSummaryRollupRefresherTests : DebtSummaryRollupRefresher
             OrderStatus = orderStatus,
             PaymentType = paymentType,
             PaymentStatus = paymentStatus,
-            TotalOrderAmount = totalOrderAmount,
+            SubtotalAmount = totalOrderAmount,
             AmountPaid = amountPaid,
             AmountOutstanding = totalOrderAmount - amountPaid,
             ReplicationVersion = 1,
