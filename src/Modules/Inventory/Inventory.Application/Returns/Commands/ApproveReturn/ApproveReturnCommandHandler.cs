@@ -1,6 +1,8 @@
 using Invoria.BuildingBlocks.Application.Abstractions.Cqrs;
 using Invoria.BuildingBlocks.Domain.Exceptions;
 using Invoria.BuildingBlocks.Domain.Primitives;
+using Invoria.Inventory.Application.Returns.Factories;
+using Invoria.Inventory.Contracts.Returns.Dtos;
 using Invoria.Inventory.Contracts.Returns.Enums;
 using Invoria.Inventory.Domain;
 using Invoria.Inventory.Domain.Returns;
@@ -9,16 +11,20 @@ using Microsoft.EntityFrameworkCore;
 namespace Invoria.Inventory.Application.Returns.Commands.ApproveReturn;
 
 public sealed class ApproveReturnCommandHandler
-    : IApplicatonRequestHandler<ApproveReturnCommand, Empty>
+    : IApplicatonRequestHandler<ApproveReturnCommand, ReturnDto>
 {
     private readonly IInventoryRepository<Return> _returnRepository;
+    private readonly IReturnResponseFactory _returnResponseFactory;
 
-    public ApproveReturnCommandHandler(IInventoryRepository<Return> returnRepository)
+    public ApproveReturnCommandHandler(
+        IInventoryRepository<Return> returnRepository,
+        IReturnResponseFactory returnResponseFactory)
     {
         _returnRepository = returnRepository;
+        _returnResponseFactory = returnResponseFactory;
     }
 
-    public async Task<Result<Empty>> Handle(
+    public async Task<Result<ReturnDto>> Handle(
         ApproveReturnCommand request,
         CancellationToken cancellationToken)
     {
@@ -28,13 +34,13 @@ public sealed class ApproveReturnCommandHandler
 
         if (@return == null)
         {
-            return Result.Failure<Empty>(
+            return Result.Failure<ReturnDto>(
                 new NotFoundException($"Return with ID {request.ReturnId} not found"));
         }
 
         if (@return.Status != ReturnStatus.Pending)
         {
-            return Result.Failure<Empty>(new BusinessLogicException(
+            return Result.Failure<ReturnDto>(new BusinessLogicException(
                 "Return can only be approved when it is Pending."));
         }
 
@@ -42,6 +48,8 @@ public sealed class ApproveReturnCommandHandler
 
         await _returnRepository.Update(@return, cancellationToken);
 
-        return Result.Success(Empty.Value);
+        var dto = await _returnResponseFactory.PrepareDto(@return);
+
+        return Result.Success(dto);
     }
 }
