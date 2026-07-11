@@ -45,7 +45,7 @@ public class CompleteOrderEndpoint : EndpointBase<CompleteOrderRequest, OrderDto
     {
         ValidateRequest(req);
 
-        var lines = (req.Items ?? [])
+        var lines = (req.ReturnItems ?? [])
             .Select(i => new CompleteReturnItemLine(i.OrderItemId, i.Quantity))
             .ToList();
 
