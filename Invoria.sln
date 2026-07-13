@@ -143,11 +143,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Reporting", "Reporting", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Reporting.Endpoints.Tests", "tests\Modules\Reporting\Reporting.Endpoints.Tests\Invoria.Reporting.Endpoints.Tests.csproj", "{3F4108EB-2579-4042-AF8C-5DA1EC8EACF1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "infrastructure", "infrastructure", "{2E86A1FD-161F-47F7-A17A-FC16A11E6BB6}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{2E86A1FD-161F-47F7-A17A-FC16A11E6BB6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.BackgroundJob.Core", "src\infrastructure\Invoria.BackgroundJob.Core\Invoria.BackgroundJob.Core.csproj", "{567B1D1C-29AF-4052-8D54-15F6D1DCC8CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.BackgroundJob.Core", "src\Infrastructure\Invoria.BackgroundJob.Core\Invoria.BackgroundJob.Core.csproj", "{567B1D1C-29AF-4052-8D54-15F6D1DCC8CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.BackgroundJobs.Hangfire", "src\infrastructure\Invoria.BackgroundJobs.Hangfire\Invoria.BackgroundJobs.Hangfire.csproj", "{D70E2A7C-3763-4393-84A4-41FD27723517}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.BackgroundJobs.Hangfire", "src\Infrastructure\Invoria.BackgroundJobs.Hangfire\Invoria.BackgroundJobs.Hangfire.csproj", "{D70E2A7C-3763-4393-84A4-41FD27723517}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
