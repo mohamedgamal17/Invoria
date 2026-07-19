@@ -1,6 +1,7 @@
 using Hangfire;
 using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJob.Core.Jobs;
+using Invoria.BackgroundJobs.Hangfire.Execution;
 
 namespace Invoria.BackgroundJobs.Hangfire;
 
@@ -16,15 +17,20 @@ public sealed class HangfireJobScheduler : IJobScheduler
     public string Enqueue<TJob>()
         where TJob : class, IJob
     {
-        string jobId = _client.Enqueue<TJob>(job => job.Execute(CancellationToken.None));
-        return jobId;
+        string result = _client.Enqueue<HangfireJobDispatcher>(
+            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None));
+
+        return result;
     }
 
     public string Schedule<TJob>(TimeSpan delay)
         where TJob : class, IJob
     {
-        string jobId = _client.Schedule<TJob>(job => job.Execute(CancellationToken.None), delay);
-        return jobId;
+        string result = _client.Schedule<HangfireJobDispatcher>(
+            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None),
+            delay);
+
+        return result;
     }
 
     public bool Delete(string jobId)

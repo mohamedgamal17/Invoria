@@ -2,6 +2,7 @@ using Hangfire;
 using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJob.Core.Jobs;
 using Invoria.BackgroundJob.Core.Scheduling;
+using Invoria.BackgroundJobs.Hangfire.Execution;
 
 namespace Invoria.BackgroundJobs.Hangfire;
 
@@ -19,9 +20,9 @@ public sealed class HangfireRecurringJobScheduler : IRecurringJobScheduler
     {
         string cronExpression = MapToCronExpression(recurrence);
 
-        _manager.AddOrUpdate<TJob>(
+        _manager.AddOrUpdate<HangfireJobDispatcher>(
             recurringJobId,
-            job => job.Execute(CancellationToken.None),
+            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None),
             cronExpression);
     }
 
