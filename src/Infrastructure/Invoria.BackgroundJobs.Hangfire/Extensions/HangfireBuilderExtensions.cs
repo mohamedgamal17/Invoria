@@ -1,7 +1,9 @@
 using Hangfire;
 using Hangfire.SqlServer;
 using Invoria.BackgroundJob.Core;
+using Invoria.BackgroundJob.Core.Context;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Invoria.BackgroundJobs.Hangfire;
 
@@ -25,6 +27,7 @@ public static class HangfireBuilderExtensions
             }
         });
 
+        builder.Services.TryAddSingleton<IJobExecutionContextAccessor, JobExecutionContextAccessor>();
         builder.Services.AddScoped<IJobScheduler, HangfireJobScheduler>();
         builder.Services.AddScoped<IRecurringJobScheduler, HangfireRecurringJobScheduler>();
 
