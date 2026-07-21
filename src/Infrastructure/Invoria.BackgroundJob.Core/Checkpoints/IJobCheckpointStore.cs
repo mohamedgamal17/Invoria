@@ -2,11 +2,11 @@ namespace Invoria.BackgroundJob.Core.Checkpoints;
 
 public interface IJobCheckpointStore
 {
-    Task SaveAsync<TState>(
-        JobCheckpoint<TState> checkpoint,
+    Task SaveAsync(
+        JobCheckpoint checkpoint,
         CancellationToken cancellationToken = default);
 
-    Task<JobCheckpoint<TState>?> RestoreAsync<TState>(
+    Task<JobCheckpoint?> RestoreAsync(
         JobId jobId,
         CancellationToken cancellationToken = default);
 
