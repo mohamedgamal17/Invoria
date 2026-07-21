@@ -1,10 +1,14 @@
 using Hangfire;
 using Hangfire.SqlServer;
 using Invoria.BackgroundJob.Core;
+using Invoria.BackgroundJob.Core.Checkpoints;
 using Invoria.BackgroundJob.Core.Context;
 using Invoria.BackgroundJob.Core.Middlewares;
+using Invoria.BackgroundJobs.Hangfire.EntityFramework;
 using Invoria.BackgroundJobs.Hangfire.Execution;
+using Invoria.BackgroundJobs.Hangfire.Extensions;
 using Invoria.BackgroundJobs.Hangfire.Middleware;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -32,6 +36,8 @@ public static class HangfireBuilderExtensions
             config.UseFilter(new HangfireJobIdCaptureFilter());
         });
 
+        RegisterCheckpointStore(builder.Services, options);
+
         builder.Services.TryAddSingleton<IJobExecutionContextAccessor, JobExecutionContextAccessor>();
         builder.Services.TryAddSingleton<JobExecutionContextAccessor>();
         builder.Services.AddSingleton<IJobMiddleware, JobExecutionContextMiddleware>();
@@ -41,5 +47,19 @@ public static class HangfireBuilderExtensions
         builder.Services.AddScoped<IRecurringJobScheduler, HangfireRecurringJobScheduler>();
 
         return builder;
+    }
+
+    private static void RegisterCheckpointStore(IServiceCollection services, HangfireOptions options)
+    {
+        string connectionString = options.CheckpointsConnectionString ?? options.ConnectionString
+            ?? throw new InvalidOperationException(
+                "A connection string is required for the checkpoint store. " +
+                "Set either CheckpointsConnectionString or ConnectionString on HangfireOptions.");
+
+        services.AddInvoriaBackgroundJobsEntityFramework<BackgroundJobsDbContext>(cfg =>
+        {
+            cfg.UseSqlServer(connectionString, sqlCfg =>
+                sqlCfg.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+        });
     }
 }
