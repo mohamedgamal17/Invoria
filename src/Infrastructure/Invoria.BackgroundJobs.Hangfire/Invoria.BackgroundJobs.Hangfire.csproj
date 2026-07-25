@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Invoria.BackgroundJob.Core\Invoria.BackgroundJob.Core.csproj" />
-    <ProjectReference Include="..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

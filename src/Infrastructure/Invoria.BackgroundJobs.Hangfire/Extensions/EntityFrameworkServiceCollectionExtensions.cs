@@ -1,7 +1,5 @@
 using Invoria.BackgroundJob.Core.Checkpoints;
 using Invoria.BackgroundJobs.Hangfire.EntityFramework;
-using Invoria.BuildingBlocks.EntityFramework.Contexts;
-using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,11 +10,11 @@ public static class EntityFrameworkServiceCollectionExtensions
     public static IServiceCollection AddInvoriaBackgroundJobsEntityFramework<TContext>(
         this IServiceCollection services,
         Action<DbContextOptionsBuilder> configure)
-        where TContext : InvoriaDbContext<TContext>
+        where TContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(configure);
 
-        services.AddInvoriaDbContext<TContext>(configure);
+        services.AddDbContext<TContext>(configure);
         services.AddScoped<IJobCheckpointStore, JobCheckpointStore<TContext>>();
 
         return services;

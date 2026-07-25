@@ -1,12 +1,11 @@
 using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJob.Core.Checkpoints;
-using Invoria.BuildingBlocks.EntityFramework.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.BackgroundJobs.Hangfire.EntityFramework;
 
 internal sealed class JobCheckpointStore<TContext> : IJobCheckpointStore
-    where TContext : InvoriaDbContext<TContext>
+    where TContext : DbContext
 {
     private readonly TContext _dbContext;
 
