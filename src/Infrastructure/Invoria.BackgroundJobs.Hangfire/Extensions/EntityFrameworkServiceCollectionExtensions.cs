@@ -1,22 +1,26 @@
 using Invoria.BackgroundJob.Core.Checkpoints;
+using Invoria.BackgroundJobs.Hangfire;
 using Invoria.BackgroundJobs.Hangfire.EntityFramework;
+using Invoria.BuildingBlocks.EntityFramework.Contexts;
+using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Invoria.BackgroundJobs.Hangfire.Extensions;
 
 public static class EntityFrameworkServiceCollectionExtensions
 {
-    public static IServiceCollection AddInvoriaBackgroundJobsEntityFramework<TContext>(
-        this IServiceCollection services,
+    public static HangfireBuilder AddBackgroundJobDbContext<TContext>(
+        this HangfireBuilder builder,
         Action<DbContextOptionsBuilder> configure)
-        where TContext : DbContext
+        where TContext : InvoriaDbContext<TContext>
     {
         ArgumentNullException.ThrowIfNull(configure);
 
-        services.AddDbContext<TContext>(configure);
-        services.AddScoped<IJobCheckpointStore, JobCheckpointStore<TContext>>();
+        builder.Services.AddInvoriaDbContext<TContext>(configure);
+        builder.Services.TryAddScoped<IJobCheckpointStore, JobCheckpointStore<TContext>>();
 
-        return services;
+        return builder;
     }
 }

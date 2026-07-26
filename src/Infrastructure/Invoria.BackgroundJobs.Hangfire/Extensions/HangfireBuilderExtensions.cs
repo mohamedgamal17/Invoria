@@ -12,7 +12,7 @@ namespace Invoria.BackgroundJobs.Hangfire;
 
 public static class HangfireBuilderExtensions
 {
-    public static IBackgroundJobsBuilder UseHangfire(
+    public static HangfireBuilder UseHangfire(
         this IBackgroundJobsBuilder builder,
         Action<HangfireOptions>? configure = null)
     {
@@ -39,7 +39,8 @@ public static class HangfireBuilderExtensions
         builder.Services.TryAddTransient<HangfireJobDispatcher>();
         builder.Services.AddScoped<IJobScheduler, HangfireJobScheduler>();
         builder.Services.AddScoped<IRecurringJobScheduler, HangfireRecurringJobScheduler>();
+        builder.Services.AddHangfireServer();
 
-        return builder;
+        return new HangfireBuilder(builder.Services);
     }
 }

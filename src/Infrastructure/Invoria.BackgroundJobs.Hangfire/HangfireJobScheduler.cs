@@ -17,8 +17,12 @@ public sealed class HangfireJobScheduler : IJobScheduler
     public string Enqueue<TJob>()
         where TJob : class, IJob
     {
+        string jobTypeName = typeof(TJob).AssemblyQualifiedName
+            ?? throw new InvalidOperationException(
+                $"Could not resolve AssemblyQualifiedName for {typeof(TJob).FullName}.");
+
         string result = _client.Enqueue<HangfireJobDispatcher>(
-            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None));
+            dispatcher => dispatcher.ExecuteAsync(jobTypeName, CancellationToken.None));
 
         return result;
     }
@@ -26,8 +30,12 @@ public sealed class HangfireJobScheduler : IJobScheduler
     public string Schedule<TJob>(TimeSpan delay)
         where TJob : class, IJob
     {
+        string jobTypeName = typeof(TJob).AssemblyQualifiedName
+            ?? throw new InvalidOperationException(
+                $"Could not resolve AssemblyQualifiedName for {typeof(TJob).FullName}.");
+
         string result = _client.Schedule<HangfireJobDispatcher>(
-            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None),
+            dispatcher => dispatcher.ExecuteAsync(jobTypeName, CancellationToken.None),
             delay);
 
         return result;

@@ -20,17 +20,25 @@ internal sealed class HangfireJobDispatcher
         _pipeline = pipeline;
     }
 
-    public async Task ExecuteAsync<TJob>(
+    public async Task ExecuteAsync(
+        string jobTypeName,
         CancellationToken cancellationToken)
-        where TJob : class, IJob
     {
-        TJob job = _serviceProvider.GetRequiredService<TJob>();
+        Type? jobType = Type.GetType(jobTypeName, throwOnError: false);
 
-        string hangfireJobId = HangfireJobIdCaptureFilter.CurrentJobId
+        if (jobType is null || !typeof(IJob).IsAssignableFrom(jobType))
+        {
+            throw new InvalidOperationException(
+                $"Job type '{jobTypeName}' could not be resolved or does not implement IJob.");
+        }
+
+        IJob job = (IJob)_serviceProvider.GetRequiredService(jobType);
+
+        string hangfireJobName = HangfireJobIdCaptureFilter.CurrentJobName
             ?? throw new InvalidOperationException(
-                "Hangfire job ID was not captured by the server filter.");
+                "Hangfire job name was not captured by the server filter.");
 
-        JobId jobId = new(hangfireJobId);
+        JobId jobId = new(hangfireJobName);
 
         HangfireExecutionContext context = new(
             jobId,

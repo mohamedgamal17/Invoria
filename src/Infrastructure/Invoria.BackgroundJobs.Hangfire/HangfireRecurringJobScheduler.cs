@@ -20,9 +20,13 @@ public sealed class HangfireRecurringJobScheduler : IRecurringJobScheduler
     {
         string cronExpression = MapToCronExpression(recurrence);
 
+        string jobTypeName = typeof(TJob).AssemblyQualifiedName
+            ?? throw new InvalidOperationException(
+                $"Could not resolve AssemblyQualifiedName for {typeof(TJob).FullName}.");
+
         _manager.AddOrUpdate<HangfireJobDispatcher>(
             recurringJobId,
-            dispatcher => dispatcher.ExecuteAsync<TJob>(CancellationToken.None),
+            dispatcher => dispatcher.ExecuteAsync(jobTypeName, CancellationToken.None),
             cronExpression);
     }
 
