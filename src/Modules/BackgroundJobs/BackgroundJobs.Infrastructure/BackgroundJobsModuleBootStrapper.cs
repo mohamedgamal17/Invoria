@@ -1,3 +1,4 @@
+using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJobs.Infrastructure.EntityFramework;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Microsoft.EntityFrameworkCore;
