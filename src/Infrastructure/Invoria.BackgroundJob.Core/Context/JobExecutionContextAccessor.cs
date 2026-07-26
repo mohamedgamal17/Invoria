@@ -26,6 +26,8 @@ public class JobExecutionContextAccessor
         }
     }
 
+    public JobId? JobId => Current?.JobId;
+
     public void SetCurrent(IJobExecutionContext context)
     {
         Current = context;
