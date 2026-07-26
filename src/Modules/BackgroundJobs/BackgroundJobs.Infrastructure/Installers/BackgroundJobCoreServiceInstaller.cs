@@ -1,7 +1,10 @@
 using Hangfire;
 using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJobs.Hangfire;
+using Invoria.BackgroundJobs.Hangfire.Extensions;
+using Invoria.BackgroundJobs.Infrastructure.EntityFramework;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,13 +14,19 @@ public class BackgroundJobCoreServiceInstaller : IServiceInstaller
 {
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("Default");
+
         services.AddBackgroundJobs()
             .UseLoggingJobMiddleware()
             .UseHangfire(options =>
             {
-                options.ConnectionString = configuration.GetConnectionString("Default");
+                options.ConnectionString = connectionString;
+            })
+            .AddBackgroundJobDbContext<BackgroundJobsDbContext>(cfg =>
+            {
+                cfg.UseSqlServer(connectionString, sqlCfg =>
+                    sqlCfg.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             });
 
-        services.AddHangfireServer();
     }
 }
