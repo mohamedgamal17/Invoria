@@ -11,4 +11,6 @@ public interface IJobScheduler
         where TJob : class, IJob;
 
     bool Delete(string jobId);
+
+    void Remove(string jobName);
 }
