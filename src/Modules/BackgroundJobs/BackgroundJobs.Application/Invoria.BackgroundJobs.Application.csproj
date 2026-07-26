@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\BackgroundJobs.Abstractions\Invoria.BackgroundJobs.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Application\Invoria.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.Domain\Invoria.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\Invoria.BackgroundJob.Core\Invoria.BackgroundJob.Core.csproj" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

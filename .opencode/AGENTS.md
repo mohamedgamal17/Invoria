@@ -16,6 +16,8 @@ Every module lives under `src/Modules/{Module}/{Module}.{Layer}/` with layers:
 
 Shared primitives in `src/BuildingBlocks/`: Core, Domain, Application, EntityFramework, Infrastructure.
 
+Infrastructure-level projects in `src/infrastructure/`: BackgroundJob.Core.
+
 ## Key commands
 
 ```powershell
