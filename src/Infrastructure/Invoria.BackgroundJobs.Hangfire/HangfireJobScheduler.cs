@@ -8,10 +8,14 @@ namespace Invoria.BackgroundJobs.Hangfire;
 public sealed class HangfireJobScheduler : IJobScheduler
 {
     private readonly IBackgroundJobClient _client;
+    private readonly IRecurringJobManager _recurringJobManager;
 
-    public HangfireJobScheduler(IBackgroundJobClient client)
+    public HangfireJobScheduler(
+        IBackgroundJobClient client,
+        IRecurringJobManager recurringJobManager)
     {
         _client = client;
+        _recurringJobManager = recurringJobManager;
     }
 
     public string Enqueue<TJob>()
@@ -45,5 +49,10 @@ public sealed class HangfireJobScheduler : IJobScheduler
     {
         bool result = _client.Delete(jobId);
         return result;
+    }
+
+    public void Remove(string jobName)
+    {
+        _recurringJobManager.RemoveIfExists(jobName);
     }
 }

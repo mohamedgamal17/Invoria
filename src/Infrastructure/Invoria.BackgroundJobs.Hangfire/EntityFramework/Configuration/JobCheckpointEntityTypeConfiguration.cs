@@ -24,7 +24,7 @@ public class JobCheckpointEntityTypeConfiguration : IEntityTypeConfiguration<Job
             .IsRequired();
 
         builder.Property(x => x.State)
-            .HasMaxLength(256)
+            .HasMaxLength(4000)
             .IsRequired();
 
         builder.Property(x => x.CreatedAt)

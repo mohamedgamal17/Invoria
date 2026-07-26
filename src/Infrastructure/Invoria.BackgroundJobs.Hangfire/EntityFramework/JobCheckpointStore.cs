@@ -25,7 +25,7 @@ internal sealed class JobCheckpointStore<TContext> : IJobCheckpointStore
 
         if (existing is not null)
         {
-            existing.State = checkpoint.State;
+            _dbContext.Entry(existing).Property(x => x.State).CurrentValue = checkpoint.State;
             existing.UpdatedAt = DateTimeOffset.UtcNow;
         }
         else
