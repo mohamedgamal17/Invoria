@@ -40,6 +40,8 @@ namespace Invoria.Api
 
             services.InstallModule<BackgroundJobsModuleInstaller>(configuration);
 
+            services.AddTransient<IModuleBootstrapper, LegacyReportingCleanupBootstrapper>();
+
             services.AddExceptionHandler<GlobalExceptionHandler>();
 
             services.AddProblemDetails();
