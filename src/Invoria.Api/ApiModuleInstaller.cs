@@ -11,7 +11,7 @@ using Invoria.CustomerManagement.Infrastructure;
 using Invoria.Inventory.Infrastructure;
 using Invoria.Ordering.Infrastructure;
 using Invoria.Procurement.Infrastructure;
-using Invoria.Reporting.Infrastructure;
+
 using Invoria.BackgroundJobs.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Rebus.Config;
@@ -37,8 +37,10 @@ namespace Invoria.Api
             services.InstallModule<InventoryModuleInstaller>(configuration);
             services.InstallModule<OrderingModuleInstaller>(configuration);
             services.InstallModule<ProcurementModuleInstaller>(configuration);
-            services.InstallModule<ReportingModuleInstaller>(configuration);
+
             services.InstallModule<BackgroundJobsModuleInstaller>(configuration);
+
+            services.AddTransient<IModuleBootstrapper, LegacyReportingCleanupBootstrapper>();
 
             services.AddExceptionHandler<GlobalExceptionHandler>();
 

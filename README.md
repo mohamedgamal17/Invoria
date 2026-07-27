@@ -25,7 +25,6 @@ Core ERP areas supported today:
 - **Orders** — create and manage orders through their lifecycle (accept, update lines, record payments, dispatch, complete, cancel, reopen, and more).
 - **Inventory** — track batches and tie stock allocations to order lines.
 - **Procurement** — manage suppliers and purchase orders (submit, approve, complete, and other workflow steps).
-- **Reporting** — view order status summaries and period rollups (by day, week, or month).
 
 For how modules are wired (layers, messaging, persistence), see [`ai/Architecture.md`](ai/Architecture.md).
 

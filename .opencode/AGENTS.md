@@ -12,7 +12,7 @@ Every module lives under `src/Modules/{Module}/{Module}.{Layer}/` with layers:
 
 | Module | Subdirectories |
 |--------|---------------|
-| Catalog, CustomerManagement, Ordering, Inventory, Procurement, Reporting | Same 5-layer shape |
+| Catalog, CustomerManagement, Ordering, Inventory, Procurement | Same 5-layer shape |
 
 Shared primitives in `src/BuildingBlocks/`: Core, Domain, Application, EntityFramework, Infrastructure.
 

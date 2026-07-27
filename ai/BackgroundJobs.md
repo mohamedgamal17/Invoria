@@ -370,10 +370,6 @@ Affected files:
 - `Ordering.Application/Orders/Factories/OrderResponseFactory.cs` — maps `TotalOrderAmount` → `SubtotalAmount`, `NetOfTotalOrderAmount` → `NetOrderAmount`, computes `ReturnsAmount` + `AmountDue`
 - `Ordering.Application/Orders/Extensions/OrderMappingExtensions.cs` — maps `TotalOrderAmount` → `SubtotalAmount`
 
-### Reporting Module Property Renames
-
-`ReportedOrder` and related types renamed `TotalOrderAmount` → `SubtotalAmount` across reports, consumers, and rollups (commit `82c82af`).
-
 ### ApproveReturn Endpoint
 
 New endpoint in `Inventory.Endpoints`: `POST /returns/{id}/approve` (commit `bf5c9c2`).
