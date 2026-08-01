@@ -48,6 +48,7 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - **Nested loops over LINQ grouping**: Iterate lines → batch allocations explicitly rather than `SelectMany` + `GroupBy` for batch-allocation operations. See `ai/CodingStyle.md`.
 - **DTO factory completeness**: When writing a `PrepareDto` or `MapTo*` method in a response factory, explicitly list **every** property of the DTO and the entity being mapped — including inherited properties like `Id`. Cross-check against the full inheritance chain of both types (`Entity`→`AuditedAggregateRoot`→`Return` vs `EntityDto`→`AuditedEntityDto`) to catch unmapped members. Do not rely on default values. For nested DTOs (e.g., line items) that don't inherit `AuditedEntityDto`, auditing fields may be omitted intentionally.
 - **Enums**: Define with explicit integer values spaced by 5, starting from 5 (e.g., `Daily = 5`, `Monthly = 10`, `Yearly = 15`, `AllTheTime = 20`).
+- **Report classes**: Domain report/read-model classes are prefixed with `Report` (e.g., `ReportCustomerMetrics`) to distinguish them from entity/aggregate classes. Applies across all modules.
 
 ## Testing patterns (NUnit + FluentAssertions)
 

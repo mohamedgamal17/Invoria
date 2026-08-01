@@ -1,5 +1,9 @@
 # Invoria Coding Style
 
+## Report class naming
+
+Domain report/read-model classes are prefixed with `Report` to distinguish them from entity/aggregate classes. Applies across all modules (e.g., `ReportCustomerMetrics`, not `CustomerMetrics`). Do not use the `Report` prefix on entities, aggregates, DTOs, commands, or queries.
+
 ## Intermediate variables
 
 Always assign the result of a method call to a named variable before further use. Do **not** chain calls inline (e.g., `GetFoo().DoBar()`).
