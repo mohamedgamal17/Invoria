@@ -190,3 +190,57 @@ recurringScheduler.AddOrUpdate<ReportCustomerMetricsJob>(
 - No inline chaining — assign method results to named variables (production and test code).
 - No code comments unless asked.
 - Jobs are not CQRS handlers; they don't return `Result<T>`.
+
+## 11. Testing report jobs (integration)
+
+Reference implementation: `ReportCustomerMetricsJobTests` (`tests/Modules/CustomerManagement/CustomerManagement.Application.Tests/Customers/Jobs/ReportCustomerMetricsJobTests.cs`).
+
+### 11.1 Location and fixture
+
+- Test project: `tests/Modules/{Module}/{Module}.Application.Tests`.
+- Mirror the Application folder: `{Feature}/Jobs/{Name}JobTests.cs`, namespace matches the folder.
+- Class inherits the module's **`{Module}BackgroundJobTestFixture`** (extends `BackgroundJobTestFixture`), which provides an in-memory `FakeJobCheckpointStore` and sets the `JobId` context before each test — no real checkpoint DB needed.
+
+### 11.2 Seed source entities with `CreatedAt` variance
+
+- Seed N entities (e.g. 100) split across groups with **different day / month / year** for `CreatedAt` (e.g. `now`, `now.AddDays(-10)`, `now.AddMonths(-3)`, `now.AddYears(-2)`) so every period bucket is exercised.
+- `CreatedAt` has a `protected set`. Set it **via reflection before `Add`**, because `AuditAndIdBeforeSaveHook` only fills `CreatedAt` when it is `default`:
+
+```csharp
+var property = typeof(AuditedAggregateRoot).GetProperty(nameof(AuditedAggregateRoot.CreatedAt));
+property!.SetValue(customer, createdAt);
+await CustomerRepository.Add(customer);
+```
+
+### 11.3 Execute the job
+
+- Resolve the job through DI (it is registered transient in the module installer), then `Execute`:
+
+```csharp
+var job = ServiceProvider.GetRequiredService<ReportCustomerMetricsJob>();
+await job.Execute(CancellationToken.None);
+```
+
+### 11.4 Assert against DB-derived ground truth
+
+- Re-query the source entities from the DB via the module repository, then compute the **expected** contribution per period using the **exact predicates the job uses** (never hard-code counts — date arithmetic like `AddDays(-10)` / `AddMonths(-3)` can cross month/year boundaries).
+- Load the report rows, take `Single` per period, and assert `TotalCount` equals the grouped value.
+
+```csharp
+var customers = await CustomerRepository.AsQuerable().ToListAsync();
+
+var expectedDaily = customers.Count(c => c.CreatedAt.Date == now.Date);
+var expectedMonthly = customers.Count(c => c.CreatedAt.Year == now.Year && c.CreatedAt.Month == now.Month);
+var expectedYearly = customers.Count(c => c.CreatedAt.Year == now.Year);
+var expectedAllTime = customers.Count;
+
+var reports = await ReportRepository.AsQuerable().ToListAsync();
+
+var dailyReport = reports.Single(x => x.Period == ReportPeriod.Daily);
+dailyReport.TotalCount.Should().Be(expectedDaily);
+// ... one Single + Be(expected) per period ...
+```
+
+### 11.5 Fixture DB isolation
+
+These fixtures must follow the DB reset rule in `ai/Test-Conventions.md` (Respawn at fixture start and teardown), otherwise leftover report rows accumulate in the upsert and exact-count assertions fail.

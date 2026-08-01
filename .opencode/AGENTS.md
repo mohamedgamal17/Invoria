@@ -54,8 +54,10 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 ## Testing patterns (NUnit + FluentAssertions)
 
 - Integration tests need a running SQL Server — the test fixture (`OrderingTestFixture` etc.) manages a shared DB context.
+- **DB reset per fixture (mandatory)**: Every SQL Server-touching fixture must reset the database via Respawn (ignoring `__EFMigrationsHistory`) in both `BeforeAllTestRunAsync` (after bootstrapper/migrations) and `AfterAllTestTearDown`, using a shared `ResetDatabaseAsync` helper. See `ai/Test-Conventions.md` and the reference `CustomerBackgroundJobTestFixture`.
 - **Test data**: Static helpers in `Invoria.*.Tests.Fakes` (e.g., `OrderTestData.PersistRandomOrdersAsync`).
 - **Test fixtures**: Inherit from module fixture (e.g., `OrderingTestFixture`), expose `Mediator` via `Scope.Resolve<IMediator>()`.
+- **Background/report job tests**: Mirror the Application folder under `{Feature}/Jobs/`, inherit the module's `{Module}BackgroundJobTestFixture`, seed source entities with `CreatedAt` variance (different day/month/year via reflection on the protected property before `Add`), resolve the job from DI and `Execute` it, then assert each period's `TotalCount` against DB-derived ground truth computed with the job's own predicates. See `ai/Report-Jobs.md` and the reference `ReportCustomerMetricsJobTests`.
 - **Assertion extensions**: DTO assertions in `Assertions/` folder (e.g., `OrderAssertionExtensions.AssertOrderDto`). Prefer these over inline property checks.
 - Follow **Red-Green-Refactor** TDD as documented in `.cursor/rules/tdd-strategy.mdc`.
 
