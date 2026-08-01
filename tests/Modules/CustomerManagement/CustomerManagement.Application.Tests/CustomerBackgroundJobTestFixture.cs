@@ -20,13 +20,21 @@ public class CustomerBackgroundJobTestFixture : BackgroundJobTestFixture
     protected override async Task BeforeAllTestRunAsync()
     {
         await ServiceProvider.RunModulesBootstrapperAsync();
+
+        await ResetDatabaseAsync();
     }
 
     protected override async Task AfterAllTestTearDown()
     {
         await base.AfterAllTestTearDown();
 
+        await ResetDatabaseAsync();
+    }
+
+    private async Task ResetDatabaseAsync()
+    {
         var connectionString = Configuration.GetConnectionString("Default");
+
         using var connection = new SqlConnection(connectionString);
         await connection.OpenAsync();
         var respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
