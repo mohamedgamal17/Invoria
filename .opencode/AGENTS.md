@@ -35,6 +35,7 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - `ai/Branch-Changes.md` — PR documentation template for feature branches.
 - `ai/TDD-Prompt-Examples.md` — example prompts.
 - `ai/Test-Conventions.md` — test folder structure conventions.
+- `ai/Report-Jobs.md` — step-by-step recipe for creating batched "Report" background jobs (checkpoints, do-while loop, period upserts, recurring registration).
 
 ## Conventions to follow
 
