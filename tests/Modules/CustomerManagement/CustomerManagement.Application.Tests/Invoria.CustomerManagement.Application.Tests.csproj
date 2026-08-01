@@ -33,6 +33,7 @@
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Respawn" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,6 +43,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Application\Invoria.CustomerManagement.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Invoria.BackgroundJobs.Test\Invoria.BackgroundJobs.Test.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Application.Tests\Invoria.Application.Tests.csproj" />
   </ItemGroup>
 
