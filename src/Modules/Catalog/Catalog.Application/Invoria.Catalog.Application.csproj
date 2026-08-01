@@ -2,6 +2,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\Invoria.BuildingBlocks.EntityFramework\Invoria.BuildingBlocks.EntityFramework.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\Invoria.BackgroundJob.Core\Invoria.BackgroundJob.Core.csproj" />
+    <ProjectReference Include="..\..\BackgroundJobs\BackgroundJobs.Abstractions\Invoria.BackgroundJobs.Abstractions.csproj" />
     <ProjectReference Include="..\Catalog.Contracts\Invoria.Catalog.Contracts.csproj" />
     <ProjectReference Include="..\Catalog.Domain\Invoria.Catalog.Domain.csproj" />
     <ProjectReference Include="..\..\Inventory\Inventory.Application\Invoria.Inventory.Application.csproj" />
