@@ -15,5 +15,10 @@ namespace Invoria.CustomerManagement.Domain.Customers
             TotalCount = totalCount;
             Period = period;
         }
+
+        public void UpdateCount(long totalCount)
+        {
+            TotalCount = totalCount;
+        }
     }
 }
