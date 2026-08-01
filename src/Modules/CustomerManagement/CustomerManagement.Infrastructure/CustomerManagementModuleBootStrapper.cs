@@ -1,4 +1,8 @@
+using Invoria.BackgroundJob.Core;
+using Invoria.BackgroundJob.Core.Scheduling;
+using Invoria.BackgroundJobs.Abstractions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.CustomerManagement.Application.Customers.Jobs;
 using Invoria.CustomerManagement.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +20,16 @@ namespace Invoria.CustomerManagement.Infrastructure
             {
                 await dbContext.Database.MigrateAsync();
             }
+
+            using var scope = serviceProvider.CreateScope();
+
+            var recurringScheduler = scope.ServiceProvider
+                .GetRequiredService<IRecurringJobScheduler>();
+
+            recurringScheduler.AddOrUpdate<ReportCustomerMetricsJob>(
+                ReportCustomerMetricsJob.Name,
+                new IntervalRecurrence(TimeSpan.FromMinutes(
+                    RecurringJobIntervalConsts.DefaultReportIntervalInMinutes)));
         }
     }
 }
