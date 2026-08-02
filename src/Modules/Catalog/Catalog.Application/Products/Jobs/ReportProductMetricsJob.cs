@@ -40,8 +40,6 @@ public sealed class ReportProductMetricsJob : IJob
         var jobState = reportJobCheckPoint.GetState<ReportJobCheckPoint>()
             ?? new ReportJobCheckPoint();
 
-        var now = DateTimeOffset.UtcNow;
-
         bool isBatchFull;
 
         do
@@ -60,9 +58,9 @@ public sealed class ReportProductMetricsJob : IJob
                 break;
             }
 
-            await UpdateDailyReportAsync(products, now, cancellationToken);
-            await UpdateMonthlyReportAsync(products, now, cancellationToken);
-            await UpdateYearlyReportAsync(products, now, cancellationToken);
+            await UpdateDailyReportAsync(products, cancellationToken);
+            await UpdateMonthlyReportAsync(products, cancellationToken);
+            await UpdateYearlyReportAsync(products, cancellationToken);
             await UpdateAllTimeReportAsync(products, cancellationToken);
 
             var lastProduct = products.LastOrDefault();
@@ -104,32 +102,41 @@ public sealed class ReportProductMetricsJob : IJob
 
     private async Task UpdateDailyReportAsync(
         List<Product> products,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = products.Count(p => p.CreatedAt.Date == now.Date);
+        var dailyGroups = products.GroupBy(p =>
+            new DateTimeOffset(p.CreatedAt.Year, p.CreatedAt.Month, p.CreatedAt.Day, 0, 0, 0, p.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Daily, contribution, cancellationToken);
+        foreach (var group in dailyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Daily, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateMonthlyReportAsync(
         List<Product> products,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = products.Count(p => p.CreatedAt.Year == now.Year && p.CreatedAt.Month == now.Month);
+        var monthlyGroups = products.GroupBy(p =>
+            new DateTimeOffset(p.CreatedAt.Year, p.CreatedAt.Month, 1, 0, 0, 0, p.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Monthly, contribution, cancellationToken);
+        foreach (var group in monthlyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Monthly, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateYearlyReportAsync(
         List<Product> products,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = products.Count(p => p.CreatedAt.Year == now.Year);
+        var yearlyGroups = products.GroupBy(p =>
+            new DateTimeOffset(p.CreatedAt.Year, 1, 1, 0, 0, 0, p.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Yearly, contribution, cancellationToken);
+        foreach (var group in yearlyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Yearly, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateAllTimeReportAsync(
@@ -138,20 +145,21 @@ public sealed class ReportProductMetricsJob : IJob
     {
         long contribution = products.Count;
 
-        await UpsertReportAsync(ReportPeriod.AllTheTime, contribution, cancellationToken);
+        await UpsertReportAsync(ReportPeriod.AllTheTime, DateTimeOffset.MinValue, contribution, cancellationToken);
     }
 
     private async Task UpsertReportAsync(
         ReportPeriod period,
+        DateTimeOffset date,
         long contribution,
         CancellationToken cancellationToken)
     {
         var existing = await _reportProductMetricsRepository
-            .SingleOrDefault(x => x.Period == period, cancellationToken);
+            .SingleOrDefault(x => x.Period == period && x.Date == date, cancellationToken);
 
         if (existing is null)
         {
-            var newReport = new ReportProductMetrics(contribution, period);
+            var newReport = new ReportProductMetrics(date, contribution, period);
 
             await _reportProductMetricsRepository.Add(newReport, cancellationToken);
 

@@ -39,8 +39,6 @@ public sealed class ReportCustomerMetricsJob : IJob
         var jobState = reportJobCheckPoint.GetState<ReportJobCheckPoint>()
             ?? new ReportJobCheckPoint();
 
-        var now = DateTimeOffset.UtcNow;
-
         bool isBatchFull;
 
         do
@@ -59,9 +57,9 @@ public sealed class ReportCustomerMetricsJob : IJob
                 break;
             }
 
-            await UpdateDailyReportAsync(customers, now, cancellationToken);
-            await UpdateMonthlyReportAsync(customers, now, cancellationToken);
-            await UpdateYearlyReportAsync(customers, now, cancellationToken);
+            await UpdateDailyReportAsync(customers, cancellationToken);
+            await UpdateMonthlyReportAsync(customers, cancellationToken);
+            await UpdateYearlyReportAsync(customers, cancellationToken);
             await UpdateAllTimeReportAsync(customers, cancellationToken);
 
             var lastCustomer = customers.LastOrDefault();
@@ -103,32 +101,41 @@ public sealed class ReportCustomerMetricsJob : IJob
 
     private async Task UpdateDailyReportAsync(
         List<Customer> customers,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = customers.Count(c => c.CreatedAt.Date == now.Date);
+        var dailyGroups = customers.GroupBy(c =>
+            new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, c.CreatedAt.Day, 0, 0, 0, c.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Daily, contribution, cancellationToken);
+        foreach (var group in dailyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Daily, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateMonthlyReportAsync(
         List<Customer> customers,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = customers.Count(c => c.CreatedAt.Year == now.Year && c.CreatedAt.Month == now.Month);
+        var monthlyGroups = customers.GroupBy(c =>
+            new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, 1, 0, 0, 0, c.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Monthly, contribution, cancellationToken);
+        foreach (var group in monthlyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Monthly, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateYearlyReportAsync(
         List<Customer> customers,
-        DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        long contribution = customers.Count(c => c.CreatedAt.Year == now.Year);
+        var yearlyGroups = customers.GroupBy(c =>
+            new DateTimeOffset(c.CreatedAt.Year, 1, 1, 0, 0, 0, c.CreatedAt.Offset));
 
-        await UpsertReportAsync(ReportPeriod.Yearly, contribution, cancellationToken);
+        foreach (var group in yearlyGroups)
+        {
+            await UpsertReportAsync(ReportPeriod.Yearly, group.Key, group.LongCount(), cancellationToken);
+        }
     }
 
     private async Task UpdateAllTimeReportAsync(
@@ -137,20 +144,21 @@ public sealed class ReportCustomerMetricsJob : IJob
     {
         long contribution = customers.Count;
 
-        await UpsertReportAsync(ReportPeriod.AllTheTime, contribution, cancellationToken);
+        await UpsertReportAsync(ReportPeriod.AllTheTime, DateTimeOffset.MinValue, contribution, cancellationToken);
     }
 
     private async Task UpsertReportAsync(
         ReportPeriod period,
+        DateTimeOffset date,
         long contribution,
         CancellationToken cancellationToken)
     {
         var existing = await _reportCustomerMetricsRepository
-            .SingleOrDefault(x => x.Period == period, cancellationToken);
+            .SingleOrDefault(x => x.Period == period && x.Date == date, cancellationToken);
 
         if (existing is null)
         {
-            var newReport = new ReportCustomerMetrics(contribution, period);
+            var newReport = new ReportCustomerMetrics(date, contribution, period);
 
             await _reportCustomerMetricsRepository.Add(newReport, cancellationToken);
 
