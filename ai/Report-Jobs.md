@@ -99,45 +99,60 @@ Rules: `OrderBy(Id)` ascending; `Skip((int)jobState.LastIndex)`; `.AsQuerable()`
 
 ## 5. One private method per ReportPeriod
 
-Each counts the batch contribution and delegates to a shared upsert:
+Each groups the batch by the period's bucket date (derived from each entity's own `CreatedAt`), and delegates **every** bucket to a shared upsert — not just the current run date's bucket:
 
 ```csharp
-private async Task UpdateDailyReportAsync(List<Customer> customers, DateTimeOffset now, CancellationToken ct)
+private async Task UpdateDailyReportAsync(List<Customer> customers, CancellationToken ct)
 {
-    long contribution = customers.Count(c => c.CreatedAt.Date == now.Date);
-    await UpsertReportAsync(ReportPeriod.Daily, contribution, ct);
+    var dailyGroups = customers.GroupBy(c =>
+        new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, c.CreatedAt.Day, 0, 0, 0, c.CreatedAt.Offset));
+
+    foreach (var group in dailyGroups)
+    {
+        await UpsertReportAsync(ReportPeriod.Daily, group.Key, group.LongCount(), ct);
+    }
 }
 
-private async Task UpdateMonthlyReportAsync(List<Customer> customers, DateTimeOffset now, CancellationToken ct)
+private async Task UpdateMonthlyReportAsync(List<Customer> customers, CancellationToken ct)
 {
-    long contribution = customers.Count(c => c.CreatedAt.Year == now.Year && c.CreatedAt.Month == now.Month);
-    await UpsertReportAsync(ReportPeriod.Monthly, contribution, ct);
+    var monthlyGroups = customers.GroupBy(c =>
+        new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, 1, 0, 0, 0, c.CreatedAt.Offset));
+
+    foreach (var group in monthlyGroups)
+    {
+        await UpsertReportAsync(ReportPeriod.Monthly, group.Key, group.LongCount(), ct);
+    }
 }
 
-private async Task UpdateYearlyReportAsync(List<Customer> customers, DateTimeOffset now, CancellationToken ct)
+private async Task UpdateYearlyReportAsync(List<Customer> customers, CancellationToken ct)
 {
-    long contribution = customers.Count(c => c.CreatedAt.Year == now.Year);
-    await UpsertReportAsync(ReportPeriod.Yearly, contribution, ct);
+    var yearlyGroups = customers.GroupBy(c =>
+        new DateTimeOffset(c.CreatedAt.Year, 1, 1, 0, 0, 0, c.CreatedAt.Offset));
+
+    foreach (var group in yearlyGroups)
+    {
+        await UpsertReportAsync(ReportPeriod.Yearly, group.Key, group.LongCount(), ct);
+    }
 }
 
 private async Task UpdateAllTimeReportAsync(List<Customer> customers, CancellationToken ct)
 {
     long contribution = customers.Count;
-    await UpsertReportAsync(ReportPeriod.AllTheTime, contribution, ct);
+    await UpsertReportAsync(ReportPeriod.AllTheTime, DateTimeOffset.MinValue, contribution, ct);
 }
 ```
 
-Shared upsert — retrieve-or-create, cumulative across batches:
+Shared upsert — retrieve-or-create by period **and** bucket date, cumulative across batches:
 
 ```csharp
-private async Task UpsertReportAsync(ReportPeriod period, long contribution, CancellationToken ct)
+private async Task UpsertReportAsync(ReportPeriod period, DateTimeOffset date, long contribution, CancellationToken ct)
 {
     var existing = await _reportCustomerMetricsRepository
-        .SingleOrDefault(x => x.Period == period, ct);
+        .SingleOrDefault(x => x.Period == period && x.Date == date, ct);
 
     if (existing is null)
     {
-        var newReport = new ReportCustomerMetrics(contribution, period);
+        var newReport = new ReportCustomerMetrics(date, contribution, period);
         await _reportCustomerMetricsRepository.Add(newReport, ct);
         return;
     }
@@ -150,8 +165,8 @@ private async Task UpsertReportAsync(ReportPeriod period, long contribution, Can
 ## 6. Report entity (Domain)
 
 - Prefix with `Report`, inherit `Entity` (not `AuditedAggregateRoot`).
-- Properties: `long TotalCount { get; private set; }`, `Period` (`ReportPeriod`).
-- Private parameterless ctor + public `(long, ReportPeriod)` ctor + `UpdateCount(long)`.
+- Properties: `DateTimeOffset Date`, `long TotalCount { get; private set; }`, `Period` (`ReportPeriod`).
+- Private parameterless ctor + public `(DateTimeOffset, long, ReportPeriod)` ctor + `UpdateCount(long)`.
 
 `ReportPeriod` enum values are spaced by 5 from 5: `Daily = 5, Monthly = 10, Yearly = 15, AllTheTime = 20` (`Invoria.BuildingBlocks.Domain.Enums`).
 
@@ -223,22 +238,33 @@ await job.Execute(CancellationToken.None);
 
 ### 11.4 Assert against DB-derived ground truth
 
-- Re-query the source entities from the DB via the module repository, then compute the **expected** contribution per period using the **exact predicates the job uses** (never hard-code counts — date arithmetic like `AddDays(-10)` / `AddMonths(-3)` can cross month/year boundaries).
-- Load the report rows, take `Single` per period, and assert `TotalCount` equals the grouped value.
+- Re-query the source entities from the DB via the module repository, then compute the **expected** per-period buckets using the **exact bucket construction the job uses** (never hard-code counts — date arithmetic like `AddDays(-10)` / `AddMonths(-3)` can cross month/year boundaries).
+- Load the report rows, and for each period assert the set of rows and each row's `Date` / `TotalCount` match the grouped ground truth.
 
 ```csharp
 var customers = await CustomerRepository.AsQuerable().ToListAsync();
 
-var expectedDaily = customers.Count(c => c.CreatedAt.Date == now.Date);
-var expectedMonthly = customers.Count(c => c.CreatedAt.Year == now.Year && c.CreatedAt.Month == now.Month);
-var expectedYearly = customers.Count(c => c.CreatedAt.Year == now.Year);
-var expectedAllTime = customers.Count;
+var expectedDaily = customers
+    .GroupBy(c => new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, c.CreatedAt.Day, 0, 0, 0, c.CreatedAt.Offset))
+    .ToDictionary(g => g.Key, g => g.LongCount());
+
+var expectedMonthly = customers
+    .GroupBy(c => new DateTimeOffset(c.CreatedAt.Year, c.CreatedAt.Month, 1, 0, 0, 0, c.CreatedAt.Offset))
+    .ToDictionary(g => g.Key, g => g.LongCount());
+
+var expectedYearly = customers
+    .GroupBy(c => new DateTimeOffset(c.CreatedAt.Year, 1, 1, 0, 0, 0, c.CreatedAt.Offset))
+    .ToDictionary(g => g.Key, g => g.LongCount());
 
 var reports = await ReportRepository.AsQuerable().ToListAsync();
 
-var dailyReport = reports.Single(x => x.Period == ReportPeriod.Daily);
-dailyReport.TotalCount.Should().Be(expectedDaily);
-// ... one Single + Be(expected) per period ...
+var dailyReports = reports.Where(x => x.Period == ReportPeriod.Daily).ToList();
+dailyReports.Count.Should().Be(expectedDaily.Count);
+foreach (var bucket in expectedDaily)
+{
+    dailyReports.Single(x => x.Date == bucket.Key).TotalCount.Should().Be(bucket.Value);
+}
+// ... repeat per period; AllTheTime: Single(Period == AllTheTime), Date == DateTimeOffset.MinValue, TotalCount == customers.Count ...
 ```
 
 ### 11.5 Fixture DB isolation
