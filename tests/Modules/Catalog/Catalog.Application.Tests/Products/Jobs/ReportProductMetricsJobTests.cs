@@ -24,7 +24,7 @@ public class ReportProductMetricsJobTests : CatalogBackgroundJobTestFixture
     }
 
     [Test]
-    public async Task Should_upsert_product_metrics_for_every_period()
+    public async Task Should_upsert_product_metrics_per_bucket_for_every_period()
     {
         // Arrange
         var now = DateTimeOffset.UtcNow;
@@ -42,24 +42,24 @@ public class ReportProductMetricsJobTests : CatalogBackgroundJobTestFixture
         // Assert
         var products = await ProductRepository.AsQuerable().ToListAsync();
 
-        var expectedDaily = products.Count(p => p.CreatedAt.Date == now.Date);
-        var expectedMonthly = products.Count(p => p.CreatedAt.Year == now.Year && p.CreatedAt.Month == now.Month);
-        var expectedYearly = products.Count(p => p.CreatedAt.Year == now.Year);
-        var expectedAllTime = products.Count;
+        var expectedDaily = GroupByBucket(products,
+            p => new DateTimeOffset(p.CreatedAt.Year, p.CreatedAt.Month, p.CreatedAt.Day, 0, 0, 0, p.CreatedAt.Offset));
+
+        var expectedMonthly = GroupByBucket(products,
+            p => new DateTimeOffset(p.CreatedAt.Year, p.CreatedAt.Month, 1, 0, 0, 0, p.CreatedAt.Offset));
+
+        var expectedYearly = GroupByBucket(products,
+            p => new DateTimeOffset(p.CreatedAt.Year, 1, 1, 0, 0, 0, p.CreatedAt.Offset));
 
         var reports = await ReportRepository.AsQuerable().ToListAsync();
 
-        var dailyReport = reports.Single(x => x.Period == ReportPeriod.Daily);
-        dailyReport.TotalCount.Should().Be(expectedDaily);
-
-        var monthlyReport = reports.Single(x => x.Period == ReportPeriod.Monthly);
-        monthlyReport.TotalCount.Should().Be(expectedMonthly);
-
-        var yearlyReport = reports.Single(x => x.Period == ReportPeriod.Yearly);
-        yearlyReport.TotalCount.Should().Be(expectedYearly);
+        AssertPeriodReports(reports, ReportPeriod.Daily, expectedDaily);
+        AssertPeriodReports(reports, ReportPeriod.Monthly, expectedMonthly);
+        AssertPeriodReports(reports, ReportPeriod.Yearly, expectedYearly);
 
         var allTimeReport = reports.Single(x => x.Period == ReportPeriod.AllTheTime);
-        allTimeReport.TotalCount.Should().Be(expectedAllTime);
+        allTimeReport.Date.Should().Be(DateTimeOffset.MinValue);
+        allTimeReport.TotalCount.Should().Be(products.Count);
         allTimeReport.TotalCount.Should().Be(ProductCount);
     }
 
@@ -80,5 +80,32 @@ public class ReportProductMetricsJobTests : CatalogBackgroundJobTestFixture
         var property = typeof(AuditedAggregateRoot).GetProperty(nameof(AuditedAggregateRoot.CreatedAt));
 
         property!.SetValue(product, createdAt);
+    }
+
+    private static Dictionary<DateTimeOffset, long> GroupByBucket(
+        List<Product> products,
+        Func<Product, DateTimeOffset> bucketSelector)
+    {
+        return products
+            .GroupBy(bucketSelector)
+            .ToDictionary(g => g.Key, g => g.LongCount());
+    }
+
+    private static void AssertPeriodReports(
+        List<ReportProductMetrics> reports,
+        ReportPeriod period,
+        Dictionary<DateTimeOffset, long> expected)
+    {
+        var periodReports = reports.Where(x => x.Period == period).ToList();
+
+        periodReports.Count.Should().Be(expected.Count);
+
+        foreach (var expectedBucket in expected)
+        {
+            var report = periodReports.Single(x => x.Date == expectedBucket.Key);
+
+            report.Date.Should().Be(expectedBucket.Key);
+            report.TotalCount.Should().Be(expectedBucket.Value);
+        }
     }
 }
