@@ -2,7 +2,7 @@ using Invoria.BackgroundJob.Core;
 using Invoria.BackgroundJob.Core.Scheduling;
 using Invoria.BackgroundJobs.Abstractions;
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.CustomerManagement.Application.Customers.Jobs;
+using Invoria.CustomerManagement.Application.ReportCustomerMetrics.Jobs;
 using Invoria.CustomerManagement.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,12 +1,14 @@
 using FluentAssertions;
 using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.BuildingBlocks.Domain.Enums;
-using Invoria.CustomerManagement.Application.Customers.Jobs;
+using Invoria.CustomerManagement.Application.ReportCustomerMetrics.Jobs;
 using Invoria.CustomerManagement.Domain.Customers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.CustomerManagement.Application.Tests.Customers.Jobs;
+
+using ReportCustomerMetricsEntity = Invoria.CustomerManagement.Domain.Customers.ReportCustomerMetrics;
 
 [TestFixture]
 public class ReportCustomerMetricsJobTests : CustomerBackgroundJobTestFixture
@@ -14,12 +16,12 @@ public class ReportCustomerMetricsJobTests : CustomerBackgroundJobTestFixture
     private const int CustomerCount = 100;
 
     protected ICustomerRepository<Customer> CustomerRepository { get; }
-    protected ICustomerRepository<ReportCustomerMetrics> ReportRepository { get; }
+    protected ICustomerRepository<ReportCustomerMetricsEntity> ReportRepository { get; }
 
     public ReportCustomerMetricsJobTests()
     {
         CustomerRepository = ServiceProvider.GetRequiredService<ICustomerRepository<Customer>>();
-        ReportRepository = ServiceProvider.GetRequiredService<ICustomerRepository<ReportCustomerMetrics>>();
+        ReportRepository = ServiceProvider.GetRequiredService<ICustomerRepository<ReportCustomerMetricsEntity>>();
     }
 
     [Test]
@@ -91,7 +93,7 @@ public class ReportCustomerMetricsJobTests : CustomerBackgroundJobTestFixture
     }
 
     private static void AssertPeriodReports(
-        List<ReportCustomerMetrics> reports,
+        List<ReportCustomerMetricsEntity> reports,
         ReportPeriod period,
         Dictionary<DateTimeOffset, long> expected)
     {

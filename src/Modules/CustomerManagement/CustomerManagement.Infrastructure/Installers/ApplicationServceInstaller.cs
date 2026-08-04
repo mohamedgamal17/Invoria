@@ -1,6 +1,6 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
-using Invoria.CustomerManagement.Application.Customers.Jobs;
+using Invoria.CustomerManagement.Application.ReportCustomerMetrics.Jobs;
 using Invoria.CustomerManagement.Application.Customers.Services;
 using Invoria.CustomerManagement.Contracts.Services;
 using Microsoft.Extensions.Configuration;
