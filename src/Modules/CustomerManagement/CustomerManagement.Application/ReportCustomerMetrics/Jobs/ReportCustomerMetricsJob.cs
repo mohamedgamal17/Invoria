@@ -7,7 +7,9 @@ using Invoria.BuildingBlocks.Domain.Enums;
 using Invoria.CustomerManagement.Domain.Customers;
 using Microsoft.EntityFrameworkCore;
 
-namespace Invoria.CustomerManagement.Application.Customers.Jobs;
+namespace Invoria.CustomerManagement.Application.ReportCustomerMetrics.Jobs;
+
+using ReportCustomerMetricsEntity = Invoria.CustomerManagement.Domain.Customers.ReportCustomerMetrics;
 
 public sealed class ReportCustomerMetricsJob : IJob
 {
@@ -18,13 +20,13 @@ public sealed class ReportCustomerMetricsJob : IJob
     private readonly IJobCheckpointStore _jobCheckpointStore;
     private readonly IJobExecutionContextAccessor _jobExecutionContextAccessor;
     private readonly ICustomerRepository<Customer> _customerRepository;
-    private readonly ICustomerRepository<ReportCustomerMetrics> _reportCustomerMetricsRepository;
+    private readonly ICustomerRepository<ReportCustomerMetricsEntity> _reportCustomerMetricsRepository;
 
     public ReportCustomerMetricsJob(
         IJobCheckpointStore jobCheckpointStore,
         IJobExecutionContextAccessor jobExecutionContextAccessor,
         ICustomerRepository<Customer> customerRepository,
-        ICustomerRepository<ReportCustomerMetrics> reportCustomerMetricsRepository)
+        ICustomerRepository<ReportCustomerMetricsEntity> reportCustomerMetricsRepository)
     {
         _jobCheckpointStore = jobCheckpointStore;
         _jobExecutionContextAccessor = jobExecutionContextAccessor;
@@ -158,7 +160,7 @@ public sealed class ReportCustomerMetricsJob : IJob
 
         if (existing is null)
         {
-            var newReport = new ReportCustomerMetrics(date, contribution, period);
+            var newReport = new ReportCustomerMetricsEntity(date, contribution, period);
 
             await _reportCustomerMetricsRepository.Add(newReport, cancellationToken);
 
