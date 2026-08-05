@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Catalog.Application.Products.Jobs;
 
+using ReportProductMetricsEntity = Invoria.Catalog.Domain.Products.ReportProductMetrics;
+
 public sealed class ReportProductMetricsJob : IJob
 {
     public const string Name = "ReportProductMetricsJob";
@@ -19,13 +21,13 @@ public sealed class ReportProductMetricsJob : IJob
     private readonly IJobCheckpointStore _jobCheckpointStore;
     private readonly IJobExecutionContextAccessor _jobExecutionContextAccessor;
     private readonly ICatalogRepository<Product> _productRepository;
-    private readonly ICatalogRepository<ReportProductMetrics> _reportProductMetricsRepository;
+    private readonly ICatalogRepository<ReportProductMetricsEntity> _reportProductMetricsRepository;
 
     public ReportProductMetricsJob(
         IJobCheckpointStore jobCheckpointStore,
         IJobExecutionContextAccessor jobExecutionContextAccessor,
         ICatalogRepository<Product> productRepository,
-        ICatalogRepository<ReportProductMetrics> reportProductMetricsRepository)
+        ICatalogRepository<ReportProductMetricsEntity> reportProductMetricsRepository)
     {
         _jobCheckpointStore = jobCheckpointStore;
         _jobExecutionContextAccessor = jobExecutionContextAccessor;
@@ -159,7 +161,7 @@ public sealed class ReportProductMetricsJob : IJob
 
         if (existing is null)
         {
-            var newReport = new ReportProductMetrics(date, contribution, period);
+            var newReport = new ReportProductMetricsEntity(date, contribution, period);
 
             await _reportProductMetricsRepository.Add(newReport, cancellationToken);
 
