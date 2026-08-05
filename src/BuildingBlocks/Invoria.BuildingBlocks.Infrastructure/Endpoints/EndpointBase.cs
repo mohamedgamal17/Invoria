@@ -77,3 +77,20 @@ public abstract class EndpointBase<TRequest> : Endpoint<TRequest, Envelope>
         ThrowIfAnyErrors();
     }
 }
+
+public abstract class EndpointBaseWithoutRequest<TResponse> : EndpointWithoutRequest<Envelope<TResponse>>
+{
+    private readonly IResultToHttpMapper _resultMapper;
+
+    protected EndpointBaseWithoutRequest(IResultToHttpMapper resultMapper)
+    {
+        _resultMapper = resultMapper;
+    }
+
+    protected async Task SendResultAsync(Result<TResponse> result, CancellationToken ct = default)
+    {
+        var (statusCode, body) = _resultMapper.Map(result, HttpContext?.Request.Path.Value);
+
+        await SendAsync(body, statusCode);
+    }
+}
