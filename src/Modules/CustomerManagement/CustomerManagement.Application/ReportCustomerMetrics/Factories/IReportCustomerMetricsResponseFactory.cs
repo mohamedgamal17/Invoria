@@ -8,12 +8,10 @@ namespace Invoria.CustomerManagement.Application.ReportCustomerMetrics.Factories
 
     public interface IReportCustomerMetricsResponseFactory : IResponseFactory<ReportCustomerMetricsEntity, ReportCustomerMetricsPeriodDto>
     {
-        Task<ReportCustomerMetricsDto> PrepareMetricsDto(ReportCustomerMetricsEntity report);
-
         Task<ReportCustomerMetricsDto> PrepareMetricsDto(
-            ReportCustomerMetricsEntity? daily,
-            ReportCustomerMetricsEntity? monthly,
-            ReportCustomerMetricsEntity? yearly,
-            ReportCustomerMetricsEntity? allTime);
+            ReportCustomerMetricsEntity daily,
+            ReportCustomerMetricsEntity monthly,
+            ReportCustomerMetricsEntity yearly,
+            ReportCustomerMetricsEntity allTime);
     }
 }

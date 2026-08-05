@@ -39,6 +39,11 @@ namespace Invoria.CustomerManagement.Application.ReportCustomerMetrics.Queries.G
             var allTime = await _reportCustomerMetricsRepository.SingleOrDefault(
                 x => x.Period == ReportPeriod.AllTheTime, cancellationToken);
 
+            daily ??= new ReportCustomerMetricsEntity(todayStart, 0, ReportPeriod.Daily);
+            monthly ??= new ReportCustomerMetricsEntity(monthStart, 0, ReportPeriod.Monthly);
+            yearly ??= new ReportCustomerMetricsEntity(yearStart, 0, ReportPeriod.Yearly);
+            allTime ??= new ReportCustomerMetricsEntity(DateTimeOffset.MinValue, 0, ReportPeriod.AllTheTime);
+
             var dto = await _reportCustomerMetricsResponseFactory.PrepareMetricsDto(daily, monthly, yearly, allTime);
 
             return dto;
