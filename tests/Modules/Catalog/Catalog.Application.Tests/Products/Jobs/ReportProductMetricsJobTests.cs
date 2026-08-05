@@ -9,18 +9,20 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Invoria.Catalog.Application.Tests.Products.Jobs;
 
+using ReportProductMetricsEntity = Invoria.Catalog.Domain.Products.ReportProductMetrics;
+
 [TestFixture]
 public class ReportProductMetricsJobTests : CatalogBackgroundJobTestFixture
 {
     private const int ProductCount = 100;
 
     protected ICatalogRepository<Product> ProductRepository { get; }
-    protected ICatalogRepository<ReportProductMetrics> ReportRepository { get; }
+    protected ICatalogRepository<ReportProductMetricsEntity> ReportRepository { get; }
 
     public ReportProductMetricsJobTests()
     {
         ProductRepository = ServiceProvider.GetRequiredService<ICatalogRepository<Product>>();
-        ReportRepository = ServiceProvider.GetRequiredService<ICatalogRepository<ReportProductMetrics>>();
+        ReportRepository = ServiceProvider.GetRequiredService<ICatalogRepository<ReportProductMetricsEntity>>();
     }
 
     [Test]
@@ -92,7 +94,7 @@ public class ReportProductMetricsJobTests : CatalogBackgroundJobTestFixture
     }
 
     private static void AssertPeriodReports(
-        List<ReportProductMetrics> reports,
+        List<ReportProductMetricsEntity> reports,
         ReportPeriod period,
         Dictionary<DateTimeOffset, long> expected)
     {
