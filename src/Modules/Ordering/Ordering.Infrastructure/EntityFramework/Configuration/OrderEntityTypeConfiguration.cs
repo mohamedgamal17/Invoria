@@ -62,7 +62,7 @@ namespace Invoria.Ordering.Infrastructure.EntityFramework.Configuration
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(x => x.StateTransitionHistory)
-                .WithOne(x => x.Order)
+                .WithOne()
                 .HasForeignKey(x => x.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
