@@ -29,6 +29,7 @@ public class GetOrderByIdQueryHandler : IApplicatonRequestHandler<GetOrderByIdQu
             .Include(o => o.Items)
             .Include(o => o.Payments)
             .Include(o => o.ReturnItems)
+            .Include(o => o.StateTransitionHistory)
             .SingleOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
 
         if (order == null)

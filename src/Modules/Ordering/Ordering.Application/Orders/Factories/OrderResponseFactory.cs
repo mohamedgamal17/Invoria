@@ -185,6 +185,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
                     })
                     .ToList(),
                 Payments = MapPayments(view.Payments),
+                StateTransitionHistory = MapStateTransitions(view.StateTransitionHistory),
                 ReturnItems = includeReturnItems
                     ? MapReturnItems(view, productById)
                     : new List<OrderReturnItemDto>(),
@@ -243,6 +244,22 @@ namespace Invoria.Ordering.Application.Orders.Factories
             dto.ReturnsAmount = returnsAmount;
             dto.NetOrderAmount = view.NetOfTotalOrderAmount;
             dto.AmountDue = view.NetOfTotalOrderAmount;
+        }
+
+        private static List<OrderStateTransitionHistoryDto> MapStateTransitions(
+            IReadOnlyCollection<OrderStateTransitionHistory> stateTransitions)
+        {
+            return stateTransitions
+                .OrderBy(t => t.ChangedAt)
+                .Select(t => new OrderStateTransitionHistoryDto
+                {
+                    Id = t.Id,
+                    OrderId = t.OrderId,
+                    FromStatus = t.FromStatus,
+                    ToStatus = t.ToStatus,
+                    ChangedAt = t.ChangedAt,
+                })
+                .ToList();
         }
 
         private List<OrderPaymentDto> MapPayments(IReadOnlyCollection<OrderPayment> payments)
