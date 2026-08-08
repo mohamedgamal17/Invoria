@@ -100,6 +100,9 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
             message.OrderId,
             message.OccurredOn));
 
+        await _bus.Publish(new RecordOrderCompletedMetricsSagaActivity(
+            message.OccurredOn));
+
         MarkAsComplete();
 
         if (message.ReturnLines.Count > 0 && !string.IsNullOrEmpty(message.AllocationId))
