@@ -39,5 +39,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
         services.AddTransient<IHandleMessages<RecordOrderInvoiceSagaActivity>, RecordOrderInvoiceSagaActivityHandler>();
         services.AddTransient<IHandleMessages<CreateOrderInvoiceIntegrationEvent>, CreateOrderInvoiceIntegrationEventConsumer>();
         services.AddTransient<IHandleMessages<RecordOrderSalesSagaActivity>, RecordOrderSalesSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<RecordOrderCompletedMetricsSagaActivity>, RecordOrderCompletedMetricsSagaActivityHandler>();
     }
 }
