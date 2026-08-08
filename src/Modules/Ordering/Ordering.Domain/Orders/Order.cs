@@ -37,6 +37,8 @@ namespace Invoria.Ordering.Domain.Orders
         public decimal NetOfTotalOrderAmount => Items.Sum(i =>
             i.Price * Math.Max(0, i.Quantity - ReturnedQuantity(i.Id)));
 
+        public decimal TotalReturnAmount => Items.Sum(i => i.Price * ReturnedQuantity(i.Id));
+
         private Order()
         {
             Items = new List<OrderItem>();
