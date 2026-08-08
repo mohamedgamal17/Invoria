@@ -37,7 +37,8 @@ namespace Invoria.CustomerManagement.Application.Tests
             await connection.OpenAsync();
             var respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
             {
-                TablesToIgnore = new Table[] { "__EFMigrationsHistory" }
+                TablesToIgnore = new Table[] { "__EFMigrationsHistory" },
+                SchemasToExclude = new[] { "Hangfire" }
             });
             await respawner.ResetAsync(connection);
         }
