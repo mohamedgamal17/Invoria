@@ -14,8 +14,6 @@ public class OrderStateTransitionHistory : Entity
 
     public DateTimeOffset ChangedAt { get; private set; }
 
-    public Order? Order { get; private set; }
-
     private OrderStateTransitionHistory()
     {
     }
