@@ -1,6 +1,7 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Ordering.Application.Invoices.Services;
+using Invoria.Ordering.Application.Orders.Jobs;
 using Invoria.Ordering.Application.Orders.Services;
 using Invoria.Ordering.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +13,8 @@ namespace Invoria.Ordering.Infrastructure.Installers
     {
         public void Install(IServiceCollection services, IConfiguration configuration)
         {
+            services.AddTransient<ReportOrderCompletedMetricsJob>();
+
             services
                 .AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Application.AssemblyReference.Assembly))
                 .RegisterFactoriesFromAssembly(Application.AssemblyReference.Assembly);

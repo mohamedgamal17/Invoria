@@ -1,7 +1,11 @@
+using Invoria.BackgroundJob.Core;
+using Invoria.BackgroundJob.Core.Scheduling;
+using Invoria.BackgroundJobs.Abstractions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Contracts.Returns.Events;
 using Invoria.Ordering.Application.Invoices.Sagas.Activities;
+using Invoria.Ordering.Application.Orders.Jobs;
 using Invoria.Ordering.Application.Orders.Sagas.Activities;
 using Invoria.Ordering.Contracts.Invoices.Events;
 using Invoria.Ordering.Contracts.Orders.Events;
@@ -20,6 +24,15 @@ namespace Invoria.Ordering.Infrastructure
 
             await dbcontext.Database.MigrateAsync();
 
+            using var scope = serviceProvider.CreateScope();
+
+            var recurringScheduler = scope.ServiceProvider
+                .GetRequiredService<IRecurringJobScheduler>();
+
+            recurringScheduler.AddOrUpdate<ReportOrderCompletedMetricsJob>(
+                ReportOrderCompletedMetricsJob.Name,
+                new IntervalRecurrence(TimeSpan.FromMinutes(
+                    RecurringJobIntervalConsts.DefaultReportIntervalInMinutes)));
 
             var bus = serviceProvider.GetService<IBus>();
 
