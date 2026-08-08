@@ -177,6 +177,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
             new OrderItem(returnedProductId, 2, 10m),
             new OrderItem(otherProductId, 1, 5m)
         ]);
+        SetEntityId(order, "order-ret-sum");
         SetEntityId(order.Items[0], returnedLineId);
         SetEntityId(order.Items[1], otherLineId);
         order.Accept();
@@ -214,6 +215,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
             new OrderItem(returnedProductId, 2, 10m),
             new OrderItem(otherProductId, 1, 5m)
         ]);
+        SetEntityId(order, "order-ret-noload");
         SetEntityId(order.Items[0], "line-returned");
         SetEntityId(order.Items[1], "line-other");
         order.Accept();

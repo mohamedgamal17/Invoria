@@ -30,6 +30,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
             dto.InvoiceId.Should().Be(order.InvoiceId);
             dto.OrderAllocated.Should().Be(order.OrderAllocated);
             dto.Payments.Should().HaveCount(order.Payments.Count);
+            dto.StateTransitionHistory.Should().HaveCount(order.StateTransitionHistory.Count);
             dto.AssertOrderCustomer(expectedCustomer);
             dto.AssertOrderPricing(order);
             dto.ReturnItems.Should().HaveCount(order.ReturnItems.Count);
