@@ -1,3 +1,4 @@
+using Invoria.BackgroundJobs.Test;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Procurement.Infrastructure;
@@ -16,6 +17,8 @@ namespace Invoria.Procurement.Application.Tests
             services.AddLogging(static b => b.SetMinimumLevel(LogLevel.Warning));
 
             services.InstallModule<ProcurementModuleInstaller>(configuration);
+
+            services.InstallModule<BackgroundJobsTestModuleInstaller>(configuration);
 
             services.AddSingleton<Mock<IBus>>(_ =>
             {
