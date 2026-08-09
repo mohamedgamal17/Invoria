@@ -3,9 +3,11 @@ using Invoria.BackgroundJob.Core.Scheduling;
 using Invoria.BackgroundJobs.Abstractions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.Procurement.Application.Parties.Jobs;
+using Invoria.Procurement.Contracts.Events;
 using Invoria.Procurement.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Rebus.Bus;
 
 namespace Invoria.Procurement.Infrastructure
 {
@@ -22,6 +24,13 @@ namespace Invoria.Procurement.Infrastructure
             }
 
             using var scope = serviceProvider.CreateScope();
+
+            var bus = serviceProvider.GetService<IBus>();
+
+            if (bus is not null)
+            {
+                await bus.Subscribe<PurchaseOrderCompletedIntegrationEvent>();
+            }
 
             var recurringScheduler = scope.ServiceProvider
                 .GetRequiredService<IRecurringJobScheduler>();
