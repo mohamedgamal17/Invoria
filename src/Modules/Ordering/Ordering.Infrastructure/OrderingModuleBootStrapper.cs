@@ -48,6 +48,7 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<OrderInvoiceCreatedIntegrationEvent>();
                 await bus.Subscribe<RecordOrderInvoiceSagaActivity>();
                 await bus.Subscribe<CreateOrderInvoiceIntegrationEvent>();
+                await bus.Subscribe<OrderAllocationConsumptionIntegrationEvent>();
             }
         }
     }
