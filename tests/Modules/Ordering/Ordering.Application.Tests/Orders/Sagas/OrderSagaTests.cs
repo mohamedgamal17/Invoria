@@ -621,6 +621,59 @@ public class OrderSagaTests
     }
 
     [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_publishes_request_order_allocation_when_allocation_exists()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            AllocationId = "alloc-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", "alloc-1", [], hasBillableItems: false));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<RequestOrderAllocationIntegrationEvent>(e =>
+                    e.OrderId == "order-1" &&
+                    e.AllocationId == "alloc-1"),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_does_not_publish_request_order_allocation_when_no_allocation()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: false));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(
+                It.IsAny<RequestOrderAllocationIntegrationEvent>(),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
+    [Test]
     public void Deliver_OrderCompletedIntegrationEvent_completes_saga()
     {
         var bus = CreateBus();
