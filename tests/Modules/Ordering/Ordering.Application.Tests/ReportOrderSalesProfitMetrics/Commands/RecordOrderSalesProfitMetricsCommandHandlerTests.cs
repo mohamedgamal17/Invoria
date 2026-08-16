@@ -118,7 +118,7 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_exclude_returns_from_revenue_and_cost()
     {
-        var (order, itemId) = await SeedOrderAsync(withReturn: true);
+        var (order, itemId) = await SeedOrderAsync(returnedQuantity: 2);
         var consumption = await SeedConsumptionAsync(order, itemId, "alloc-1");
         var occurredOn = new DateTimeOffset(2024, 5, 7, 10, 30, 0, TimeSpan.Zero);
 
@@ -214,7 +214,59 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
         allTime.TotalReturnAmount.Should().Be(expected1.TotalReturnAmount + expected2.TotalReturnAmount);
     }
 
-    private async Task<(Order Order, string ItemId)> SeedOrderAsync(bool withReturn = false)
+    [Test]
+    public async Task Should_deduct_returns_from_last_batch_first_at_batch_unit_price()
+    {
+        var (order, itemId) = await SeedOrderAsync(returnedQuantity: 2);
+        var consumption = await SeedConsumptionAsync(
+            order,
+            itemId,
+            "alloc-1",
+            [(3, 10m), (2, 7.5m)]);
+        var occurredOn = new DateTimeOffset(2024, 5, 7, 10, 30, 0, TimeSpan.Zero);
+
+        var result = await Mediator.Send(new RecordOrderSalesProfitMetricsCommand
+        {
+            OrderId = order.Id,
+            AllocationId = consumption.AllocationId,
+            OccurredOn = occurredOn
+        });
+
+        result.ShouldBeSuccess();
+
+        var report = (await GetReportsAsync()).Single(x => x.Period == ReportPeriod.Daily);
+
+        report.TotalCost.Should().Be(30m);
+        report.TotalProfit.Should().Be(report.TotalRevenue - 30m);
+    }
+
+    [Test]
+    public async Task Should_deduct_returns_across_batches_after_last_batch_is_exhausted()
+    {
+        var (order, itemId) = await SeedOrderAsync(returnedQuantity: 4);
+        var consumption = await SeedConsumptionAsync(
+            order,
+            itemId,
+            "alloc-1",
+            [(3, 10m), (2, 7.5m)]);
+        var occurredOn = new DateTimeOffset(2024, 5, 7, 10, 30, 0, TimeSpan.Zero);
+
+        var result = await Mediator.Send(new RecordOrderSalesProfitMetricsCommand
+        {
+            OrderId = order.Id,
+            AllocationId = consumption.AllocationId,
+            OccurredOn = occurredOn
+        });
+
+        result.ShouldBeSuccess();
+
+        var report = (await GetReportsAsync()).Single(x => x.Period == ReportPeriod.Daily);
+
+        report.TotalCost.Should().Be(10m);
+        report.TotalProfit.Should().Be(report.TotalRevenue - 10m);
+    }
+
+    private async Task<(Order Order, string ItemId)> SeedOrderAsync(int returnedQuantity = 0)
     {
         var order = new Order($"PROFIT-{Guid.NewGuid():N}", Guid.NewGuid().ToString());
         var itemId = Guid.NewGuid().ToString("N");
@@ -222,7 +274,7 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
         AssignStringEntityId(item, itemId);
         order.UpdateItems([item]);
         order.Accept();
-        order.Complete(withReturn ? [new OrderReturnItem(itemId, 2)] : []);
+        order.Complete(returnedQuantity > 0 ? [new OrderReturnItem(itemId, returnedQuantity)] : []);
         await OrderRepository.Add(order, CancellationToken.None);
         return (order, itemId);
     }
@@ -232,6 +284,15 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
         string orderItemId,
         string allocationId)
     {
+        return await SeedConsumptionAsync(order, orderItemId, allocationId, [(5, 8m)]);
+    }
+
+    private async Task<OrderAllocationConsumption> SeedConsumptionAsync(
+        Order order,
+        string orderItemId,
+        string allocationId,
+        IReadOnlyCollection<(int Quantity, decimal UnitPrice)> batches)
+    {
         var consumptionRepository = Scope.Resolve<IOrderingRepository<OrderAllocationConsumption>>();
 
         var line = new OrderAllocationConsumptionLine(
@@ -239,11 +300,15 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
             orderItemId,
             "product-1",
             5);
-        line.AddBatchAllocation(new OrderAllocationConsumptionBatch(
-            Guid.NewGuid().ToString("N"),
-            "batch-1",
-            5,
-            8m));
+
+        foreach (var (quantity, unitPrice) in batches)
+        {
+            line.AddBatchAllocation(new OrderAllocationConsumptionBatch(
+                Guid.NewGuid().ToString("N"),
+                Guid.NewGuid().ToString("N"),
+                quantity,
+                unitPrice));
+        }
 
         var consumption = OrderAllocationConsumption.Create(order.Id, allocationId, [line]);
         consumption.ClearDomainEvents();
@@ -271,12 +336,27 @@ public class RecordOrderSalesProfitMetricsCommandHandlerTests : OrderTestFixture
 
         var totalCost = consumption.Lines.Sum(line =>
         {
-            var lineCost = line.BatchAllocations.Sum(b => b.UnitPrice * b.Quantity);
             var returnedQuantity = returnedQuantities.TryGetValue(line.OrderItemId, out var quantity)
                 ? quantity
                 : 0;
-            var billableQuantity = Math.Max(0, line.QuantityRequested - returnedQuantity);
-            return lineCost * billableQuantity / line.QuantityRequested;
+
+            var batches = line.BatchAllocations.ToList();
+            var remainingReturn = returnedQuantity;
+            var lineCost = 0m;
+
+            for (var i = batches.Count - 1; i >= 0; i--)
+            {
+                var batch = batches[i];
+
+                var deductedQuantity = Math.Min(batch.Quantity, remainingReturn);
+                remainingReturn -= deductedQuantity;
+
+                var billableQuantity = batch.Quantity - deductedQuantity;
+
+                lineCost += billableQuantity * batch.UnitPrice;
+            }
+
+            return lineCost;
         });
 
         var totalRevenue = order.NetOfTotalOrderAmount;
