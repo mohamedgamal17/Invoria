@@ -1,13 +1,18 @@
+using System.Reflection;
 using Autofac;
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
+using Invoria.BuildingBlocks.Domain.Entities;
 using Invoria.Ordering.Application.OrderAllocationConsumptions.Commands.CreateOrderAllocationConsumption;
 using Invoria.Ordering.Application.Tests.Orders;
 using Invoria.Ordering.Domain.OrderAllocationConsumptions;
+using Invoria.Ordering.Domain.Orders;
 using Invoria.Ordering.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Ordering.Application.Tests.OrderAllocationConsumptions.Commands;
+
+using ReportOrderSalesProfitMetricsEntity = Invoria.Ordering.Domain.Orders.ReportOrderSalesProfitMetrics;
 
 [TestFixture]
 public class CreateOrderAllocationConsumptionCommandHandlerTests : OrderTestFixture
@@ -26,12 +31,18 @@ public class CreateOrderAllocationConsumptionCommandHandlerTests : OrderTestFixt
         db.RemoveRange(lines);
         var consumptions = await db.Set<OrderAllocationConsumption>().ToListAsync();
         db.RemoveRange(consumptions);
+        var reports = await db.Set<ReportOrderSalesProfitMetricsEntity>().ToListAsync();
+        db.RemoveRange(reports);
+        var orders = await db.Set<Order>().ToListAsync();
+        db.RemoveRange(orders);
         await db.SaveChangesAsync();
     }
 
     [Test]
     public async Task Should_create_order_allocation_consumption_with_lines_and_batches()
     {
+        await SeedOrderAsync();
+
         var result = await Mediator.Send(BuildCommand());
 
         result.ShouldBeSuccess();
@@ -59,6 +70,8 @@ public class CreateOrderAllocationConsumptionCommandHandlerTests : OrderTestFixt
     [Test]
     public async Task Should_create_multiple_lines_with_their_batch_allocations()
     {
+        await SeedOrderAsync();
+
         var command = BuildCommand();
         command.Lines.Add(new CreateOrderAllocationConsumptionCommand.Line
         {
@@ -94,6 +107,8 @@ public class CreateOrderAllocationConsumptionCommandHandlerTests : OrderTestFixt
     [Test]
     public async Task Should_be_idempotent_when_allocation_already_consumed()
     {
+        await SeedOrderAsync();
+
         await Mediator.Send(BuildCommand());
 
         var result = await Mediator.Send(BuildCommand());
@@ -105,6 +120,26 @@ public class CreateOrderAllocationConsumptionCommandHandlerTests : OrderTestFixt
             .CountAsync(c => c.AllocationId == "alloc-1");
 
         count.Should().Be(1);
+    }
+
+    private async Task SeedOrderAsync()
+    {
+        var order = new Order($"CONSUMPTION-{Guid.NewGuid():N}", Guid.NewGuid().ToString());
+        AssignStringEntityId(order, "order-1");
+        var item1 = new OrderItem("product-1", 5, 20m);
+        AssignStringEntityId(item1, "item-1");
+        var item2 = new OrderItem("product-2", 2, 15m);
+        AssignStringEntityId(item2, "item-2");
+        order.UpdateItems([item1, item2]);
+        await OrderRepository.Add(order, CancellationToken.None);
+    }
+
+    private static void AssignStringEntityId(Entity<string> entity, string id)
+    {
+        var property = typeof(Entity<string>).GetProperty(
+            nameof(Entity<string>.Id),
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
+        property.SetValue(entity, id);
     }
 
     private static CreateOrderAllocationConsumptionCommand BuildCommand() =>
