@@ -100,15 +100,27 @@ public sealed class RecordOrderSalesProfitMetricsCommandHandler
         OrderAllocationConsumptionLine line,
         IReadOnlyDictionary<string, int> returnedQuantities)
     {
-        var lineCost = line.BatchAllocations.Sum(b => b.UnitPrice * b.Quantity);
-
         var returnedQuantity = returnedQuantities.TryGetValue(line.OrderItemId, out var quantity)
             ? quantity
             : 0;
 
-        var billableQuantity = Math.Max(0, line.QuantityRequested - returnedQuantity);
+        var batches = line.BatchAllocations.ToList();
+        var remainingReturn = returnedQuantity;
+        var totalCost = 0m;
 
-        return lineCost * billableQuantity / line.QuantityRequested;
+        for (var i = batches.Count - 1; i >= 0; i--)
+        {
+            var batch = batches[i];
+
+            var deductedQuantity = Math.Min(batch.Quantity, remainingReturn);
+            remainingReturn -= deductedQuantity;
+
+            var billableQuantity = batch.Quantity - deductedQuantity;
+
+            totalCost += billableQuantity * batch.UnitPrice;
+        }
+
+        return totalCost;
     }
 
     private async Task UpsertReportAsync(
