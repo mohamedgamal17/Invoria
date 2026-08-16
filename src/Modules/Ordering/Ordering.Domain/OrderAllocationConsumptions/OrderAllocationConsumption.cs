@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using Invoria.BuildingBlocks.Domain.Entities;
+using Invoria.Ordering.Domain.OrderAllocationConsumptions.Events;
 
 namespace Invoria.Ordering.Domain.OrderAllocationConsumptions;
 
@@ -42,6 +43,8 @@ public class OrderAllocationConsumption : AuditedAggregateRoot
             line.AttachToConsumption(consumption.Id!);
             consumption._lines.Add(line);
         }
+
+        consumption.AddDomainEvent(new OrderAllocationConsumptionCreatedDomainEvent(consumption));
 
         return consumption;
     }
