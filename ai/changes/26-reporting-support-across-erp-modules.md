@@ -42,6 +42,10 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 - `GET GetOrderCompletedMetrics` — dashboard totals.
 - `GET ListOrderCompletedMetrics` — paged history.
 
+### Report Order Sales Profit Metrics (`/report/orders/sales-profit`)
+- `GET GetOrderSalesProfitMetrics` — dashboard totals (`TotalRevenue`/`TotalCost`/`TotalProfit`/`TotalReturnAmount` per period).
+- `GET ListOrderSalesProfitMetrics` — paged history (`Period`, `Skip`, `Length`).
+
 ## Procurement
 ### Report Supplier Metrics (`/report/supplier-metrics`)
 - `GET GetSupplierMetrics` — dashboard totals.
@@ -80,7 +84,7 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 - Tables, migrations, EF configurations (unique period-date index/constraint), saga activity wiring.
 
 ### Endpoints / Presentation (`Invoria.Ordering.Endpoints`)
-- `ReportOrderSalesMetrics`, `ReportOrderCompletedMetrics` routing groups + endpoints. (Profit metrics remain Application-only via MediatR — no endpoints by design.)
+- `ReportOrderSalesMetrics`, `ReportOrderCompletedMetrics`, `ReportOrderSalesProfitMetrics` routing groups + endpoints (`/report/orders/sales-profit/overview` and `/report/orders/sales-profit/metrics`).
 
 ### Contracts (`Invoria.Ordering.Contracts`)
 - Report DTOs (`ReportOrderSalesMetricsDto`/`PeriodDto`, `ReportOrderCompletedMetrics*`, `ReportOrderSalesProfitMetricsDto`/`PeriodDto`), `OrderStateTransitionHistoryDto`, allocation-consumption integration events.
