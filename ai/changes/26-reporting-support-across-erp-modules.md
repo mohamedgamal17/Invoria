@@ -2,7 +2,7 @@
 branch: 26-reporting-support-across-erp-modules
 base: master
 pr: ""
-last_updated: 2026-08-16
+last_updated: 2026-08-17
 author: ""
 ---
 
@@ -28,42 +28,45 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 ## CustomerManagement
 - **Customer metrics** — Checkpointed background job counting customers per period, with paged history + dashboard.
 
+## Inventory
+- **Order allocation consumption query** — Consumes the Ordering allocation-consumption request and exposes which batches/lines were consumed per order.
+
 ## Cross-cutting
 - **BackgroundJobs** — New `Invoria.BackgroundJob.Core` abstraction + Hangfire provider (`Invoria.BackgroundJobs.Hangfire`) with `IJob`, recurrence scheduling, checkpoints, middleware pipeline, and job execution context; applied to the customer/product/supplier report jobs.
 
 # API Changes
 
 ## Ordering
-### Report Order Sales Metrics (`/report/order-sales-metrics`)
-- `GET GetOrderSalesMetrics` — dashboard totals (no request params; returns `ReportOrderSalesMetricsDto`).
-- `GET ListOrderSalesMetrics` — paged history (`Period`, `Skip`, `Length`).
+### Report Order Sales Metrics (`/report/orders/sales`)
+- `GET /report/orders/sales/overview` — dashboard totals (no request params; returns `ReportOrderSalesMetricsDto`).
+- `GET /report/orders/sales/metrics` — paged history (`Period`, `Skip`, `Length`).
 
-### Report Order Completed Metrics (`/report/order-completed-metrics`)
-- `GET GetOrderCompletedMetrics` — dashboard totals.
-- `GET ListOrderCompletedMetrics` — paged history.
+### Report Order Completed Metrics (`/report/orders/completion`)
+- `GET /report/orders/completion/overview` — dashboard totals.
+- `GET /report/orders/completion/metrics` — paged history.
 
 ### Report Order Sales Profit Metrics (`/report/orders/sales-profit`)
-- `GET GetOrderSalesProfitMetrics` — dashboard totals (`TotalRevenue`/`TotalCost`/`TotalProfit`/`TotalReturnAmount` per period).
-- `GET ListOrderSalesProfitMetrics` — paged history (`Period`, `Skip`, `Length`).
+- `GET /report/orders/sales-profit/overview` — dashboard totals (`TotalRevenue`/`TotalCost`/`TotalProfit`/`TotalReturnAmount` per period).
+- `GET /report/orders/sales-profit/metrics` — paged history (`Period`, `Skip`, `Length`).
 
 ## Procurement
-### Report Supplier Metrics (`/report/supplier-metrics`)
-- `GET GetSupplierMetrics` — dashboard totals.
-- `GET ListSupplierMetrics` — paged history.
+### Report Supplier Metrics (`/report/suppliers/creation`)
+- `GET /report/suppliers/creation/overview` — dashboard totals.
+- `GET /report/suppliers/creation/metrics` — paged history.
 
-### Report Purchase Sales Metrics (`/report/purchase-sales-metrics`)
-- `GET GetPurchaseSalesMetrics` / `GET ListPurchaseSalesMetrics`.
+### Report Purchase Sales Metrics (`/report/purchase-orders/sales`)
+- `GET /report/purchase-orders/sales/overview` / `GET /report/purchase-orders/sales/metrics`.
 
-### Report Purchase Orders Completed Metrics (`/report/purchase-orders-completed-metrics`)
-- `GET GetPurchaseOrdersCompletedMetrics` / `GET ListPurchaseOrdersCompletedMetrics`.
+### Report Purchase Orders Completed Metrics (`/report/purchase-orders/completion`)
+- `GET /report/purchase-orders/completion/overview` / `GET /report/purchase-orders/completion/metrics`.
 
 ## Catalog
-### Report Product Metrics (`/report/product-metrics`)
-- `GET GetProductMetrics` / `GET ListProductMetrics`.
+### Report Product Metrics (`/report/products/creation`)
+- `GET /report/products/creation/overview` / `GET /report/products/creation/metrics`.
 
 ## CustomerManagement
-### Report Customer Metrics (`/report/customer-metrics`)
-- `GET GetCustomerMetrics` / `GET ListCustomerMetrics`.
+### Report Customer Metrics (`/report/customers/creation`)
+- `GET /report/customers/creation/overview` / `GET /report/customers/creation/metrics`.
 
 # Code Changes
 
@@ -73,12 +76,14 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 - Report entities: `ReportOrderSalesMetrics`, `ReportOrderCompletedMetrics`, `ReportOrderSalesProfitMetrics`.
 - `OrderAllocationConsumption` aggregate with `OrderAllocationConsumptionCreatedDomainEvent`.
 - `OrderStateTransitionHistory` entity.
+- `Order` now records a `StateTransitionHistory` entry on every status change (`RecordTransition`) and exposes `TotalReturnAmount`.
 
 ### Application (`Invoria.Ordering.Application`)
 - Report commands/queries/factories for all three Ordering report features (paged `List` + `Get` dashboard via `ResponseFactory`).
 - `RecordOrderSalesProfitMetricsCommandHandler` — LIFO batch deduction with returns deducted from the last batch first at that batch's unit price; upserts one entity per period.
 - `OrderAllocationConsumptionCreatedDomainEventHandler` — resolves a fresh `IServiceScope`/`IMediator` via `IServiceScopeFactory` to avoid same-`DbContext` re-entrancy deadlock when the domain-event dispatcher runs inside the after-save hook.
 - Saga activities recording sales and completed metrics on order completion.
+- `OrderResponseFactory` and `GetOrderByIdQueryHandler` surface `StateTransitionHistory` (ordered by `ChangedAt`) in order responses.
 
 ### Infrastructure (`Invoria.Ordering.Infrastructure`)
 - Tables, migrations, EF configurations (unique period-date index/constraint), saga activity wiring.
@@ -92,6 +97,19 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 ### Testing
 - `Invoria.Ordering.Application.Tests`: record command/handler tests, consumption-created event handler tests, multi-batch LIFO return deduction cases, profit metrics List/Get query tests, saga activity coverage.
 - `Invoria.Ordering.Endpoints.Tests`: report endpoint tests.
+
+## Inventory
+
+### Application (`Invoria.Inventory.Application`)
+- `RequestOrderAllocationIntegrationEventConsumer` — consumes the Ordering `RequestOrderAllocationIntegrationEvent` and maps allocation consumption.
+- `GetOrderAllocationConsumptionQuery` / handler — reads order allocation consumption per order.
+- `AllocationMappingExtensions` — maps allocation/batch data to the consumption contract models.
+
+### Contracts (`Invoria.Inventory.Contracts`)
+- `OrderAllocationConsumptionIntegrationEvent` with `OrderAllocationConsumptionBatchModel` / `OrderAllocationConsumptionLineModel` under `Allocations/`.
+
+### Infrastructure (`Invoria.Inventory.Infrastructure`)
+- `RebusHandlersServiceInstaller` registers the consumption consumer; `InventoryModuleBootStrapper` subscribes to the Ordering request event.
 
 ## Procurement
 
@@ -126,7 +144,7 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 
 ## Host / API (`Invoria.Api`)
 - BackgroundJobs module installed in the API composition root; Hangfire schema guarded against missing connection string.
-- Legacy Reporting module removed from solution, host wiring, and docs.
+- Legacy Reporting module removed from solution, host wiring, and docs; `LegacyReportingCleanupBootstrapper` drops the legacy Reporting tables on startup.
 
 ## BuildingBlocks (`Invoria.BuildingBlocks.*`)
 - `ReportPeriod` enum in `BuildingBlocks.Domain.Enums` (values spaced by 5, starting at 5).
@@ -137,11 +155,16 @@ Adds cross-module **reporting support** backed by a new background-job abstracti
 - Shared recurring interval const and `ReportJobCheckPoint` in `BackgroundJobs.Abstractions`.
 - Respawn test fixtures exclude Hangfire schema from resets.
 
+## Tooling and docs
+- `.config/dotnet-tools.json` adds `dotnet-ef` 8.0.29; new `OrderingDbContextFactory` supports design-time migrations.
+- `README.md` drops the legacy Reporting bullet; `ai/CodingStyle.md` and `.cursor/rules/report-class-naming.mdc` document the `Report` class-prefix convention.
+- `ai/Test-Conventions.md` and AGENTS.md document the mandatory DB reset per SQL Server-touching fixture.
+
 ## Documented conventions
 - `ai/Report-Jobs.md` (checkpointed batched report-job recipe), `ai/BackgroundJobs.md`, AGENTS.md updates (`Report` prefix, enum spacing, DB-reset + report-job testing rules).
 
 # Integration and messaging
 
-- Order allocation consumption flow: `RequestOrderAllocationConsumption` integration event (Contracts) consumed for consumption creation; `OrderAllocationConsumptionCreatedDomainEvent` triggers profit-metrics recording.
+- Order allocation consumption flow: Ordering publishes `RequestOrderAllocationIntegrationEvent` (Ordering.Contracts); Inventory consumes it and publishes `OrderAllocationConsumptionIntegrationEvent` (Inventory.Contracts); Ordering's `OrderAllocationConsumptionIntegrationEventConsumer` sends `CreateOrderAllocationConsumptionCommand`, and the resulting `OrderAllocationConsumptionCreatedDomainEvent` triggers profit-metrics recording.
 - Procurement report recording is driven by Rebus consumers (`RecordPurchaseSalesMetricsIntegrationEventConsumer`, `RecordPurchaseOrdersCompletedMetricsIntegrationEventConsumer`).
 - Ordering sales/completed metrics recording driven by Saga activities inside the order-completion pipeline.
