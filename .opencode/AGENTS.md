@@ -35,6 +35,7 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - `ai/Branch-Changes.md` — PR documentation template for feature branches.
 - `ai/TDD-Prompt-Examples.md` — example prompts.
 - `ai/Test-Conventions.md` — test folder structure conventions.
+- `ai/Report-Jobs.md` — step-by-step recipe for creating batched "Report" background jobs (checkpoints, do-while loop, period upserts, recurring registration).
 
 ## Conventions to follow
 
@@ -47,12 +48,16 @@ CI runs each test project separately in Release mode. Tests need SQL Server (Loc
 - **Intermediate variables**: Always assign method results to named variables before further use — no inline chaining like `GetFoo().DoBar()`. Applies to production and test code.
 - **Nested loops over LINQ grouping**: Iterate lines → batch allocations explicitly rather than `SelectMany` + `GroupBy` for batch-allocation operations. See `ai/CodingStyle.md`.
 - **DTO factory completeness**: When writing a `PrepareDto` or `MapTo*` method in a response factory, explicitly list **every** property of the DTO and the entity being mapped — including inherited properties like `Id`. Cross-check against the full inheritance chain of both types (`Entity`→`AuditedAggregateRoot`→`Return` vs `EntityDto`→`AuditedEntityDto`) to catch unmapped members. Do not rely on default values. For nested DTOs (e.g., line items) that don't inherit `AuditedEntityDto`, auditing fields may be omitted intentionally.
+- **Enums**: Define with explicit integer values spaced by 5, starting from 5 (e.g., `Daily = 5`, `Monthly = 10`, `Yearly = 15`, `AllTheTime = 20`).
+- **Report classes**: Domain report/read-model classes are prefixed with `Report` (e.g., `ReportCustomerMetrics`) to distinguish them from entity/aggregate classes. Applies across all modules.
 
 ## Testing patterns (NUnit + FluentAssertions)
 
 - Integration tests need a running SQL Server — the test fixture (`OrderingTestFixture` etc.) manages a shared DB context.
+- **DB reset per fixture (mandatory)**: Every SQL Server-touching fixture must reset the database via Respawn (ignoring `__EFMigrationsHistory`) in both `BeforeAllTestRunAsync` (after bootstrapper/migrations) and `AfterAllTestTearDown`, using a shared `ResetDatabaseAsync` helper. See `ai/Test-Conventions.md` and the reference `CustomerBackgroundJobTestFixture`.
 - **Test data**: Static helpers in `Invoria.*.Tests.Fakes` (e.g., `OrderTestData.PersistRandomOrdersAsync`).
 - **Test fixtures**: Inherit from module fixture (e.g., `OrderingTestFixture`), expose `Mediator` via `Scope.Resolve<IMediator>()`.
+- **Background/report job tests**: Mirror the Application folder under `{Feature}/Jobs/`, inherit the module's `{Module}BackgroundJobTestFixture`, seed source entities with `CreatedAt` variance (different day/month/year via reflection on the protected property before `Add`), resolve the job from DI and `Execute` it, then assert each period's `TotalCount` against DB-derived ground truth computed with the job's own predicates. See `ai/Report-Jobs.md` and the reference `ReportCustomerMetricsJobTests`.
 - **Assertion extensions**: DTO assertions in `Assertions/` folder (e.g., `OrderAssertionExtensions.AssertOrderDto`). Prefer these over inline property checks.
 - Follow **Red-Green-Refactor** TDD as documented in `.cursor/rules/tdd-strategy.mdc`.
 

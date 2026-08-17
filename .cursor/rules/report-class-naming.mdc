@@ -1,0 +1,15 @@
+---
+description: Report classes must be prefixed with Report across all modules
+alwaysApply: true
+---
+
+# Report class naming
+
+Domain report/read-model classes are prefixed with `Report` to distinguish them from entity/aggregate classes. This applies to every module (Catalog, CustomerManagement, Ordering, Inventory, Procurement, and any new modules).
+
+## Rules
+
+- Any domain class that represents a report or read-model must start with the `Report` prefix.
+- Example: `ReportCustomerMetrics` (CustomerManagement), not `CustomerMetrics`.
+- Do not use the `Report` prefix on entities, aggregates, DTOs, commands, or queries.
+- Follow this convention when creating or renaming report classes across the whole application.

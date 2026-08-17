@@ -73,7 +73,11 @@ public class CreateInvoiceCommandHandlerTests : OrderTestFixture
     [Test]
     public async Task Should_deduct_returned_quantities_on_invoice_lines()
     {
-        var order = (await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 1)).Single();
+        var order = new Order(
+            $"TEST-INV-{Guid.NewGuid():N}",
+            Guid.NewGuid().ToString());
+        order.UpdateItems([new OrderItem(Guid.NewGuid().ToString(), 2, 10m)]);
+        await OrderRepository.Add(order, CancellationToken.None);
         await Mediator.Send(new AcceptOrderCommand(order.Id));
 
         var line = await Scope.Resolve<OrderingDbContext>()

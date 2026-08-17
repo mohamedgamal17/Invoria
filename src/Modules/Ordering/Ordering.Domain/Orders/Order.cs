@@ -13,6 +13,8 @@ namespace Invoria.Ordering.Domain.Orders
         public List<OrderItem> Items { get; private set; }
         public List<OrderPayment> Payments { get; private set; }
         public List<OrderReturnItem> ReturnItems { get; private set; } = new();
+        private readonly List<OrderStateTransitionHistory> _stateTransitionHistory = new();
+        public IReadOnlyCollection<OrderStateTransitionHistory> StateTransitionHistory => _stateTransitionHistory.AsReadOnly();
         public OrderPaymentType PaymentType { get; private set; }
         public OrderStatus Status { get; private set; }
 
@@ -34,6 +36,8 @@ namespace Invoria.Ordering.Domain.Orders
 
         public decimal NetOfTotalOrderAmount => Items.Sum(i =>
             i.Price * Math.Max(0, i.Quantity - ReturnedQuantity(i.Id)));
+
+        public decimal TotalReturnAmount => Items.Sum(i => i.Price * ReturnedQuantity(i.Id));
 
         private Order()
         {
@@ -152,6 +156,21 @@ namespace Invoria.Ordering.Domain.Orders
             RefreshPaymentSummary();
         }
 
+        private void RecordTransition(OrderStatus from, OrderStatus to)
+        {
+            if (string.IsNullOrWhiteSpace(Id))
+            {
+                return;
+            }
+
+            _stateTransitionHistory.Add(new OrderStateTransitionHistory(
+                Guid.NewGuid().ToString("N"),
+                Id,
+                from,
+                to,
+                DateTimeOffset.UtcNow));
+        }
+
         private void RefreshPaymentSummary()
         {
             AmountPaid = Payments.Sum(p => p.PaidAmount);
@@ -186,7 +205,9 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be accepted when it is Pending or Revision.");
             }
 
+            var fromStatus = Status;
             Status = OrderStatus.Processing;
+            RecordTransition(fromStatus, OrderStatus.Processing);
             AddDomainEvent(new OrderAcceptedDomainEvent(this));
         }
 
@@ -232,7 +253,9 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be revised when it is Processing or RevisionPending.");
             }
 
+            var fromStatus = Status;
             Status = OrderStatus.Revision;
+            RecordTransition(fromStatus, OrderStatus.Revision);
         }
 
         public void MarkAsAllocated()
@@ -260,8 +283,10 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order revision can only be requested when the order is allocated.");
             }
 
+            var fromStatus = Status;
             Status = OrderStatus.RevisionPending;
             OrderAllocated = false;
+            RecordTransition(fromStatus, OrderStatus.RevisionPending);
             AddDomainEvent(new OrderRevisionRequestedDomainEvent(this));
         }
 
@@ -273,7 +298,9 @@ namespace Invoria.Ordering.Domain.Orders
                     "Order can only be cancelled when the order is not Completed.");
             }
 
+            var fromStatus = Status;
             Status = OrderStatus.Cancelled;
+            RecordTransition(fromStatus, OrderStatus.Cancelled);
         }
 
         public void Complete(IReadOnlyList<OrderReturnItem>? returnItems)
@@ -285,7 +312,9 @@ namespace Invoria.Ordering.Domain.Orders
             }
 
             RecordReturnItems(returnItems ?? []);
+            var fromStatus = Status;
             Status = OrderStatus.Completed;
+            RecordTransition(fromStatus, OrderStatus.Completed);
             AddDomainEvent(new OrderCompletedDomainEvent(this));
         }
 

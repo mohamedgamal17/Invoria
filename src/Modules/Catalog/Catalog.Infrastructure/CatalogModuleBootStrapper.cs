@@ -1,4 +1,8 @@
+using Invoria.BackgroundJob.Core;
+using Invoria.BackgroundJob.Core.Scheduling;
+using Invoria.BackgroundJobs.Abstractions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Catalog.Application.Products.Jobs;
 using Invoria.Catalog.Infrastructure.EntityFramework;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,8 +15,21 @@ namespace Invoria.Catalog.Infrastructure
         {
             var dbContext = serviceProvider.GetRequiredService<CatalogDbContext>();
 
-            await dbContext.Database.MigrateAsync();
+            var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+            {
+                await dbContext.Database.MigrateAsync();
+            }
 
+            using var scope = serviceProvider.CreateScope();
+
+            var recurringScheduler = scope.ServiceProvider
+                .GetRequiredService<IRecurringJobScheduler>();
+
+            recurringScheduler.AddOrUpdate<ReportProductMetricsJob>(
+                ReportProductMetricsJob.Name,
+                new IntervalRecurrence(TimeSpan.FromMinutes(
+                    RecurringJobIntervalConsts.DefaultReportIntervalInMinutes)));
         }
     }
 }

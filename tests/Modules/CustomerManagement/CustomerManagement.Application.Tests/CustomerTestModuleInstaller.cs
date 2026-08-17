@@ -1,3 +1,4 @@
+using Invoria.BackgroundJobs.Test;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.CustomerManagement.Infrastructure;
@@ -11,6 +12,7 @@ namespace Invoria.CustomerManagement.Application.Tests
         public void Install(IServiceCollection services, IConfiguration configuration)
         {
             services.InstallModule<CustomerManagementModuleInstaller>(configuration);
+            services.InstallModule<BackgroundJobsTestModuleInstaller>(configuration);
         }
     }
 }

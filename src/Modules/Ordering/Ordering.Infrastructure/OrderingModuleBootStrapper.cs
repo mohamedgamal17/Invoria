@@ -20,6 +20,7 @@ namespace Invoria.Ordering.Infrastructure
 
             await dbcontext.Database.MigrateAsync();
 
+            using var scope = serviceProvider.CreateScope();
 
             var bus = serviceProvider.GetService<IBus>();
 
@@ -38,6 +39,8 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<MarkOrderAllocatedSagaActivity>();
                 await bus.Subscribe<CreateOrderReturnSagaActivity>();
                 await bus.Subscribe<CreateOrderInvoiceSagaActivity>();
+                await bus.Subscribe<RecordOrderSalesSagaActivity>();
+                await bus.Subscribe<RecordOrderCompletedMetricsSagaActivity>();
                 await bus.Subscribe<OrderReturnRequestedIntegrationEvent>();
                 await bus.Subscribe<ImmediateReturnCreatedIntegrationEvent>();
                 await bus.Subscribe<RecordOrderReturnSagaActivity>();
@@ -45,6 +48,7 @@ namespace Invoria.Ordering.Infrastructure
                 await bus.Subscribe<OrderInvoiceCreatedIntegrationEvent>();
                 await bus.Subscribe<RecordOrderInvoiceSagaActivity>();
                 await bus.Subscribe<CreateOrderInvoiceIntegrationEvent>();
+                await bus.Subscribe<OrderAllocationConsumptionIntegrationEvent>();
             }
         }
     }

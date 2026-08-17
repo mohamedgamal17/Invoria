@@ -17,10 +17,35 @@ namespace Invoria.Procurement.Infrastructure.EntityFramework.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.29")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Invoria.Procurement.Domain.Parties.ReportSupplierMetrics", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("int");
+
+                    b.Property<long>("TotalCount")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("Period", "Date")
+                        .IsUnique();
+
+                    b.ToTable("ReportSupplierMetrics");
+                });
 
             modelBuilder.Entity("Invoria.Procurement.Domain.Parties.Supplier", b =>
                 {
@@ -237,6 +262,65 @@ namespace Invoria.Procurement.Infrastructure.EntityFramework.Migrations
                     b.HasIndex("PurchaseOrderId");
 
                     b.ToTable("PurchaseStateHistory", (string)null);
+                });
+
+            modelBuilder.Entity("Invoria.Procurement.Domain.PurchaseOrders.ReportPurchaseOrdersCompletedMetrics", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("int");
+
+                    b.Property<long>("TotalCount")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("Period", "Date")
+                        .IsUnique();
+
+                    b.ToTable("ReportPurchaseOrdersCompletedMetrics", (string)null);
+                });
+
+            modelBuilder.Entity("Invoria.Procurement.Domain.PurchaseOrders.ReportPurchaseSalesMetrics", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("Date")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date");
+
+                    b.HasIndex("Period", "Date")
+                        .IsUnique();
+
+                    b.ToTable("ReportPurchaseSalesMetrics", (string)null);
                 });
 
             modelBuilder.Entity("Invoria.Procurement.Domain.PurchaseOrders.PurchaseOrder", b =>

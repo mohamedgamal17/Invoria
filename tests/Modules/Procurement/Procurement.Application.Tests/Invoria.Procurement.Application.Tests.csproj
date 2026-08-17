@@ -34,6 +34,7 @@
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Respawn" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +45,7 @@
     <ProjectReference Include="..\..\..\..\src\Modules\Procurement\Procurement.Domain\Invoria.Procurement.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Procurement\Procurement.Application\Invoria.Procurement.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Procurement\Procurement.Infrastructure\Invoria.Procurement.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Invoria.BackgroundJobs.Test\Invoria.BackgroundJobs.Test.csproj" />
     <ProjectReference Include="..\..\..\Invoria.Application.Tests\Invoria.Application.Tests.csproj" />
   </ItemGroup>
 

@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.Application.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Procurement.Application.Parties.Jobs;
 using Invoria.Procurement.Application.Services;
 using Invoria.Procurement.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,8 @@ namespace Invoria.Procurement.Infrastructure.Installers
                    .RegisterFactoriesFromAssembly(Invoria.Procurement.Application.AssemblyReference.Assembly);
 
             services.AddTransient<IPurchaseOrderNumberGenerator, PurchaseOrderNumberGenerator>();
+
+            services.AddTransient<ReportSupplierMetricsJob>();
         }
     }
 }

@@ -3,6 +3,7 @@ using Invoria.Inventory.Contracts.Allocations.Events;
 using Invoria.Inventory.Contracts.Returns.Events;
 using Invoria.Ordering.Application.Invoices.Consumers;
 using Invoria.Ordering.Application.Invoices.Sagas;
+using Invoria.Ordering.Application.OrderAllocationConsumptions.Consumers;
 using Invoria.Ordering.Application.Invoices.Sagas.Activities;
 using Invoria.Ordering.Application.Orders.Sagas;
 using Invoria.Ordering.Application.Orders.Sagas.Activities;
@@ -38,5 +39,8 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
         services.AddTransient<IHandleMessages<RecordOrderReturnSagaActivity>, RecordOrderReturnSagaActivityHandler>();
         services.AddTransient<IHandleMessages<RecordOrderInvoiceSagaActivity>, RecordOrderInvoiceSagaActivityHandler>();
         services.AddTransient<IHandleMessages<CreateOrderInvoiceIntegrationEvent>, CreateOrderInvoiceIntegrationEventConsumer>();
+        services.AddTransient<IHandleMessages<RecordOrderSalesSagaActivity>, RecordOrderSalesSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<RecordOrderCompletedMetricsSagaActivity>, RecordOrderCompletedMetricsSagaActivityHandler>();
+        services.AddTransient<IHandleMessages<OrderAllocationConsumptionIntegrationEvent>, OrderAllocationConsumptionIntegrationEventConsumer>();
     }
 }

@@ -1,4 +1,5 @@
 using Invoria.Application.Tests;
+using Invoria.BackgroundJobs.Test;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
 using Invoria.BuildingBlocks.Domain.Primitives;
@@ -18,6 +19,7 @@ namespace Invoria.Catalog.Application.Tests
         {
             services.InstallModule<CatalogModuleInstaller>(configuration);
             services.InstallModule<InventoryModuleInstaller>(configuration);
+            services.InstallModule<BackgroundJobsTestModuleInstaller>(configuration);
         }
 
     }

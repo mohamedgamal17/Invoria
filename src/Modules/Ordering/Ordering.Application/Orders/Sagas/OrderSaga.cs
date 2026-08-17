@@ -96,6 +96,22 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
     {
         Data.ApplyCompleted();
 
+        if (!string.IsNullOrEmpty(Data.AllocationId))
+        {
+            await _bus.Publish(new RequestOrderAllocationIntegrationEvent
+            {
+                OrderId = Data.OrderId,
+                AllocationId = Data.AllocationId
+            });
+        }
+
+        await _bus.Publish(new RecordOrderSalesSagaActivity(
+            message.OrderId,
+            message.OccurredOn));
+
+        await _bus.Publish(new RecordOrderCompletedMetricsSagaActivity(
+            message.OccurredOn));
+
         MarkAsComplete();
 
         if (message.ReturnLines.Count > 0 && !string.IsNullOrEmpty(message.AllocationId))
