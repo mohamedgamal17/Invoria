@@ -4,10 +4,6 @@ namespace Invoria.Procurement.Domain.PurchaseOrders;
 
 public class PurchaseOrderItem : Entity
 {
-#pragma warning disable CS0414
-    private string _legacyCreatedBatchIds = "[]";
-#pragma warning restore CS0414
-
     public string PurchaseOrderId { get; private set; } = null!;
 
     public string ProductId { get; private set; } = null!;
