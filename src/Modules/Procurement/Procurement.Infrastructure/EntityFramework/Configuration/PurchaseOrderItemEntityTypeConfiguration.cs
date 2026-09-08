@@ -27,9 +27,6 @@ public sealed class PurchaseOrderItemEntityTypeConfiguration : IEntityTypeConfig
         builder.Property(x => x.UnitPrice)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.SupplierProductCode)
-            .HasMaxLength(PurchaseOrderItemTableConsts.SupplierProductCodeMaxLength);
-
         builder.Ignore(x => x.LineTotal);
         builder.Property<string>("_legacyCreatedBatchIds")
             .HasColumnName("CreatedBatchIds");

@@ -28,8 +28,6 @@ public sealed class PurchaseOrderEntityTypeConfiguration : IEntityTypeConfigurat
         builder.Property(x => x.CompletedDate);
 
         builder.Property(x => x.SubTotal).HasPrecision(18, 2);
-        builder.Property(x => x.TaxAmount).HasPrecision(18, 2);
-        builder.Property(x => x.DiscountAmount).HasPrecision(18, 2);
         builder.Property(x => x.TotalAmount).HasPrecision(18, 2);
 
         builder.MapAudited();
