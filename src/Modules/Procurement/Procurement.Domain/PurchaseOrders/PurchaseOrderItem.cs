@@ -16,8 +16,6 @@ public class PurchaseOrderItem : Entity
 
     public decimal UnitPrice { get; private set; }
 
-    public string? SupplierProductCode { get; private set; }
-
     public decimal LineTotal => Quantity * UnitPrice;
 
     private PurchaseOrderItem()
@@ -29,8 +27,7 @@ public class PurchaseOrderItem : Entity
         string purchaseOrderId,
         string productId,
         int quantity,
-        decimal unitPrice,
-        string? supplierProductCode = null)
+        decimal unitPrice)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -62,6 +59,5 @@ public class PurchaseOrderItem : Entity
         ProductId = productId;
         Quantity = quantity;
         UnitPrice = unitPrice;
-        SupplierProductCode = supplierProductCode;
     }
 }

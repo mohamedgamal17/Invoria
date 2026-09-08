@@ -9,6 +9,4 @@ public static class PurchaseOrderItemTableConsts
     public const int PurchaseOrderIdMaxLength = 256;
 
     public const int ProductIdMaxLength = 256;
-
-    public const int SupplierProductCodeMaxLength = 256;
 }
