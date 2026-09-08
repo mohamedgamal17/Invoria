@@ -45,7 +45,7 @@ public class ListInvoicesQueryHandler : IApplicatonRequestHandler<ListInvoicesQu
 
         query = query
             .Include(i => i.Items)
-            .OrderByDescending(i => i.Id);
+            .OrderByDescending(i => i.CreatedAt);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _invoiceResponseFactory.PreparePagingDto(paged);

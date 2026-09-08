@@ -33,7 +33,7 @@ public class ListReturnsQueryHandler
             query = query.Where(x => x.Type == request.Type.Value);
         }
 
-        query = query.OrderByDescending(x => x.Id);
+        query = query.OrderByDescending(x => x.CreatedAt);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _returnResponseFactory.PreparePagingDto(paged);

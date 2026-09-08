@@ -60,7 +60,7 @@ public sealed class ListPurchaseOrdersQueryHandler : IApplicatonRequestHandler<L
             query = query.Where(x => x.SupplierId == supplierIdTerm);
         }
 
-        query = query.OrderByDescending(x => x.Id);
+        query = query.OrderByDescending(x => x.CreatedAt);
 
         var paged = await query.ToPaged(request.Skip, request.Length);
         var response = await _purchaseOrderResponseFactory.PreparePagingDto(paged);
