@@ -42,13 +42,11 @@ public sealed class CreatePurchaseOrderEndpoint : EndpointBase<CreatePurchaseOrd
         ValidateRequest(req);
 
         var itemCommands = req.PurchaseOrderItems
-            .Select(x => new CreatePurchaseOrderItemCommand(x.ProductId, x.Quantity, x.UnitPrice, x.SupplierProductCode))
+            .Select(x => new CreatePurchaseOrderItemCommand(x.ProductId, x.Quantity, x.UnitPrice))
             .ToList();
 
         var command = new CreatePurchaseOrderCommand(
             supplierId: req.SupplierId,
-            taxAmount: req.TaxAmount,
-            discountAmount: req.DiscountAmount,
             purchaseOrderItems: itemCommands);
 
         var result = await _mediator.Send(command, ct);
