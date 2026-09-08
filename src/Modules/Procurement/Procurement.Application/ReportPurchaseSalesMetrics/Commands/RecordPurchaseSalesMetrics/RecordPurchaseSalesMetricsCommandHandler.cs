@@ -35,9 +35,7 @@ public sealed class RecordPurchaseSalesMetricsCommandHandler
 
         var contribution = new ReportPurchaseSalesContribution(
             purchaseOrder.TotalAmount,
-            purchaseOrder.SubTotal,
-            purchaseOrder.TaxAmount,
-            purchaseOrder.DiscountAmount);
+            purchaseOrder.SubTotal);
 
         var occurredOn = request.OccurredOn;
 
@@ -83,8 +81,8 @@ public sealed class RecordPurchaseSalesMetricsCommandHandler
                 date,
                 contribution.TotalAmount,
                 contribution.SubTotal,
-                contribution.TaxAmount,
-                contribution.DiscountAmount,
+                0m,
+                0m,
                 period);
 
             await _reportPurchaseSalesMetricsRepository.Add(newReport, cancellationToken);
@@ -95,15 +93,13 @@ public sealed class RecordPurchaseSalesMetricsCommandHandler
         existing.UpdateAmounts(
             existing.TotalAmount + contribution.TotalAmount,
             existing.SubTotal + contribution.SubTotal,
-            existing.TaxAmount + contribution.TaxAmount,
-            existing.DiscountAmount + contribution.DiscountAmount);
+            existing.TaxAmount,
+            existing.DiscountAmount);
 
         await _reportPurchaseSalesMetricsRepository.Update(existing, cancellationToken);
     }
 
     private readonly record struct ReportPurchaseSalesContribution(
         decimal TotalAmount,
-        decimal SubTotal,
-        decimal TaxAmount,
-        decimal DiscountAmount);
+        decimal SubTotal);
 }

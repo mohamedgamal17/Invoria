@@ -24,8 +24,6 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
             State = view.State,
             CompletedDate = view.CompletedDate,
             SubTotal = view.SubTotal,
-            TaxAmount = view.TaxAmount,
-            DiscountAmount = view.DiscountAmount,
             TotalAmount = view.TotalAmount,
             StateHistory = view.StateHistory
                 .OrderBy(x => x.ChangedAt)
@@ -44,7 +42,6 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
                     ProductId = x.ProductId,
                     Quantity = x.Quantity,
                     UnitPrice = x.UnitPrice,
-                    SupplierProductCode = x.SupplierProductCode,
                     LineTotal = x.LineTotal
                 })
                 .ToList()
