@@ -10,12 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Ordering.Application.Orders.Queries.ListOrders;
 
-public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, PagingDto<OrderDto>>
+public class ListOrderQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, PagingDto<OrderDto>>
 {
     private readonly IOrderingRepository<Order> _orderRepository;
     private readonly IOrderResponseFactory _orderResponseFactory;
 
-    public ListQueryHandler(
+    public ListOrderQueryHandler(
         IOrderingRepository<Order> orderRepository,
         IOrderResponseFactory orderResponseFactory)
     {
@@ -56,7 +56,7 @@ public class ListQueryHandler : IApplicatonRequestHandler<ListOrdersQuery, Pagin
             query = query.Where(o => o.Status == request.Status.Value);
         }
 
-        query = query.OrderByDescending(o => o.Id);
+        query = query.OrderByDescending(o => o.CreatedAt);
 
         if (request.IncludeOrderItems || request.IncludeReturnItems)
         {
