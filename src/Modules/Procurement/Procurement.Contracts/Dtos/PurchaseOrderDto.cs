@@ -11,8 +11,6 @@ public sealed class PurchaseOrderDto : AuditedEntityDto
     public PurchaseState State { get; set; }
     public DateTime? CompletedDate { get; set; }
     public decimal SubTotal { get; set; }
-    public decimal TaxAmount { get; set; }
-    public decimal DiscountAmount { get; set; }
     public decimal TotalAmount { get; set; }
     public List<PurchaseOrderStateHistoryDto> StateHistory { get; set; } = [];
     public List<PurchaseOrderItemDto> PurchaseOrderItems { get; set; } = [];
