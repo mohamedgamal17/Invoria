@@ -17,13 +17,12 @@ public class PurchaseOrderDomainTests
     public void AddItem_only_in_Draft_and_recalculates_SubTotal()
     {
         var order = CreateDraftOrder();
-        order.SetHeaderFinancials(10m, 5m);
 
         var line = NewLine(order.Id, quantity: 2, unitPrice: 100m);
         order.AddItem(line);
 
         Assert.That(order.SubTotal, Is.EqualTo(200m));
-        Assert.That(order.TotalAmount, Is.EqualTo(200m - 5m + 10m));
+        Assert.That(order.TotalAmount, Is.EqualTo(200m));
     }
 
     [Test]
@@ -164,7 +163,6 @@ public class PurchaseOrderDomainTests
             purchaseOrderId,
             NewId(),
             quantity,
-            unitPrice,
-            supplierProductCode: null);
+            unitPrice);
     }
 }

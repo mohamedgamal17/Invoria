@@ -29,8 +29,7 @@ public class PurchaseOrderCompletedDomainEventHandlerTests
                     PurchaseOrderItemId: "li1",
                     ProductId: "p1",
                     Quantity: 2,
-                    UnitPrice: 10m,
-                    SupplierProductCode: "SKU-1")
+                    UnitPrice: 10m)
             ]);
 
         await handler.Handle(ev, CancellationToken.None);
@@ -45,8 +44,7 @@ public class PurchaseOrderCompletedDomainEventHandlerTests
                     msg.Items[0].PurchaseOrderItemId == "li1" &&
                     msg.Items[0].ProductId == "p1" &&
                     msg.Items[0].Quantity == 2 &&
-                    msg.Items[0].UnitPrice == 10m &&
-                    msg.Items[0].SupplierProductCode == "SKU-1"),
+                    msg.Items[0].UnitPrice == 10m),
                 It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }

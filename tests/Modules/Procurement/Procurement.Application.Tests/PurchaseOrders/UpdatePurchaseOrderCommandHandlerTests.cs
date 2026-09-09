@@ -38,15 +38,12 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         var command = new UpdatePurchaseOrderCommand(
             id: created.Id,
             supplierId: newSupplier.Id,
-            taxAmount: 5m,
-            discountAmount: 2m,
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 2,
-                    unitPrice: 50m,
-                    supplierProductCode: "SKU-NEW")
+                    unitPrice: 50m)
             ]);
 
         var result = await Mediator.Send(command);
@@ -55,19 +52,15 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         result.Value.Should().NotBeNull();
         result.Value!.State.Should().Be(PurchaseState.Draft);
         result.Value.SupplierId.Should().Be(newSupplier.Id);
-        result.Value.TaxAmount.Should().Be(5m);
-        result.Value.DiscountAmount.Should().Be(2m);
         result.Value.SubTotal.Should().Be(100m);
-        result.Value.TotalAmount.Should().Be(103m);
+        result.Value.TotalAmount.Should().Be(100m);
         result.Value.PurchaseOrderItems.Should().HaveCount(1);
 
         var persisted = await PurchaseOrderRepository.SingleOrDefault(x => x.Id == created.Id);
         persisted.Should().NotBeNull();
         persisted!.SupplierId.Should().Be(newSupplier.Id);
-        persisted.TaxAmount.Should().Be(5m);
-        persisted.DiscountAmount.Should().Be(2m);
         persisted.SubTotal.Should().Be(100m);
-        persisted.TotalAmount.Should().Be(103m);
+        persisted.TotalAmount.Should().Be(100m);
         persisted.Items.Should().HaveCount(1);
     }
 
@@ -80,15 +73,12 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         var command = new UpdatePurchaseOrderCommand(
             id: reopened.Id,
             supplierId: newSupplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 10m,
-                    supplierProductCode: null)
+                    unitPrice: 10m)
             ]);
 
         var result = await Mediator.Send(command);
@@ -114,15 +104,12 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         var command = new UpdatePurchaseOrderCommand(
             id: Guid.NewGuid().ToString("N"),
             supplierId: supplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 10m,
-                    supplierProductCode: null)
+                    unitPrice: 10m)
             ]);
 
         var result = await Mediator.Send(command);
@@ -138,15 +125,12 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         var command = new UpdatePurchaseOrderCommand(
             id: submitted.Id,
             supplierId: supplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new UpdatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 10m,
-                    supplierProductCode: null)
+                    unitPrice: 10m)
             ]);
 
         var result = await Mediator.Send(command);
@@ -171,15 +155,12 @@ public class UpdatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         var createCommand = new CreatePurchaseOrderCommand(
             supplierId: supplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 100m,
-                    supplierProductCode: "SKU-01")
+                    unitPrice: 100m)
             ]);
 
         var createResult = await Mediator.Send(createCommand);

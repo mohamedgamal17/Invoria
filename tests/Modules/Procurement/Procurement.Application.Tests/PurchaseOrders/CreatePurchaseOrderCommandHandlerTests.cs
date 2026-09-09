@@ -39,15 +39,12 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         var command = new CreatePurchaseOrderCommand(
             supplierId: supplier.Id,
-            taxAmount: 10m,
-            discountAmount: 5m,
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 3,
-                    unitPrice: 100m,
-                    supplierProductCode: "SKU-01")
+                    unitPrice: 100m)
             ]);
 
         // Act
@@ -61,10 +58,8 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         purchaseOrder.Should().NotBeNull();
         purchaseOrder!.PurchaseNumber.Should().NotBeNullOrWhiteSpace();
         purchaseOrder.SupplierId.Should().Be(supplier.Id);
-        purchaseOrder.TaxAmount.Should().Be(10m);
-        purchaseOrder.DiscountAmount.Should().Be(5m);
         purchaseOrder.SubTotal.Should().Be(300m);
-        purchaseOrder.TotalAmount.Should().Be(305m);
+        purchaseOrder.TotalAmount.Should().Be(300m);
 
         result.Value.PurchaseNumber.Should().Be(purchaseOrder.PurchaseNumber);
         result.Value.SupplierId.Should().Be(purchaseOrder.SupplierId);
@@ -73,8 +68,6 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         result.Value.Supplier.Name.Should().Be(supplier.Name);
         result.Value.Supplier.SupplierCode.Should().Be(supplier.SupplierCode);
         result.Value.Supplier.CreatedAt.Should().Be(supplier.CreatedAt);
-        result.Value.TaxAmount.Should().Be(purchaseOrder.TaxAmount);
-        result.Value.DiscountAmount.Should().Be(purchaseOrder.DiscountAmount);
         result.Value.SubTotal.Should().Be(purchaseOrder.SubTotal);
         result.Value.TotalAmount.Should().Be(purchaseOrder.TotalAmount);
         result.Value.PurchaseOrderItems.Should().HaveCount(1);

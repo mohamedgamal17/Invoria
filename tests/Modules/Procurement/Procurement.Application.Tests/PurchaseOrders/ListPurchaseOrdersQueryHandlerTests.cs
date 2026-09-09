@@ -341,8 +341,7 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
             purchaseOrderId: purchaseOrder.Id,
             productId: Guid.NewGuid().ToString("N"),
             quantity: 2,
-            unitPrice: 100m,
-            supplierProductCode: "SKU-01"));
+            unitPrice: 100m));
 
         applyTransitions?.Invoke(purchaseOrder);
 
