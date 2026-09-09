@@ -29,16 +29,13 @@ public class CreatePurchaseOrderEndpointTests : ProcurementTestFixture
         var request = new CreatePurchaseOrderRequest
         {
             SupplierId = supplierId!,
-            TaxAmount = 10m,
-            DiscountAmount = 5m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 2,
-                    UnitPrice = 100m,
-                    SupplierProductCode = "SKU-01"
+                    UnitPrice = 100m
                 }
             ]
         };
@@ -55,8 +52,6 @@ public class CreatePurchaseOrderEndpointTests : ProcurementTestFixture
         var request = new CreatePurchaseOrderRequest
         {
             SupplierId = "",
-            TaxAmount = -1m,
-            DiscountAmount = -1m,
             PurchaseOrderItems = []
         };
 
