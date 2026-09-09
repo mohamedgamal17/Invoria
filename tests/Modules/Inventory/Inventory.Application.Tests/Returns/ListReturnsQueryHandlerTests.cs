@@ -45,26 +45,12 @@ public class ListReturnsQueryHandlerTests : BatchTestFixture
     }
 
     [Test]
-    public async Task Should_return_paged_returns_ordered_by_id_descending()
+    public async Task Should_return_paged_returns_ordered_by_created_at_descending()
     {
-        var returnA = ImmediateReturn.Create(
-            Guid.NewGuid().ToString(),
-            Guid.NewGuid().ToString(),
-        [
-            ReturnLine.Create($"oi-{Guid.NewGuid():N}", Guid.NewGuid().ToString(), 2)
-        ]);
-        var returnB = ImmediateReturn.Create(
-            Guid.NewGuid().ToString(),
-            Guid.NewGuid().ToString(),
-        [
-            ReturnLine.Create($"oi-{Guid.NewGuid():N}", Guid.NewGuid().ToString(), 3)
-        ]);
-        var returnC = ImmediateReturn.Create(
-            Guid.NewGuid().ToString(),
-            Guid.NewGuid().ToString(),
-        [
-            ReturnLine.Create($"oi-{Guid.NewGuid():N}", Guid.NewGuid().ToString(), 1)
-        ]);
+        var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+        var returnA = CreateReturnWithCreatedAt(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 2, baseTime);
+        var returnB = CreateReturnWithCreatedAt(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 3, baseTime.AddHours(1));
+        var returnC = CreateReturnWithCreatedAt(Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), 1, baseTime.AddHours(2));
 
         await ReturnRepository.Add(returnA);
         await ReturnRepository.Add(returnB);
@@ -78,10 +64,25 @@ public class ListReturnsQueryHandlerTests : BatchTestFixture
         var page = result.Value!;
         page.AssertPagingDto(1, 2, 3, 2);
 
-        var orderedIds = new[] { returnA.Id, returnB.Id, returnC.Id }
-            .OrderByDescending(x => x)
+        var orderedIds = new[] { returnA, returnB, returnC }
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => x.Id)
             .ToList();
         page.Data.Select(x => x.Id).Should().Equal(orderedIds.Skip(1).Take(2));
+    }
+
+    private static ImmediateReturn CreateReturnWithCreatedAt(string orderId, string allocationId, int qty, DateTimeOffset createdAt)
+    {
+        var ret = ImmediateReturn.Create(
+            orderId,
+            allocationId,
+            [
+                ReturnLine.Create($"oi-{Guid.NewGuid():N}", Guid.NewGuid().ToString(), qty)
+            ]);
+        var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+            .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+        property!.SetValue(ret, createdAt);
+        return ret;
     }
 
     [Test]
