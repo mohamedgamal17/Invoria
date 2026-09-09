@@ -288,12 +288,11 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
     }
 
     [Test]
-    public async Task Should_return_purchase_orders_ordered_by_id_descending()
+    public async Task Should_return_purchase_orders_ordered_by_created_at_descending()
     {
-        var highId = "ffffffffffffffffffffffffffffffff";
-        var lowId = "00000000000000000000000000000001";
-        await CreatePurchaseOrderAsync("PO-ORD-HIGH", highId);
-        await CreatePurchaseOrderAsync("PO-ORD-LOW", lowId);
+        var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+        var older = await CreatePurchaseOrderAsync("PO-ORD-LOW", createdAt: baseTime);
+        var newer = await CreatePurchaseOrderAsync("PO-ORD-HIGH", createdAt: baseTime.AddHours(2));
 
         var query = new ListPurchaseOrdersQuery
         {
@@ -305,14 +304,20 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.Data.Take(2).Select(x => x.Id).Should().Equal(highId, lowId);
+        var persisted = new[] { older, newer }
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => x.Id)
+            .ToList();
+        result.Value!.Data.Where(x => persisted.Contains(x.Id)).Select(x => x.Id).Should().Equal(persisted);
+        result.Value.Data.First().Id.Should().Be(newer.Id);
     }
 
     private async Task<PurchaseOrder> CreatePurchaseOrderAsync(
         string purchaseNumber,
         string? id = null,
         Action<PurchaseOrder>? applyTransitions = null,
-        Supplier? supplier = null)
+        Supplier? supplier = null,
+        DateTimeOffset? createdAt = null)
     {
         Supplier supplierEntity;
         if (supplier is not null)
@@ -344,6 +349,13 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
             unitPrice: 100m));
 
         applyTransitions?.Invoke(purchaseOrder);
+
+        if (createdAt.HasValue)
+        {
+            var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+                .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+            property!.SetValue(purchaseOrder, createdAt.Value);
+        }
 
         return await PurchaseOrderRepository.Add(purchaseOrder);
     }

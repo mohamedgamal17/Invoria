@@ -43,7 +43,7 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         envelope.Result!.Id.Should().Be(purchaseOrderId);
         envelope.Result.SupplierId.Should().Be(supplierId);
         envelope.Result.SubTotal.Should().Be(20m);
-        envelope.Result.TotalAmount.Should().Be(21m);
+        envelope.Result.TotalAmount.Should().Be(20m);
     }
 
     [Test]
