@@ -80,15 +80,12 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         var createCommand = new CreatePurchaseOrderCommand(
             supplierId: supplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 100m,
-                    supplierProductCode: "SKU-01")
+                    unitPrice: 100m)
             ]);
 
         var createResult = await Mediator.Send(createCommand);
@@ -122,15 +119,12 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         var createCommand = new CreatePurchaseOrderCommand(
             supplierId: supplier.Id,
-            taxAmount: 0m,
-            discountAmount: 0m,
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 1,
-                    unitPrice: 100m,
-                    supplierProductCode: "SKU-01")
+                    unitPrice: 100m)
             ]);
 
         var createResult = await Mediator.Send(createCommand);

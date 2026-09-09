@@ -39,9 +39,7 @@ public sealed class UpdatePurchaseOrderCommandHandler : IApplicatonRequestHandle
         try
         {
             purchaseOrder.UpdateDetails(
-                supplierId: request.SupplierId,
-                taxAmount: request.TaxAmount,
-                discountAmount: request.DiscountAmount);
+                supplierId: request.SupplierId);
 
             var lineCommands = request.PurchaseOrderItems ?? [];
             var newItems = lineCommands
@@ -50,8 +48,7 @@ public sealed class UpdatePurchaseOrderCommandHandler : IApplicatonRequestHandle
                     purchaseOrderId: purchaseOrder.Id,
                     productId: x.ProductId,
                     quantity: x.Quantity,
-                    unitPrice: x.UnitPrice,
-                    supplierProductCode: x.SupplierProductCode))
+                    unitPrice: x.UnitPrice))
                 .ToList();
 
             purchaseOrder.UpdateItems(newItems);

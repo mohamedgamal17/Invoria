@@ -4,10 +4,6 @@ namespace Invoria.Procurement.Domain.PurchaseOrders;
 
 public class PurchaseOrderItem : Entity
 {
-#pragma warning disable CS0414
-    private string _legacyCreatedBatchIds = "[]";
-#pragma warning restore CS0414
-
     public string PurchaseOrderId { get; private set; } = null!;
 
     public string ProductId { get; private set; } = null!;
@@ -15,8 +11,6 @@ public class PurchaseOrderItem : Entity
     public int Quantity { get; private set; }
 
     public decimal UnitPrice { get; private set; }
-
-    public string? SupplierProductCode { get; private set; }
 
     public decimal LineTotal => Quantity * UnitPrice;
 
@@ -29,8 +23,7 @@ public class PurchaseOrderItem : Entity
         string purchaseOrderId,
         string productId,
         int quantity,
-        decimal unitPrice,
-        string? supplierProductCode = null)
+        decimal unitPrice)
     {
         if (string.IsNullOrWhiteSpace(id))
         {
@@ -62,6 +55,5 @@ public class PurchaseOrderItem : Entity
         ProductId = productId;
         Quantity = quantity;
         UnitPrice = unitPrice;
-        SupplierProductCode = supplierProductCode;
     }
 }

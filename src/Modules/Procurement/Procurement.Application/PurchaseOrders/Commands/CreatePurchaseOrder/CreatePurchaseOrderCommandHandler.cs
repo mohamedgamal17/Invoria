@@ -40,8 +40,6 @@ public sealed class CreatePurchaseOrderCommandHandler : IApplicatonRequestHandle
             purchaseNumber: purchaseOrderNumber,
             supplierId: request.SupplierId);
 
-        purchaseOrder.SetHeaderFinancials(request.TaxAmount, request.DiscountAmount);
-
         foreach (var line in lineCommands)
         {
             var item = new PurchaseOrderItem(
@@ -49,8 +47,7 @@ public sealed class CreatePurchaseOrderCommandHandler : IApplicatonRequestHandle
                 purchaseOrderId: purchaseOrder.Id,
                 productId: line.ProductId,
                 quantity: line.Quantity,
-                unitPrice: line.UnitPrice,
-                supplierProductCode: line.SupplierProductCode);
+                unitPrice: line.UnitPrice);
 
             purchaseOrder.AddItem(item);
         }

@@ -14,6 +14,11 @@ namespace Invoria.BuildingBlocks.EntityFramework.Extensions
         {
             builder.Property(x => x.CreatedBy).HasMaxLength(256);
             builder.Property(x => x.LastModifiedBy).IsRequired(false).HasMaxLength(256);
+
+            builder.HasIndex(x => x.CreatedAt);
+            builder.HasIndex(x => x.CreatedBy);
+            builder.HasIndex(x => x.LastModifiedAt);
+            builder.HasIndex(x => x.LastModifiedBy);
         }
 
         public static void MapId<T>(this EntityTypeBuilder<T>  builder)

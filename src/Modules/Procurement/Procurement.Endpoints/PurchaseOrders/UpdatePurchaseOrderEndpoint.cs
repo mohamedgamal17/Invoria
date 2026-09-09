@@ -44,14 +44,12 @@ public sealed class UpdatePurchaseOrderEndpoint : EndpointBase<UpdatePurchaseOrd
         ValidateRequest(req);
 
         var itemCommands = req.PurchaseOrderItems
-            .Select(x => new UpdatePurchaseOrderItemCommand(x.ProductId, x.Quantity, x.UnitPrice, x.SupplierProductCode))
+            .Select(x => new UpdatePurchaseOrderItemCommand(x.ProductId, x.Quantity, x.UnitPrice))
             .ToList();
 
         var command = new UpdatePurchaseOrderCommand(
             id: req.Id,
             supplierId: req.SupplierId,
-            taxAmount: req.TaxAmount,
-            discountAmount: req.DiscountAmount,
             purchaseOrderItems: itemCommands);
 
         var result = await _mediator.Send(command, ct);

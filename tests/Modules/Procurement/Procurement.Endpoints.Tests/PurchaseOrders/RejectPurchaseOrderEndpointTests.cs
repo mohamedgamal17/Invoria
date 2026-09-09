@@ -76,16 +76,13 @@ public class RejectPurchaseOrderEndpointTests : ProcurementTestFixture
         var request = new CreatePurchaseOrderRequest
         {
             SupplierId = supplierId!,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 2,
-                    UnitPrice = 100m,
-                    SupplierProductCode = "SKU-01"
+                    UnitPrice = 100m
                 }
             ]
         };

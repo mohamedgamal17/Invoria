@@ -21,16 +21,13 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         {
             Id = purchaseOrderId,
             SupplierId = supplierId,
-            TaxAmount = 1m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 2,
-                    UnitPrice = 10m,
-                    SupplierProductCode = "SKU-01"
+                    UnitPrice = 10m
                 }
             ]
         };
@@ -46,7 +43,7 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         envelope.Result!.Id.Should().Be(purchaseOrderId);
         envelope.Result.SupplierId.Should().Be(supplierId);
         envelope.Result.SubTotal.Should().Be(20m);
-        envelope.Result.TotalAmount.Should().Be(21m);
+        envelope.Result.TotalAmount.Should().Be(20m);
     }
 
     [Test]
@@ -59,16 +56,13 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         {
             Id = purchaseOrderId,
             SupplierId = supplierId,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 1,
-                    UnitPrice = 5m,
-                    SupplierProductCode = null
+                    UnitPrice = 5m
                 }
             ]
         };
@@ -97,8 +91,6 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         {
             Id = purchaseOrderId,
             SupplierId = supplierId,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
@@ -126,8 +118,6 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         {
             Id = purchaseOrderId,
             SupplierId = supplierId,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
@@ -172,16 +162,13 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
         var request = new CreatePurchaseOrderRequest
         {
             SupplierId = supplierId!,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 2,
-                    UnitPrice = 100m,
-                    SupplierProductCode = "SKU-01"
+                    UnitPrice = 100m
                 }
             ]
         };

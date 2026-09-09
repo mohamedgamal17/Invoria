@@ -28,7 +28,6 @@ public sealed class PurchaseOrderCompletedDomainEvent : DomainEvent
         string PurchaseOrderItemId,
         string ProductId,
         int Quantity,
-        decimal UnitPrice,
-        string? SupplierProductCode);
+        decimal UnitPrice);
 }
 

@@ -158,18 +158,26 @@ public class ListOrdersQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_return_orders_ordered_by_id_descending()
+    public async Task Should_return_orders_ordered_by_created_at_descending()
     {
-        var persisted = await OrderTestData.PersistRandomOrdersAsync(OrderRepository, 3);
+        var orders = OrderTestData.CreateRandomOrders(3);
+        var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+        for (var i = 0; i < orders.Count; i++)
+        {
+            var createdAt = baseTime.AddHours(i);
+            var property = typeof(AuditedAggregateRoot).GetProperty(nameof(AuditedAggregateRoot.CreatedAt));
+            property!.SetValue(orders[i], createdAt);
+            await OrderRepository.Add(orders[i], CancellationToken.None);
+        }
 
         var query = new ListOrdersQuery { Skip = 0, Length = 3 };
 
         var result = await TestMediator.Send(query);
 
         result.ShouldBeSuccess();
-        var expectedIds = persisted
+        var expectedIds = orders
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => x.Id)
-            .OrderByDescending(x => x)
             .ToList();
         result.Value!.Data.Select(x => x.Id).Should().Equal(expectedIds);
     }

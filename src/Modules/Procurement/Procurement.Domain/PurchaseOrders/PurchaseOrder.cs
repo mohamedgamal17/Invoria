@@ -22,10 +22,6 @@ public class PurchaseOrder : AuditedAggregateRoot
 
     public decimal SubTotal { get; private set; }
 
-    public decimal TaxAmount { get; private set; }
-
-    public decimal DiscountAmount { get; private set; }
-
     public decimal TotalAmount { get; private set; }
 
     public IReadOnlyCollection<PurchaseOrderItem> Items => _items.AsReadOnly();
@@ -68,25 +64,6 @@ public class PurchaseOrder : AuditedAggregateRoot
         RecalculateFinancials();
     }
 
-    public void SetHeaderFinancials(decimal taxAmount, decimal discountAmount)
-    {
-        EnsureState(PurchaseState.Draft, "Header financials can only be set in Draft.");
-
-        if (taxAmount < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(taxAmount), "Tax cannot be negative.");
-        }
-
-        if (discountAmount < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount cannot be negative.");
-        }
-
-        TaxAmount = taxAmount;
-        DiscountAmount = discountAmount;
-        RecalculateFinancials();
-    }
-
     public void AddItem(PurchaseOrderItem item)
     {
         EnsureState(PurchaseState.Draft, "Lines can only be added in Draft.");
@@ -101,9 +78,7 @@ public class PurchaseOrder : AuditedAggregateRoot
     }
 
     public void UpdateDetails(
-        string supplierId,
-        decimal taxAmount,
-        decimal discountAmount)
+        string supplierId)
     {
         EnsureEditable("Purchase order can only be updated in Draft or Reopened.");
 
@@ -112,19 +87,7 @@ public class PurchaseOrder : AuditedAggregateRoot
             throw new ArgumentException("Supplier id cannot be empty.", nameof(supplierId));
         }
 
-        if (taxAmount < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(taxAmount), "Tax cannot be negative.");
-        }
-
-        if (discountAmount < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(discountAmount), "Discount cannot be negative.");
-        }
-
         SupplierId = supplierId;
-        TaxAmount = taxAmount;
-        DiscountAmount = discountAmount;
         RecalculateFinancials();
     }
 
@@ -204,8 +167,7 @@ public class PurchaseOrder : AuditedAggregateRoot
                     PurchaseOrderItemId: i.Id,
                     ProductId: i.ProductId,
                     Quantity: i.Quantity,
-                    UnitPrice: i.UnitPrice,
-                    SupplierProductCode: i.SupplierProductCode))
+                    UnitPrice: i.UnitPrice))
                 .ToList()));
     }
 
@@ -222,7 +184,7 @@ public class PurchaseOrder : AuditedAggregateRoot
     public void RecalculateFinancials()
     {
         SubTotal = _items.Sum(i => i.LineTotal);
-        TotalAmount = SubTotal - DiscountAmount + TaxAmount;
+        TotalAmount = SubTotal;
     }
 
     private bool HasValidLinesForCompletion()

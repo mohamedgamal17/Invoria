@@ -43,11 +43,16 @@ public class ListBatchesQueryHandlerTests : BatchTestFixture
     }
 
     [Test]
-    public async Task Should_return_paged_batches_ordered_by_id_descending()
+    public async Task Should_return_paged_batches_ordered_by_created_at_descending()
     {
-        var batchA = await BatchRepository.Add(new Batch("product-2", 10, 20m), CancellationToken.None);
-        var batchB = await BatchRepository.Add(new Batch("product-1", 5, 15m), CancellationToken.None);
-        var batchC = await BatchRepository.Add(new Batch("product-3", 7, 30m), CancellationToken.None);
+        var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+        var batchA = CreateBatchWithCreatedAt("product-2", 10, 20m, baseTime);
+        var batchB = CreateBatchWithCreatedAt("product-1", 5, 15m, baseTime.AddHours(1));
+        var batchC = CreateBatchWithCreatedAt("product-3", 7, 30m, baseTime.AddHours(2));
+
+        await BatchRepository.Add(batchA, CancellationToken.None);
+        await BatchRepository.Add(batchB, CancellationToken.None);
+        await BatchRepository.Add(batchC, CancellationToken.None);
 
         var query = new ListBatchesQuery { Skip = 1, Length = 2 };
 
@@ -57,8 +62,17 @@ public class ListBatchesQueryHandlerTests : BatchTestFixture
         var page = result.Value!;
         page.AssertPagingDto(1, 2, 3, 2);
 
-        var orderedIds = new[] { batchA.Id, batchB.Id, batchC.Id }.OrderByDescending(x => x).ToList();
-        page.Data.Select(x => x.Id).Should().Equal(orderedIds.Skip(1).Take(2));
+        var ordered = new[] { batchA, batchB, batchC }.OrderByDescending(x => x.CreatedAt).Select(x => x.Id).ToList();
+        page.Data.Select(x => x.Id).Should().Equal(ordered.Skip(1).Take(2));
+    }
+
+    private static Batch CreateBatchWithCreatedAt(string productId, int quantity, decimal price, DateTimeOffset createdAt)
+    {
+        var batch = new Batch(productId, quantity, price);
+        var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+            .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+        property!.SetValue(batch, createdAt);
+        return batch;
     }
 
     [Test]

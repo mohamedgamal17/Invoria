@@ -29,8 +29,7 @@ public sealed class PurchaseOrderCompletedDomainEventHandler : INotificationHand
                     PurchaseOrderItemId = i.PurchaseOrderItemId,
                     ProductId = i.ProductId,
                     Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice,
-                    SupplierProductCode = i.SupplierProductCode
+                    UnitPrice = i.UnitPrice
                 })
                 .ToList()
         };

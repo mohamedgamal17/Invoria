@@ -153,10 +153,11 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     }
 
     [Test]
-    public async Task Should_return_suppliers_ordered_by_id_descending()
+    public async Task Should_return_suppliers_ordered_by_created_at_descending()
     {
-        var first = await CreateSupplierAsync("SUP-ORD-001", "Zulu", "00000000000000000000000000000001");
-        var second = await CreateSupplierAsync("SUP-ORD-002", "Alpha", "ffffffffffffffffffffffffffffffff");
+        var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+        var first = await CreateSupplierAsync("SUP-ORD-001", "Zulu", createdAt: baseTime);
+        var second = await CreateSupplierAsync("SUP-ORD-002", "Alpha", createdAt: baseTime.AddHours(2));
 
         var query = new ListSupplierQuery
         {
@@ -168,10 +169,12 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
 
         result.ShouldBeSuccess();
         result.Value.Should().NotBeNull();
-        result.Value!.Data.Take(2).Select(x => x.Id).Should().Equal(second.Id, first.Id);
+        var expected = new[] { first, second }.OrderByDescending(x => x.CreatedAt).Select(x => x.Id).ToList();
+        result.Value!.Data.Where(x => expected.Contains(x.Id)).Select(x => x.Id).Should().Equal(expected);
+        result.Value.Data.First(x => x.Id == second.Id).Should().NotBeNull();
     }
 
-    private async Task<Supplier> CreateSupplierAsync(string supplierCode, string name, string? id = null)
+    private async Task<Supplier> CreateSupplierAsync(string supplierCode, string name, string? id = null, DateTimeOffset? createdAt = null)
     {
         var supplier = Supplier.Create(
             id: id ?? Guid.NewGuid().ToString("N"),
@@ -180,6 +183,13 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
             contactEmail: null,
             phone: null,
             createdBy: "tests");
+
+        if (createdAt.HasValue)
+        {
+            var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+                .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+            property!.SetValue(supplier, createdAt.Value);
+        }
 
         return await SupplierRepository.Add(supplier);
     }

@@ -64,11 +64,15 @@ public class ListInvoicesQueryHandlerTests : OrderTestFixture
     }
 
     [Test]
-    public async Task Should_return_paged_invoices_ordered_by_id_descending()
+    public async Task Should_return_paged_invoices_ordered_by_created_at_descending()
     {
         var (orderA, invoiceA) = await CreateCompletedOrderWithInvoiceAsync();
         var (orderB, invoiceB) = await CreateCompletedOrderWithInvoiceAsync();
         var (orderC, invoiceC) = await CreateCompletedOrderWithInvoiceAsync();
+
+        var invoices = await SetInvoicesCreatedAtForOrderingAsync(
+            [invoiceA, invoiceB, invoiceC],
+            DateTimeOffset.UtcNow.AddDays(-10));
 
         var query = new ListInvoicesQuery { Skip = 1, Length = 2 };
 
@@ -78,10 +82,36 @@ public class ListInvoicesQueryHandlerTests : OrderTestFixture
         var page = result.Value!;
         page.AssertPagingDto(1, 2, 3, 2);
 
-        var orderedIds = new[] { invoiceA, invoiceB, invoiceC }.OrderByDescending(x => x).ToList();
+        var orderedIds = invoices
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => x.Id)
+            .ToList();
         page.Data.Select(x => x.Id).Should().Equal(orderedIds.Skip(1).Take(2));
         page.Data.Should().OnlyContain(i =>
             i.OrderId == orderA.Id || i.OrderId == orderB.Id || i.OrderId == orderC.Id);
+    }
+
+    private async Task<List<Invoice>> SetInvoicesCreatedAtForOrderingAsync(
+        IReadOnlyList<string> invoiceIds,
+        DateTimeOffset baseTime)
+    {
+        var db = Scope.Resolve<OrderingDbContext>();
+        var invoices = await db.Set<Invoice>()
+            .Where(i => invoiceIds.Contains(i.Id))
+            .ToListAsync();
+
+        var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+            .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+
+        for (var i = 0; i < invoices.Count; i++)
+        {
+            var createdAt = baseTime.AddHours(i);
+            property!.SetValue(invoices[i], createdAt);
+        }
+
+        await db.SaveChangesAsync();
+
+        return invoices;
     }
 
     [Test]

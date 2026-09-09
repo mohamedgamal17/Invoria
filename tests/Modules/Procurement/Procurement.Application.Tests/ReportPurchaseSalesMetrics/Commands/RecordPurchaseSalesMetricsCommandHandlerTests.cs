@@ -99,9 +99,7 @@ public class RecordPurchaseSalesMetricsCommandHandlerTests : ReportPurchaseSales
         var expected2 = await LoadContributionAsync(purchaseOrder2.Id);
         var combined = new SalesContribution(
             expected1.TotalAmount + expected2.TotalAmount,
-            expected1.SubTotal + expected2.SubTotal,
-            expected1.TaxAmount + expected2.TaxAmount,
-            expected1.DiscountAmount + expected2.DiscountAmount);
+            expected1.SubTotal + expected2.SubTotal);
 
         var reports = await GetReportsAsync();
 
@@ -155,15 +153,11 @@ public class RecordPurchaseSalesMetricsCommandHandlerTests : ReportPurchaseSales
         yearly.Should().HaveCount(1);
         AssertPeriodReport(yearly.Single(), new SalesContribution(
             expected1.TotalAmount + expected2.TotalAmount,
-            expected1.SubTotal + expected2.SubTotal,
-            expected1.TaxAmount + expected2.TaxAmount,
-            expected1.DiscountAmount + expected2.DiscountAmount));
+            expected1.SubTotal + expected2.SubTotal));
 
         var allTime = reports.Single(x => x.Period == ReportPeriod.AllTheTime);
         allTime.TotalAmount.Should().Be(expected1.TotalAmount + expected2.TotalAmount);
         allTime.SubTotal.Should().Be(expected1.SubTotal + expected2.SubTotal);
-        allTime.TaxAmount.Should().Be(expected1.TaxAmount + expected2.TaxAmount);
-        allTime.DiscountAmount.Should().Be(expected1.DiscountAmount + expected2.DiscountAmount);
     }
 
     private async Task<PurchaseOrder> SeedCompletedPurchaseOrderAsync()
@@ -179,15 +173,12 @@ public class RecordPurchaseSalesMetricsCommandHandlerTests : ReportPurchaseSales
 
         var createCommand = new CreatePurchaseOrderCommand(
             supplierId: supplier.Id,
-            taxAmount: 30m,
-            discountAmount: 10m,
             purchaseOrderItems:
             [
                 new CreatePurchaseOrderItemCommand(
                     productId: Guid.NewGuid().ToString("N"),
                     quantity: 3,
-                    unitPrice: 100m,
-                    supplierProductCode: "SKU-01")
+                    unitPrice: 100m)
             ]);
 
         var createResult = await Mediator.Send(createCommand);
@@ -215,9 +206,7 @@ public class RecordPurchaseSalesMetricsCommandHandlerTests : ReportPurchaseSales
 
         return new SalesContribution(
             purchaseOrder!.TotalAmount,
-            purchaseOrder.SubTotal,
-            purchaseOrder.TaxAmount,
-            purchaseOrder.DiscountAmount);
+            purchaseOrder.SubTotal);
     }
 
     private async Task<List<ReportPurchaseSalesMetricsEntity>> GetReportsAsync()
@@ -243,13 +232,9 @@ public class RecordPurchaseSalesMetricsCommandHandlerTests : ReportPurchaseSales
     {
         report.TotalAmount.Should().Be(expected.TotalAmount);
         report.SubTotal.Should().Be(expected.SubTotal);
-        report.TaxAmount.Should().Be(expected.TaxAmount);
-        report.DiscountAmount.Should().Be(expected.DiscountAmount);
     }
 
     private readonly record struct SalesContribution(
         decimal TotalAmount,
-        decimal SubTotal,
-        decimal TaxAmount,
-        decimal DiscountAmount);
+        decimal SubTotal);
 }

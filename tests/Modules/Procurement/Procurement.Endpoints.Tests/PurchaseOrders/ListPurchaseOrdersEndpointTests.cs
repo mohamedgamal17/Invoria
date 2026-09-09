@@ -208,16 +208,13 @@ public class ListPurchaseOrdersEndpointTests : ProcurementTestFixture
         var createRequest = new CreatePurchaseOrderRequest
         {
             SupplierId = supplierId!,
-            TaxAmount = 0m,
-            DiscountAmount = 0m,
             PurchaseOrderItems =
             [
                 new PurchaseOrderItemRequest
                 {
                     ProductId = Guid.NewGuid().ToString("N"),
                     Quantity = 1,
-                    UnitPrice = 100m,
-                    SupplierProductCode = supplierProductCode
+                    UnitPrice = 100m
                 }
             ]
         };
