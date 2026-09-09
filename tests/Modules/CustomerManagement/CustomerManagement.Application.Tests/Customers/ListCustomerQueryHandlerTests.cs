@@ -77,11 +77,12 @@ namespace Invoria.CustomerManagement.Application.Tests.Customers
         }
 
         [Test]
-        public async Task Should_return_customers_ordered_by_id_descending()
+        public async Task Should_return_customers_ordered_by_created_at_descending()
         {
-            var customerOne = new Customer($"Order A {GetUniqueSuffix()}");
-            var customerTwo = new Customer($"Order B {GetUniqueSuffix()}");
-            var customerThree = new Customer($"Order C {GetUniqueSuffix()}");
+            var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+            var customerOne = CreateCustomerWithCreatedAt($"Order A {GetUniqueSuffix()}", baseTime);
+            var customerTwo = CreateCustomerWithCreatedAt($"Order B {GetUniqueSuffix()}", baseTime.AddHours(1));
+            var customerThree = CreateCustomerWithCreatedAt($"Order C {GetUniqueSuffix()}", baseTime.AddHours(2));
 
             await CustomerRepository.Add(customerOne);
             await CustomerRepository.Add(customerTwo);
@@ -98,10 +99,20 @@ namespace Invoria.CustomerManagement.Application.Tests.Customers
             result.ShouldBeSuccess();
             result.Value.Should().NotBeNull();
 
-            var expectedIds = new[] { customerOne.Id, customerTwo.Id, customerThree.Id }
-                .OrderByDescending(x => x)
+            var expectedIds = new[] { customerOne, customerTwo, customerThree }
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => x.Id)
                 .ToList();
             result.Value!.Data.Select(x => x.Id).Should().Equal(expectedIds);
+        }
+
+        private static Customer CreateCustomerWithCreatedAt(string name, DateTimeOffset createdAt)
+        {
+            var customer = new Customer(name);
+            var property = typeof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot)
+                .GetProperty(nameof(Invoria.BuildingBlocks.Domain.Entities.AuditedAggregateRoot.CreatedAt));
+            property!.SetValue(customer, createdAt);
+            return customer;
         }
 
         private static string GetUniqueSuffix()
