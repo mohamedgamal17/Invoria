@@ -8,6 +8,7 @@ using Invoria.BuildingBlocks.EntityFramework.Extensions;
 using Invoria.BuildingBlocks.Infrastructure.Extensions;
 using Invoria.Catalog.Infrastructure;
 using Invoria.CustomerManagement.Infrastructure;
+using Invoria.Financial.Infrastructure;
 using Invoria.Inventory.Infrastructure;
 using Invoria.Ordering.Infrastructure;
 using Invoria.Procurement.Infrastructure;
@@ -34,6 +35,7 @@ namespace Invoria.Api
                 .AddApplicationInfrastructure();
 
             services.InstallModule<CustomerManagementModuleInstaller>(configuration);
+            services.InstallModule<FinancialModuleInstaller>(configuration);
             services.InstallModule<InventoryModuleInstaller>(configuration);
             services.InstallModule<OrderingModuleInstaller>(configuration);
             services.InstallModule<ProcurementModuleInstaller>(configuration);
@@ -94,7 +96,7 @@ namespace Invoria.Api
                     s.Title = "Invoria API";
                     s.Version = "v1";
                     s.Description =
-                        "HTTP API for the Invoria modular backend. The host wires Catalog, CustomerManagement, Ordering, Inventory, and Procurement. "
+                        "HTTP API for the Invoria modular backend. The host wires Catalog, CustomerManagement, Financial, Ordering, Inventory, and Procurement. "
                         + "Successful and failed responses are wrapped in a JSON envelope: on success, isSuccess is true and the payload is in result; "
                         + "on failure, isSuccess is false and problem details are in error (RFC 7807-style fields plus optional errorCode and field errors for validation).";
                 };

@@ -9,6 +9,9 @@
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Endpoints\Invoria.CustomerManagement.Endpoints.csproj" />
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Contracts\Invoria.CustomerManagement.Contracts.csproj" />
     <ProjectReference Include="..\Modules\CustomerManagement\CustomerManagement.Infrastructure\Invoria.CustomerManagement.Infrastructure.csproj" />
+    <ProjectReference Include="..\Modules\Financial\Financial.Endpoints\Invoria.Financial.Endpoints.csproj" />
+    <ProjectReference Include="..\Modules\Financial\Financial.Contracts\Invoria.Financial.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\Financial\Financial.Infrastructure\Invoria.Financial.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Infrastructure\Invoria.Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Ordering\Ordering.Infrastructure\Invoria.Ordering.Infrastructure.csproj" />
     <ProjectReference Include="..\Modules\Procurement\Procurement.Endpoints\Invoria.Procurement.Endpoints.csproj" />
