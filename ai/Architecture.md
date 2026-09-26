@@ -8,6 +8,7 @@ This document describes the current architecture of the Invoria solution based o
 - **Shared building blocks**: `Invoria.BuildingBlocks.*`
 - **Business module**: Catalog (`Invoria.Catalog.*`)
 - **Business module**: CustomerManagement (`Invoria.CustomerManagement.*`)
+- **Business module**: Financial (`Invoria.Financial.*`) — scaffolded; no aggregates, commands, or endpoints yet
 - **Business module**: Ordering (`Invoria.Ordering.*`)
 - **Business module**: Procurement (`Invoria.Procurement.*`) — suppliers, purchase orders, and CQRS
 - **Business module**: Inventory (`Invoria.Inventory.*`) — batches and CQRS; consumes Ordering integration events via Rebus
@@ -51,6 +52,14 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Infrastructure: `Invoria.CustomerManagement.Infrastructure`
   - Presentation / Endpoints: `Invoria.CustomerManagement.Endpoints`
   - Contracts: `Invoria.CustomerManagement.Contracts`
+
+- **Financial Module**
+  - Domain: `Invoria.Financial.Domain`
+  - Application: `Invoria.Financial.Application`
+  - Infrastructure: `Invoria.Financial.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Financial.Endpoints`
+  - Contracts: `Invoria.Financial.Contracts`
+  - Current scope: layered scaffold only — no aggregates, commands, queries, endpoints, or migrations yet (see [Financial Module](#financial-module))
 
 - **Ordering Module**
   - Domain: `Invoria.Ordering.Domain`
@@ -133,7 +142,7 @@ flowchart LR
   ordContracts -.->|"referenced for handler types"| invInfra
 ```
 
-Other business modules (CustomerManagement, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
+Other business modules (CustomerManagement, Financial, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
 
 ---
 
@@ -545,12 +554,112 @@ flowchart LR
 
 ---
 
+## Financial Module
+
+The Financial module follows the same layered layout as Catalog, Inventory, and Procurement: Domain, Application, Infrastructure, Endpoints, and Contracts.
+
+**Current scope: layered scaffold only.** The module is installed by the host and its DI graph, EF model, and migration bootstrap path are wired, but no business features exist yet. There are no aggregates, entity configurations, migrations, commands, queries, endpoints, integration events, or tests. The layers below record the scaffolding that is in place and the conventions any first feature must follow.
+
+```mermaid
+flowchart LR
+  finEndpoints[Financial.Endpoints]
+  finApp[Financial.Application]
+  finDomain[Financial.Domain]
+  finInfra[Financial.Infrastructure]
+  finContracts[Financial.Contracts]
+
+  finEndpoints --> finApp
+  finEndpoints --> finContracts
+
+  finApp --> finDomain
+  finApp --> finContracts
+
+  finInfra --> finDomain
+  finInfra --> finApp
+
+  bbDomain[BuildingBlocks.Domain]
+  bbEf[BuildingBlocks.EntityFramework]
+
+  finDomain -->|"extends"| bbDomain
+  finInfra -->|"uses"| bbEf
+```
+
+### Domain (`Invoria.Financial.Domain`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Domain`
+
+- **In place**
+  - **`IFinancialRepository<T>`** (`Repositories/IFinancialRepository.cs`) — module repository abstraction extending `IRepository<T>` from BuildingBlocks, constrained to `T : IBaseEntity`. Mirrors `IProcurementRepository<T>` and `ICustomerRepository<T>`.
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — assembly marker for scanning.
+
+- **Not yet defined**
+  - Aggregates, value objects, domain services, domain events, and `*TableConsts` classes. When the first financial aggregate is added, place it in a bounded-context folder (e.g. `Ledger/`, `Receivables/`, `Payables/`) with a matching `IFinancialRepository<T>`-backed persistence path.
+
+### Application (`Invoria.Financial.Application`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Application`
+
+- **In place**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — consumed by `ApplicationServiceInstaller` to register MediatR handlers and response factories via assembly scanning.
+
+- **Not yet defined**
+  - Commands, queries, handlers, response factories, Rebus consumers, and report jobs. Handlers must implement `IApplicatonRequestHandler<TCommand, TResponse>` and return `Result<T>`; DTOs belong in `Invoria.Financial.Contracts`.
+
+### Infrastructure (`Invoria.Financial.Infrastructure`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Infrastructure`
+
+- **Persistence**
+  - **`FinancialDbContext`** (`EntityFramework/FinancialDbContext.cs`) — inherits `InvoriaDbContext<FinancialDbContext>`; `OnModelCreating` applies configurations from the executing assembly. Currently the model is empty (no entity types).
+  - **`FinancialDbContextFactory`** (`EntityFramework/FinancialDbContextFactory.cs`) — `IDesignTimeDbContextFactory<FinancialDbContext>` targeting `InvoriaFinancial_Dev` on LocalDB; required for `dotnet ef migrations add`.
+  - **`FinancialRepository<TEntity>`** (`EntityFramework/Repositories/FinancialRepository.cs`) — extends `EFCoreRepository<TEntity, FinancialDbContext>`, implements `IFinancialRepository<TEntity>`.
+  - **`EntityFramework/Migrations/`** — empty; the first migration is added when the first entity configuration lands.
+
+- **Bootstrap**
+  - **`FinancialModuleBootStrapper`** (`FinancialModuleBootStrapper.cs`) — implements `IModuleBootstrapper`; applies pending EF migrations for `FinancialDbContext` at startup. No recurring jobs and no Rebus subscriptions are registered yet.
+  - **`FinancialModuleInstaller`** (`FinancialModuleInstaller.cs`) — implements `IModuleInstaller`; discovers `IServiceInstaller` implementations in the Infrastructure assembly and registers the bootstrapper. Invoked by `ApiModuleInstaller` via `services.InstallModule<FinancialModuleInstaller>(configuration)`.
+
+- **Installers** (`Installers/`)
+  - **`EntityFrameworkServiceInstaller`** — registers `FinancialDbContext` via `AddInvoriaDbContext<FinancialDbContext>` (SQL Server, split-query) and the open-generic `IFinancialRepository<>` → `FinancialRepository<>`.
+  - **`ApplicationServiceInstaller`** — registers MediatR from the Application assembly and response factories via `RegisterFactoriesFromAssembly`.
+  - **`EndpointServiceInstaller`** — adds `Financial.Endpoints` to `EndpointsAssemblyRegistry` and registers FluentValidation validators from that assembly.
+
+- **Not yet defined**
+  - A `RebusHandlersServiceInstaller`, a `DomainServiceInstaller`, and number generators. When the module starts publishing or consuming integration events, add `MapAssemblyOf<Financial.Contracts.AssemblyReference>(inputQueueName)` to `AddInvoriaRebus` in `src/Invoria.Api/ApiModuleInstaller.cs`.
+
+### Presentation (`Invoria.Financial.Endpoints`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Endpoints`
+
+- **In place**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — registered with `EndpointsAssemblyRegistry` by `EndpointServiceInstaller`; the assembly is picked up by FastEndpoints discovery in the host.
+
+- **Not yet defined**
+  - Routing groups, endpoints, requests, and validators. Endpoints must inherit `EndpointBase<TRequest, TResponse>`, declare `Group<TRoutingGroup>()`, call `ValidateRequest(req)`, and finish with `SendResultAsync(result, ct)`. Each new bounded context needs its own Swagger tag in `ApiModuleInstaller.ConfigureSwagger`.
+
+### Contracts (`Invoria.Financial.Contracts`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Contracts`
+
+- **In place**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — the anchor to register with Rebus type-based routing once integration events exist.
+
+- **Not yet defined**
+  - DTOs, enums, integration events, and models. New types must use the context-folder layout from `.cursor/rules/module-contracts.mdc` (`{Context}/Enums/`, `{Context}/Dtos/`, `{Context}/Events/`, `{Context}/Models/`) — no flat root folders.
+
+---
+
 ## Host Module (Invoria.Api)
 
 ### Responsibilities
 
 - Bootstrap the application and configure shared infrastructure.
-- Install functional modules (currently, Catalog, CustomerManagement, Ordering, Inventory, and Procurement).
+- Install functional modules (currently, Catalog, CustomerManagement, Financial, Ordering, Inventory, and Procurement).
 - Configure FastEndpoints discovery and Swagger.
 - Register global exception handling and problem details.
 
@@ -559,7 +668,7 @@ flowchart LR
 - **`ApiModuleInstaller`**
   - Location: `src/Invoria.Api/ApiModuleInstaller.cs`
   - Implements `IModuleInstaller` from building blocks.
-  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Inventory, Ordering, and Procurement.
+  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Financial, Inventory, Ordering, and Procurement.
   - Configures **Rebus** once (`AddInvoriaRebus`): SQL Server transport, subscription storage in SQL Server, System.Text.Json serialization, and type-based routing (see `MapAssemblyOf<IntegrationEventsAssemblyMarker>` for the assembly used as the integration-events routing anchor).
   - Adds shared application infrastructure via `AddApplicationInfrastructure()`.
   - Registers global exception handler `GlobalExceptionHandler` and `ProblemDetails`.
@@ -997,7 +1106,7 @@ flowchart LR
   - Orchestrates module installation and shared infrastructure (including Rebus).
   - Depends on:
     - BuildingBlocks Core and Infrastructure for modularity and endpoint wiring.
-    - Module installers for Catalog, CustomerManagement, Inventory, Ordering, and Procurement (each module’s Infrastructure project).
+    - Module installers for Catalog, CustomerManagement, Financial, Inventory, Ordering, and Procurement (each module’s Infrastructure project).
 
 - **Catalog.Endpoints (Presentation)**
   - Only interacts with the **Application** layer and shared infrastructure:
@@ -1033,6 +1142,9 @@ flowchart LR
 
 - **Procurement (layered module)**
   - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
+
+- **Financial (layered module, scaffolded)**
+  - Same dependency shape as Procurement. **Infrastructure** provides `FinancialDbContext` and `FinancialRepository<>` behind `IFinancialRepository<>`; `FinancialModuleInstaller` is registered by the host and `FinancialModuleBootStrapper` applies pending migrations. The model currently contains no entity types.
 
 This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using contract types in the owning module’s `{Module}.Contracts` project and handlers registered in consuming modules.
 
