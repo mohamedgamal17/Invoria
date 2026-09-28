@@ -148,6 +148,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Financial.Endpoints
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Invoria.Financial.Infrastructure", "src\Modules\Financial\Financial.Infrastructure\Invoria.Financial.Infrastructure.csproj", "{5DC4ECA3-8069-4C51-B5C6-66D88B897B10}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Financial", "Financial", "{686BBDC4-9F25-48CE-918D-A25C301ECB5C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Invoria.Financial.Application.Tests", "tests\Modules\Financial\Financial.Application.Tests\Invoria.Financial.Application.Tests.csproj", "{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -818,6 +822,18 @@ Global
 		{5DC4ECA3-8069-4C51-B5C6-66D88B897B10}.Release|x64.Build.0 = Release|Any CPU
 		{5DC4ECA3-8069-4C51-B5C6-66D88B897B10}.Release|x86.ActiveCfg = Release|Any CPU
 		{5DC4ECA3-8069-4C51-B5C6-66D88B897B10}.Release|x86.Build.0 = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|x64.Build.0 = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Debug|x86.Build.0 = Debug|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|x64.ActiveCfg = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|x64.Build.0 = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|x86.ActiveCfg = Release|Any CPU
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -892,6 +908,8 @@ Global
 		{6AAA5894-4146-4547-B7CE-0BBB40D468C5} = {4D1B1343-57BD-4548-8227-103844E0F4EE}
 		{02D117C7-B4F0-4BA8-9C5D-E4DCECAD740F} = {4D1B1343-57BD-4548-8227-103844E0F4EE}
 		{5DC4ECA3-8069-4C51-B5C6-66D88B897B10} = {4D1B1343-57BD-4548-8227-103844E0F4EE}
+		{686BBDC4-9F25-48CE-918D-A25C301ECB5C} = {3216E1E0-7019-4319-B813-369DAD98A347}
+		{1BA8ABEE-4B37-44F9-A7E5-2068BF602ED0} = {686BBDC4-9F25-48CE-918D-A25C301ECB5C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12DAB194-1672-4BA8-94A8-A5F83D36912D}
