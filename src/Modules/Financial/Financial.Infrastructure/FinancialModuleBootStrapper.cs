@@ -1,7 +1,9 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Financial.Contracts.Receivables.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Invoria.Financial.Infrastructure.EntityFramework;
+using Rebus.Bus;
 
 namespace Invoria.Financial.Infrastructure
 {
@@ -15,6 +17,13 @@ namespace Invoria.Financial.Infrastructure
             if (pendingMigrations.Any())
             {
                 await dbContext.Database.MigrateAsync();
+            }
+
+            var bus = serviceProvider.GetService<IBus>();
+
+            if (bus is not null)
+            {
+                await bus.Subscribe<CreateOrderReceivableIntegrationEvent>();
             }
         }
     }
