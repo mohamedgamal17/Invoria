@@ -80,7 +80,8 @@ namespace Invoria.Api
                     .Transport(t => t.UseSqlServer(transportOptions, inputQueueName))
                     .Routing(r => r.TypeBased()
                         .MapAssemblyOf<Ordering.Contracts.AssemblyReference>(inputQueueName)
-                        .MapAssemblyOf<Inventory.Contracts.AssemblyReference>(inputQueueName)));
+                        .MapAssemblyOf<Inventory.Contracts.AssemblyReference>(inputQueueName)
+                        .MapAssemblyOf<Financial.Contracts.AssemblyReference>(inputQueueName)));
         }
 
         private void ConfigureSwagger(IServiceCollection services)
