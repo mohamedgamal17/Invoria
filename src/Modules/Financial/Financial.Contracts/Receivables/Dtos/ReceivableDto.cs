@@ -10,4 +10,5 @@ public sealed class ReceivableDto : AuditedEntityDto
     public decimal Amount { get; set; }
     public decimal OutstandingAmount { get; set; }
     public FinancialObligationStatus Status { get; set; }
+    public List<ReceivableSettlementDto> Settlements { get; set; } = new();
 }
