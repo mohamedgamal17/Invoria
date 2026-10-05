@@ -564,6 +564,57 @@ public class OrderSagaTests
     }
 
     [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_publishes_create_order_receivable_saga_activity_when_amount_positive()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: false, amount: 100m));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(
+                It.Is<CreateOrderReceivableSagaActivity>(a =>
+                    a.OrderId == "order-1" &&
+                    a.CustomerId == "cust-1" &&
+                    a.Amount == 100m),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+    }
+
+    [Test]
+    public void Deliver_OrderCompletedIntegrationEvent_does_not_publish_create_order_receivable_saga_activity_when_amount_zero()
+    {
+        var bus = CreateBus();
+        using var fixture = SagaFixture.For(() => new OrderSaga(bus.Object));
+
+        fixture.Add(new OrderSagaState
+        {
+            OrderId = "order-1",
+            OrderNumber = "ON-1",
+            CustomerId = "cust-1",
+            State = OrderSagaProcessState.AllocationSucceeded
+        });
+
+        fixture.Deliver(BuildOrderCompleted("order-1", allocationId: null, [], hasBillableItems: false, amount: 0m));
+
+        fixture.HandlerExceptions.Should().BeEmpty();
+
+        bus.Verify(
+            b => b.Publish(It.IsAny<CreateOrderReceivableSagaActivity>(), It.IsAny<Dictionary<string, string>>()),
+            Times.Never);
+    }
+
+    [Test]
     public void Deliver_OrderCompletedIntegrationEvent_publishes_record_order_sales_saga_activity()
     {
         var bus = CreateBus();
