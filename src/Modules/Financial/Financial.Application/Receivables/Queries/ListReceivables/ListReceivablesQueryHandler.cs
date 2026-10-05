@@ -7,6 +7,7 @@ using Invoria.Financial.Contracts.Receivables.Dtos;
 using Invoria.Financial.Contracts.Receivables.Enums;
 using Invoria.Financial.Domain.Receivables;
 using Invoria.Financial.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Invoria.Financial.Application.Receivables.Queries.ListReceivables;
 
@@ -27,7 +28,9 @@ public class ListReceivablesQueryHandler : IApplicatonRequestHandler<ListReceiva
         ListReceivablesQuery request,
         CancellationToken cancellationToken)
     {
-        var query = _receivableRepository.AsQuerable();
+        var queryable = _receivableRepository.AsQuerable();
+
+        IQueryable<Receivable> query = queryable.Include(r => r.Settlements);
 
         var partyIdTerm = request.PartyId?.Trim();
 

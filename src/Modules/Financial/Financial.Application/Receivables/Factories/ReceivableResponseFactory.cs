@@ -8,6 +8,17 @@ public sealed class ReceivableResponseFactory : ResponseFactory<Receivable, Rece
 {
     public override Task<ReceivableDto> PrepareDto(Receivable view)
     {
+        var settlementDtos = view.Settlements
+            .OrderBy(s => s.SettledAt)
+            .Select(s => new ReceivableSettlementDto
+            {
+                Id = s.Id,
+                ReceivableId = s.ReceivableId,
+                Amount = s.Amount,
+                SettledAt = s.SettledAt
+            })
+            .ToList();
+
         var dto = new ReceivableDto
         {
             Id = view.Id,
@@ -15,7 +26,8 @@ public sealed class ReceivableResponseFactory : ResponseFactory<Receivable, Rece
             SourceId = view.SourceId,
             Amount = view.Amount,
             OutstandingAmount = view.OutstandingAmount,
-            Status = view.Status
+            Status = view.Status,
+            Settlements = settlementDtos
         };
 
         MapAudited(view, dto);
