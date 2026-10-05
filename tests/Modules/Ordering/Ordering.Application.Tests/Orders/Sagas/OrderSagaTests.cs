@@ -859,10 +859,14 @@ public class OrderSagaTests
         string? allocationId,
         List<OrderReturnLineModel> returnLines,
         bool hasBillableItems,
-        DateTimeOffset? occurredOn = null) =>
+        DateTimeOffset? occurredOn = null,
+        string customerId = "cust-1",
+        decimal amount = 100m) =>
         new()
         {
             OrderId = orderId,
+            CustomerId = customerId,
+            Amount = amount,
             OccurredOn = occurredOn ?? DateTimeOffset.UtcNow,
             AllocationId = allocationId,
             ReturnLines = returnLines,

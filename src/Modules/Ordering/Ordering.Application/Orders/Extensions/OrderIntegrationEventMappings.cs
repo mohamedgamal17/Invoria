@@ -12,26 +12,36 @@ public static class OrderIntegrationEventMappings
 {
     public static OrderCompletedIntegrationEvent ToOrderCompletedIntegrationEvent(
         this Order order,
-        DateTimeOffset occurredOn) =>
-        new()
+        DateTimeOffset occurredOn)
+    {
+        var returnLines = order.ReturnItems
+            .Select(returnItem =>
+            {
+                var orderLine = order.Items.Single(i => i.Id == returnItem.OrderItemId);
+                var returnLine = new OrderReturnLineModel
+                {
+                    OrderItemId = returnItem.OrderItemId,
+                    ProductId = orderLine.ProductId,
+                    Quantity = returnItem.Quantity
+                };
+                return returnLine;
+            })
+            .ToList();
+        var billableItems = order.GetBillableItems();
+        var hasBillableItems = billableItems.Any();
+        var amount = order.NetOfTotalOrderAmount;
+        var integrationEvent = new OrderCompletedIntegrationEvent
         {
             OrderId = order.Id,
+            CustomerId = order.CustomerId,
+            Amount = amount,
             OccurredOn = occurredOn,
             AllocationId = order.AllocationId,
-            ReturnLines = order.ReturnItems
-                .Select(returnItem =>
-                {
-                    var orderLine = order.Items.Single(i => i.Id == returnItem.OrderItemId);
-                    return new OrderReturnLineModel
-                    {
-                        OrderItemId = returnItem.OrderItemId,
-                        ProductId = orderLine.ProductId,
-                        Quantity = returnItem.Quantity
-                    };
-                })
-                .ToList(),
-            HasBillableItems = order.GetBillableItems().Any()
+            ReturnLines = returnLines,
+            HasBillableItems = hasBillableItems
         };
+        return integrationEvent;
+    }
 
     public static AllocateOrderIntegrationEvent ToAllocateOrderIntegrationEvent(this OrderModel order) =>
         new()

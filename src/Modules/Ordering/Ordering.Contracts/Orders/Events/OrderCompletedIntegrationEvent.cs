@@ -4,11 +4,15 @@ namespace Invoria.Ordering.Contracts.Orders.Events;
 
 /// <summary>
 /// Published when a sales order is completed.
-/// Consumed by OrderSaga to fan out return and invoice activities.
+/// Consumed by OrderSaga to fan out return, invoice and receivable activities.
 /// </summary>
 public class OrderCompletedIntegrationEvent
 {
     public required string OrderId { get; set; }
+
+    public required string CustomerId { get; set; }
+
+    public decimal Amount { get; set; }
 
     public required DateTimeOffset OccurredOn { get; set; }
 

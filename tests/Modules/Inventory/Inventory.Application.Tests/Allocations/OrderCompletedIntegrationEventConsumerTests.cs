@@ -25,6 +25,8 @@ public class OrderCompletedIntegrationEventConsumerTests
         var message = new OrderCompletedIntegrationEvent
         {
             OrderId = "order-1",
+            CustomerId = "cust-1",
+            Amount = 100m,
             OccurredOn = DateTimeOffset.UtcNow,
             AllocationId = "alloc-1"
         };
