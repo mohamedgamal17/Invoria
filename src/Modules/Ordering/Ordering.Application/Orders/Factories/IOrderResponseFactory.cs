@@ -12,5 +12,13 @@ namespace Invoria.Ordering.Application.Orders.Factories
             bool includeOrderItems,
             bool includeReturnItems = false,
             CancellationToken cancellationToken = default);
+
+        Task<PublicOrderDto> PreparePublicOrderDto(
+            Order order,
+            CancellationToken cancellationToken = default);
+
+        Task<List<PublicOrderDto>> PreparePublicListDto(
+            List<Order> orders,
+            CancellationToken cancellationToken = default);
     }
 }
