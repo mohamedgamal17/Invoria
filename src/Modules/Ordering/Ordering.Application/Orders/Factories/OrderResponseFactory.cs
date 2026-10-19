@@ -120,6 +120,7 @@ namespace Invoria.Ordering.Application.Orders.Factories
         {
             var publicOrderDto = new PublicOrderDto
             {
+                Id = view.Id,
                 OrderNumber = view.OrderNumber,
                 CustomerId = view.CustomerId,
                 Status = view.Status,
