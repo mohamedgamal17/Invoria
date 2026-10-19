@@ -1,4 +1,4 @@
-# Invoria - CLAUDE.md
+Invoria - CLAUDE.md
 
 This file provides guidance for working with the Invoria codebase using Claude Code.
 
