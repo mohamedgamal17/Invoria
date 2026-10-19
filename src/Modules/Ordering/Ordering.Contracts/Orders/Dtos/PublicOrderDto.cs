@@ -4,6 +4,7 @@ namespace Invoria.Ordering.Contracts.Orders.Dtos
 {
     public class PublicOrderDto
     {
+        public string Id { get; set; } = string.Empty;
         public string OrderNumber { get; set; } 
         public string CustomerId { get; set; }
         public OrderStatus Status { get; set; }
