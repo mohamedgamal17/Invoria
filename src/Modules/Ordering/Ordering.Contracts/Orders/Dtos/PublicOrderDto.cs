@@ -11,7 +11,7 @@ namespace Invoria.Ordering.Contracts.Orders.Dtos
         public decimal SubtotalAmount { get; set; }
         public decimal ReturnsAmount { get; set; }
         public decimal NetOrderAmount { get; set; }
-        public decimal AmountDue { get; set; }
+        public decimal AmountOutstanding { get; set; }
         public string? AllocationId { get; set; }
         public string? ReturnId { get; set; }
         public string? InvoiceId { get; set; }
