@@ -1,7 +1,10 @@
 using Invoria.BackgroundJobs.Test;
 using Invoria.BuildingBlocks.Core.Extensions;
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.CustomerManagement.Contracts.Services;
+using Invoria.Financial.Application.Tests.Fakes;
 using Invoria.Financial.Infrastructure;
+using Invoria.Ordering.Contracts.Orders.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,6 +22,10 @@ namespace Invoria.Financial.Application.Tests
             services.InstallModule<FinancialModuleInstaller>(configuration);
 
             services.InstallModule<BackgroundJobsTestModuleInstaller>(configuration);
+
+            services.AddSingleton<IOrderService, EmptyListOrderService>();
+
+            services.AddSingleton<ICustomerService, EmptyListCustomerService>();
 
             services.AddSingleton<Mock<IBus>>(_ =>
             {

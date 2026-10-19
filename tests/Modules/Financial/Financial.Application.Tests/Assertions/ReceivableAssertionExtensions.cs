@@ -25,6 +25,8 @@ namespace Invoria.Financial.Application.Tests.Assertions
             dto.Amount.Should().Be(receivable.Amount);
             dto.OutstandingAmount.Should().Be(receivable.OutstandingAmount);
             dto.Status.Should().Be(receivable.Status);
+            dto.Source.Should().BeNull();
+            dto.Party.Should().BeNull();
         }
     }
 }
