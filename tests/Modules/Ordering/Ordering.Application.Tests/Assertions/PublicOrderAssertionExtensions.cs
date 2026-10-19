@@ -8,6 +8,7 @@ namespace Invoria.Ordering.Application.Tests.Assertions
     {
         public static void AssertPublicOrderDto(this PublicOrderDto dto, Order order)
         {
+            dto.Id.Should().Be(order.Id);
             dto.OrderNumber.Should().Be(order.OrderNumber);
             dto.CustomerId.Should().Be(order.CustomerId);
             dto.Status.Should().Be(order.Status);

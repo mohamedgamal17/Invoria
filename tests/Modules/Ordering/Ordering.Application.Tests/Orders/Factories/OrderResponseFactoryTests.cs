@@ -265,6 +265,7 @@ public class OrderResponseFactoryTests : OrderingTestFixture
 
         var dto = await Factory.PreparePublicOrderDto(order);
 
+        dto.Id.Should().Be("public-map-order");
         dto.OrderNumber.Should().Be("PUBLIC-MAP");
         dto.CustomerId.Should().Be(customerId);
         dto.Status.Should().Be(OrderStatus.Completed);
