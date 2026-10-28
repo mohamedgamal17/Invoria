@@ -17,10 +17,116 @@ namespace Invoria.Financial.Infrastructure.EntityFramework.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.31")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Invoria.Financial.Domain.Payables.Payable", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<decimal>("OutstandingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PartyId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("LastModifiedAt");
+
+                    b.HasIndex("LastModifiedBy");
+
+                    b.HasIndex("PartyId");
+
+                    b.HasIndex("SourceId")
+                        .IsUnique();
+
+                    b.ToTable("Payables", (string)null);
+                });
+
+            modelBuilder.Entity("Invoria.Financial.Domain.Payables.PayableSettlement", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LastModifiedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("PayableId")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<DateTimeOffset>("SettledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("LastModifiedAt");
+
+                    b.HasIndex("LastModifiedBy");
+
+                    b.HasIndex("PayableId");
+
+                    b.ToTable("PayableSettlements", (string)null);
+                });
 
             modelBuilder.Entity("Invoria.Financial.Domain.Receivables.Receivable", b =>
                 {
@@ -128,6 +234,17 @@ namespace Invoria.Financial.Infrastructure.EntityFramework.Migrations
                     b.ToTable("ReceivableSettlements", (string)null);
                 });
 
+            modelBuilder.Entity("Invoria.Financial.Domain.Payables.PayableSettlement", b =>
+                {
+                    b.HasOne("Invoria.Financial.Domain.Payables.Payable", "Payable")
+                        .WithMany("Settlements")
+                        .HasForeignKey("PayableId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Payable");
+                });
+
             modelBuilder.Entity("Invoria.Financial.Domain.Receivables.ReceivableSettlement", b =>
                 {
                     b.HasOne("Invoria.Financial.Domain.Receivables.Receivable", "Receivable")
@@ -137,6 +254,11 @@ namespace Invoria.Financial.Infrastructure.EntityFramework.Migrations
                         .IsRequired();
 
                     b.Navigation("Receivable");
+                });
+
+            modelBuilder.Entity("Invoria.Financial.Domain.Payables.Payable", b =>
+                {
+                    b.Navigation("Settlements");
                 });
 
             modelBuilder.Entity("Invoria.Financial.Domain.Receivables.Receivable", b =>

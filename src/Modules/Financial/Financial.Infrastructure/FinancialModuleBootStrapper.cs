@@ -1,4 +1,5 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Financial.Contracts.Payables.Events;
 using Invoria.Financial.Contracts.Receivables.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,7 @@ namespace Invoria.Financial.Infrastructure
             if (bus is not null)
             {
                 await bus.Subscribe<CreateOrderReceivableIntegrationEvent>();
+                await bus.Subscribe<CreatePurchaseOrderPayableIntegrationEvent>();
             }
         }
     }

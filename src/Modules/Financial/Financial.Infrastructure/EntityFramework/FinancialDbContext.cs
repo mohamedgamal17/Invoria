@@ -1,5 +1,6 @@
 using Invoria.BuildingBlocks.EntityFramework.Contexts;
 using Invoria.BuildingBlocks.EntityFramework.Hooks;
+using Invoria.Financial.Domain.Payables;
 using Invoria.Financial.Domain.Receivables;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -15,6 +16,10 @@ namespace Invoria.Financial.Infrastructure.EntityFramework
         public DbSet<Receivable> Receivables => Set<Receivable>();
 
         public DbSet<ReceivableSettlement> ReceivableSettlements => Set<ReceivableSettlement>();
+
+        public DbSet<Payable> Payables => Set<Payable>();
+
+        public DbSet<PayableSettlement> PayableSettlements => Set<PayableSettlement>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

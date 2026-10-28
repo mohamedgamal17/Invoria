@@ -1,5 +1,7 @@
 using Invoria.BuildingBlocks.Core.Modularity;
+using Invoria.Financial.Application.Payables.Consumers;
 using Invoria.Financial.Application.Receivables.Consumers;
+using Invoria.Financial.Contracts.Payables.Events;
 using Invoria.Financial.Contracts.Receivables.Events;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,5 +14,6 @@ public sealed class RebusHandlersServiceInstaller : IServiceInstaller
     public void Install(IServiceCollection services, IConfiguration configuration)
     {
         services.AddTransient<IHandleMessages<CreateOrderReceivableIntegrationEvent>, CreateOrderReceivableIntegrationEventConsumer>();
+        services.AddTransient<IHandleMessages<CreatePurchaseOrderPayableIntegrationEvent>, CreatePurchaseOrderPayableIntegrationEventConsumer>();
     }
 }
