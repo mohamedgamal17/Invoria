@@ -1,10 +1,12 @@
 using FluentAssertions;
 using Invoria.Application.Tests.Extensions;
 using Invoria.BuildingBlocks.Domain.Exceptions;
+using Invoria.Financial.Contracts.Payables.Events;
 using Invoria.Procurement.Application.PurchaseOrders.Commands.CompletePurchaseOrder;
 using Invoria.Procurement.Application.PurchaseOrders.Commands.CreatePurchaseOrder;
 using Invoria.Procurement.Application.PurchaseOrders.Commands.SubmitPurchaseOrder;
 using Invoria.Procurement.Application.PurchaseOrders.Commands.ApprovePurchaseOrder;
+using Invoria.Procurement.Contracts.Events;
 using Invoria.Procurement.Contracts.PurchaseOrders;
 using Invoria.Procurement.Domain.Parties;
 using Invoria.Procurement.Domain.PurchaseOrders;
@@ -58,7 +60,16 @@ public class CompletePurchaseOrderCommandHandlerTests : ProcurementTestFixture
 
         var busMock = ServiceProvider.GetRequiredService<Mock<IBus>>();
         busMock.Verify(
-            b => b.Publish(It.IsAny<object>(), It.IsAny<Dictionary<string, string>>()),
+            b => b.Publish(
+                It.IsAny<PurchaseOrderCompletedIntegrationEvent>(),
+                It.IsAny<Dictionary<string, string>>()),
+            Times.Once);
+        busMock.Verify(
+            b => b.Publish(
+                It.Is<CreatePurchaseOrderPayableIntegrationEvent>(msg =>
+                    msg.PurchaseOrderId == approved.Id &&
+                    msg.Amount == 100m),
+                It.IsAny<Dictionary<string, string>>()),
             Times.Once);
     }
 

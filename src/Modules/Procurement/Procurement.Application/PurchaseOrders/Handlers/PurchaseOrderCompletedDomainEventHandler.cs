@@ -1,3 +1,4 @@
+using Invoria.Financial.Contracts.Payables.Events;
 using Invoria.Procurement.Contracts.Events;
 using Invoria.Procurement.Contracts.Models;
 using Invoria.Procurement.Domain.PurchaseOrders.Events;
@@ -35,6 +36,18 @@ public sealed class PurchaseOrderCompletedDomainEventHandler : INotificationHand
         };
 
         await _bus.Publish(integrationEvent);
+
+        if (notification.TotalAmount > 0m)
+        {
+            var payableIntegrationEvent = new CreatePurchaseOrderPayableIntegrationEvent
+            {
+                PurchaseOrderId = notification.PurchaseOrderId,
+                SupplierId = notification.SupplierId,
+                Amount = notification.TotalAmount
+            };
+
+            await _bus.Publish(payableIntegrationEvent);
+        }
     }
 }
 
