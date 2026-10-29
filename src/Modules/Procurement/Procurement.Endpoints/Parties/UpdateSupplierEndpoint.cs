@@ -43,7 +43,7 @@ public sealed class UpdateSupplierEndpoint : EndpointBase<UpdateSupplierRequest,
     {
         ValidateRequest(req);
 
-        var command = new UpdateSupplierCommand(req.Id, req.SupplierCode, req.Name, req.ContactEmail, req.Phone);
+        var command = new UpdateSupplierCommand(req.Id, req.Name, req.ContactEmail, req.Phone);
         var result = await _mediator.Send(command, ct);
 
         await SendResultAsync(result, ct);

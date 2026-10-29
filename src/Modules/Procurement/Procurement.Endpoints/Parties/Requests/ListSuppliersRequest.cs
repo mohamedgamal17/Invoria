@@ -9,9 +9,6 @@ public class ListSuppliersRequest : PagingParams
 {
     [QueryParam]
     public string? Name { get; set; }
-
-    [QueryParam]
-    public string? Code { get; set; }
 }
 
 public class ListSuppliersRequestValidator : AbstractValidator<ListSuppliersRequest>
@@ -24,12 +21,6 @@ public class ListSuppliersRequestValidator : AbstractValidator<ListSuppliersRequ
         {
             RuleFor(x => x.Name!)
                 .MaximumLength(SupplierTableConsts.NameMaxLength);
-        });
-
-        When(x => !string.IsNullOrWhiteSpace(x.Code), () =>
-        {
-            RuleFor(x => x.Code!)
-                .MaximumLength(SupplierTableConsts.SupplierCodeMaxLength);
         });
     }
 }
