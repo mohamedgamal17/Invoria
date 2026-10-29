@@ -31,7 +31,6 @@ public sealed class UpdateSupplierCommandHandler : IApplicatonRequestHandler<Upd
         }
 
         supplier.Update(
-            supplierCode: request.SupplierCode,
             name: request.Name,
             contactEmail: request.ContactEmail,
             phone: request.Phone,

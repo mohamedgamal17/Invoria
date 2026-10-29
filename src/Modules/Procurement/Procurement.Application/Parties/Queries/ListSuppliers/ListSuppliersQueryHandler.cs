@@ -33,13 +33,6 @@ public sealed class ListSuppliersQueryHandler : IApplicatonRequestHandler<ListSu
             query = query.Where(x => x.Name.ToLower().Contains(normalizedNameTerm));
         }
 
-        var codeTerm = request.Code?.Trim();
-        if (!string.IsNullOrEmpty(codeTerm))
-        {
-            var normalizedCodeTerm = codeTerm.ToLower();
-            query = query.Where(x => x.SupplierCode.ToLower().Contains(normalizedCodeTerm));
-        }
-
         query = query.OrderByDescending(x => x.CreatedAt);
 
         var paged = await query.ToPaged(request.Skip, request.Length);

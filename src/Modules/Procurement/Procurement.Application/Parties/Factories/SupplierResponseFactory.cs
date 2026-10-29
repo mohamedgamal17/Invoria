@@ -11,7 +11,6 @@ public sealed class SupplierResponseFactory : ResponseFactory<Supplier, Supplier
         var dto = new SupplierDto
         {
             Id = view.Id,
-            SupplierCode = view.SupplierCode,
             Name = view.Name,
             ContactEmail = view.ContactEmail,
             Phone = view.Phone

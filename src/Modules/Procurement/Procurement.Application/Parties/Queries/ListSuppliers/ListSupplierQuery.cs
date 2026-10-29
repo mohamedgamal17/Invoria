@@ -8,5 +8,4 @@ namespace Invoria.Procurement.Application.Parties.Queries.ListSuppliers;
 public class ListSupplierQuery : PagingParams, IQuery<PagingDto<SupplierDto>>
 {
     public string? Name { get; set; }
-    public string? Code { get; set; }
 }
