@@ -41,7 +41,7 @@ public sealed class CreateSupplierEndpoint : EndpointBase<CreateSupplierRequest,
     {
         ValidateRequest(req);
 
-        var command = new CreateSupplierCommand(req.SupplierCode, req.Name, req.ContactEmail, req.Phone);
+        var command = new CreateSupplierCommand(req.Name, req.ContactEmail, req.Phone);
         var result = await _mediator.Send(command, ct);
 
         await SendResultAsync(result, ct);

@@ -29,7 +29,6 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         // Arrange
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Procurement Supplier",
             contactEmail: "supplier@example.com",
             phone: "+1",
@@ -66,7 +65,7 @@ public class CreatePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         result.Value.Supplier.Should().NotBeNull();
         result.Value.Supplier!.Id.Should().Be(supplier.Id);
         result.Value.Supplier.Name.Should().Be(supplier.Name);
-        result.Value.Supplier.SupplierCode.Should().Be(supplier.SupplierCode);
+        result.Value.Supplier.Name.Should().Be(supplier.Name);
         result.Value.Supplier.CreatedAt.Should().Be(supplier.CreatedAt);
         result.Value.SubTotal.Should().Be(purchaseOrder.SubTotal);
         result.Value.TotalAmount.Should().Be(purchaseOrder.TotalAmount);

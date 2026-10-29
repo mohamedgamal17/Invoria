@@ -8,10 +8,11 @@ This document describes the current architecture of the Invoria solution based o
 - **Shared building blocks**: `Invoria.BuildingBlocks.*`
 - **Business module**: Catalog (`Invoria.Catalog.*`)
 - **Business module**: CustomerManagement (`Invoria.CustomerManagement.*`)
+- **Business module**: Financial (`Invoria.Financial.*`) — receivables and payables lifecycle (create from orders/purchase orders via Rebus, settle, read)
 - **Business module**: Ordering (`Invoria.Ordering.*`)
 - **Business module**: Procurement (`Invoria.Procurement.*`) — suppliers, purchase orders, and CQRS
 - **Business module**: Inventory (`Invoria.Inventory.*`) — batches and CQRS; consumes Ordering integration events via Rebus
-- **Tests**: `Invoria.*.Tests`, including Catalog-, Inventory-, Ordering-, and Procurement-focused application and endpoint tests where present
+- **Tests**: `Invoria.*.Tests`, including Catalog-, Financial-, Inventory-, Ordering-, and Procurement-focused application and endpoint tests where present
 
 The sections below list only modules, layers, classes, and relationships that exist in the repository.
 
@@ -52,6 +53,14 @@ The sections below list only modules, layers, classes, and relationships that ex
   - Presentation / Endpoints: `Invoria.CustomerManagement.Endpoints`
   - Contracts: `Invoria.CustomerManagement.Contracts`
 
+- **Financial Module**
+  - Domain: `Invoria.Financial.Domain`
+  - Application: `Invoria.Financial.Application`
+  - Infrastructure: `Invoria.Financial.Infrastructure`
+  - Presentation / Endpoints: `Invoria.Financial.Endpoints`
+  - Contracts: `Invoria.Financial.Contracts`
+  - Current scope: `Receivables` and `Payables` bounded contexts — creation, settlement (validated against `OutstandingAmount`), and read/query flows (see [Financial Module](#financial-module))
+
 - **Ordering Module**
   - Domain: `Invoria.Ordering.Domain`
   - Application: `Invoria.Ordering.Application`
@@ -78,6 +87,7 @@ The sections below list only modules, layers, classes, and relationships that ex
   - `Invoria.Application.Tests`
   - `Invoria.Endpoints.Tests`
   - `Invoria.Catalog.Application.Tests`
+  - `Invoria.Financial.Application.Tests`
   - `Invoria.Inventory.Application.Tests`, `Invoria.Inventory.Endpoints.Tests` (where present)
   - `Invoria.Ordering.Application.Tests`, `Invoria.Ordering.Endpoints.Tests` (where present)
   - `Invoria.Procurement.Application.Tests`, `Invoria.Procurement.Endpoints.Tests` (where present)
@@ -133,7 +143,7 @@ flowchart LR
   ordContracts -.->|"referenced for handler types"| invInfra
 ```
 
-Other business modules (CustomerManagement, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
+Other business modules (CustomerManagement, Financial, Ordering, Procurement, and Inventory) follow the same layered layout as Catalog: Domain, Application, Infrastructure, Endpoints, and Contracts. The diagram above highlights Catalog and the Ordering-to-Inventory integration contract edge; see module-specific sections below for representative types and paths.
 
 ---
 
@@ -545,12 +555,212 @@ flowchart LR
 
 ---
 
+## Financial Module
+
+The Financial module follows the same layered layout as Catalog, Inventory, and Procurement: Domain, Application, Infrastructure, Endpoints, and Contracts.
+
+**Current scope: Receivables and Payables.** The module implements two mirrored obligation lifecycles. *Receivables* — money owed **to** the company, created from completed orders (received over Rebus from Ordering). *Payables* — money owed **by** the company to suppliers, created from completed purchase orders (received over Rebus from Procurement). Both are settled incrementally (with the settlement amount validated against `OutstandingAmount` before the domain `Settle` runs) and read through query endpoints. The bounded contexts are `Receivables/` and `Payables/` in every layer.
+
+```mermaid
+flowchart LR
+  finEndpoints[Financial.Endpoints]
+  finApp[Financial.Application]
+  finDomain[Financial.Domain]
+  finInfra[Financial.Infrastructure]
+  finContracts[Financial.Contracts]
+  ordContracts[Ordering.Contracts]
+
+  finEndpoints --> finApp
+  finEndpoints --> finContracts
+
+  finApp --> finDomain
+  finApp --> finContracts
+
+  finInfra --> finDomain
+  finInfra --> finApp
+
+  finApp -.->|"integration event consumption"| finContracts
+  finInfra -.->|"handler registration / Rebus"| finContracts
+
+  bbDomain[BuildingBlocks.Domain]
+  bbEf[BuildingBlocks.EntityFramework]
+
+  finDomain -->|"extends"| bbDomain
+  finInfra -->|"uses"| bbEf
+```
+
+### Domain (`Invoria.Financial.Domain`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Domain`
+
+- **Receivables** (`Receivables/`)
+  - **`Receivable`** (`Receivable.cs`) — `AuditedAggregateRoot` with `PartyId`, `SourceId`, `Amount`, `OutstandingAmount`, `Status` (`FinancialObligationStatus`), child **`ReceivableSettlement`** rows, and a computed `TotalSettledAmount` (`Amount − OutstandingAmount`).
+  - **`Receivable.Create(partyId, sourceId, amount)`** — Guard-clause factory; a new receivable starts `Outstanding` with `OutstandingAmount = amount`.
+  - **`Receivable.Settle(amount, settledAt?)`** — adds a `ReceivableSettlement` (defaulting `SettledAt` to now), recomputes `OutstandingAmount` (`Amount − sum of settlements`), and refreshes `Status` (`Outstanding` → `PartiallyPaid` → `Paid`). Guards reject zero/negative amounts, an already-`Paid` receivable (`InvalidOperationException`), and over-settlement (`amount > OutstandingAmount`) — the domain guard is the last line of defense behind the command-level `Result.Failure` checks.
+  - **`ReceivableSettlement`** (`ReceivableSettlement.cs`) — `AuditedEntity` line with `ReceivableId`, `Amount`, `SettledAt`.
+  - **`ReceivableTableConsts`** / **`ReceivableSettlementTableConsts`** — table-name and length constants shared with EF configuration.
+- **Payables** (`Payables/`) — mirrored from Receivables (see [Receivable.cs](../src/Modules/Financial/Financial.Domain/Receivables/Receivable.cs) for the template shape)
+  - **`Payable`** (`Payable.cs`) — `AuditedAggregateRoot` with `PartyId` (supplier), `SourceId` (purchase order), `Amount`, `OutstandingAmount`, `Status` (shared `FinancialObligationStatus`), child **`PayableSettlement`** rows, and a computed `TotalSettledAmount` (`Amount − OutstandingAmount`).
+  - **`Payable.Create(partyId, sourceId, amount)`** — Guard-clause factory; a new payable starts `Outstanding` with `OutstandingAmount = amount`.
+  - **`Payable.Settle(amount, settledAt?)`** — adds a `PayableSettlement` (defaulting `SettledAt` to now), recomputes `OutstandingAmount` (`Amount − sum of settlements`), and refreshes `Status` (`Outstanding` → `PartiallyPaid` → `Paid`). Same guard set as `Receivable.Settle` (zero/negative amounts, already-`Paid`, over-settlement).
+  - **`PayableSettlement`** (`PayableSettlement.cs`) — `AuditedEntity` line with `PayableId`, `Amount`, `SettledAt`.
+  - **`PayableTableConsts`** (`"Payables"`) / **`PayableSettlementTableConsts`** (`"PayableSettlements"`) — table-name and length constants shared with EF configuration.
+- **Repository**
+  - **`IFinancialRepository<T>`** (`Repositories/IFinancialRepository.cs`) — module repository abstraction extending `IRepository<T>` from BuildingBlocks, constrained to `T : IBaseEntity`. Mirrors `IProcurementRepository<T>` and `ICustomerRepository<T>`.
+- **Assembly marker**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — assembly marker for scanning.
+
+### Application (`Invoria.Financial.Application`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Application`
+
+- **Commands**
+  - **`CreateReceivableCommand`** / **`CreateReceivableCommandHandler`** — `Receivables/Commands/CreateReceivable/`; creates `Receivable` via `Receivable.Create(partyId, sourceId, amount)`, persists with `IFinancialRepository<Receivable>.Add` and returns `ReceivableDto` via `IReceivableResponseFactory`. Exposes `CreateReceivableCommand.FromEvent` for the Rebus consumer path.
+  - **`SettleReceivableCommand`** / **`SettleReceivableCommandHandler`** — `Receivables/Commands/SettleReceivable/`; `ReceivableId` + `Amount` → `ReceivableDto`. Loads the receivable (with `Settlements`) and **validates before invoking `Receivable.Settle`**:
+    - Not found → `Result.Failure<ReceivableDto>(NotFoundException)`.
+    - Status already `Paid` → `Result.Failure<ReceivableDto>(BusinessLogicException)`.
+    - `Amount > OutstandingAmount` → `Result.Failure<ReceivableDto>(BusinessLogicException)`.
+    - Otherwise calls `receivable.Settle(request.Amount)`, persists via `Update`, and returns the refreshed `ReceivableDto`.
+- **Payables commands** (`Payables/Commands/`) — mirrors the receivable commands; aggregate `Payable`, DTO `PayableDto`, repository `IFinancialRepository<Payable>`:
+  - **`CreatePayableCommand`** / **`CreatePayableCommandHandler`** — creates `Payable` via `Payable.Create(partyId, sourceId, amount)`; exposes `CreatePayableCommand.FromEvent` for the Rebus consumer path (`SupplierId` → `PartyId`, `PurchaseOrderId` → `SourceId`).
+  - **`SettlePayableCommand`** / **`SettlePayableCommandHandler`** — same validation ladder as the receivable settle (NotFound → `NotFoundException`; already `Paid` / over-settlement → `BusinessLogicException`), then `payable.Settle(request.Amount)` and persist.
+- **Queries**
+  - **`ListReceivablesQuery`** / handler — `Receivables/Queries/ListReceivables/`; paged `PagingDto<ReceivableDto>` with optional `PartyId`, `SourceId`, and `IsPaid` filters.
+  - **`GetReceivableByIdQuery`** / handler — `Receivables/Queries/GetReceivableById/`; single receivable by id (settlements included) or `NotFoundException`.
+  - **`GetReceivableByOrderIdQuery`** / handler — `Receivables/Queries/GetReceivableByOrderId/`; latest receivable for an order (`SourceId == OrderId`, settlements included) or `NotFoundException`.
+- **Payables queries** (`Payables/Queries/`) — mirrors the receivable queries:
+  - **`ListPayablesQuery`** / handler — paged `PagingDto<PayableDto>` with optional `PartyId`, `SourceId`, and `IsPaid` filters.
+  - **`GetPayableByIdQuery`** / handler — single payable by id (settlements included) or `NotFoundException`.
+  - **`GetPayableByPurchaseOrderIdQuery`** / handler — payable for a purchase order (`SourceId == PurchaseOrderId`, settlements included) or `NotFoundException`.
+- **Factories**
+  - **`IReceivableResponseFactory`** / **`ReceivableResponseFactory`** — `Receivables/Factories/`; maps `Receivable` (+ settlements) to `ReceivableDto`.
+  - **`IPayableResponseFactory`** / **`PayableResponseFactory`** — `Payables/Factories/`; maps `Payable` (+ settlements) to `PayableDto`. No enrichment services in v1 (`PayableDto` carries raw `PartyId`/`SourceId` only).
+- **Integration consumers (Rebus)**
+  - **`CreateOrderReceivableIntegrationEventConsumer`** — `Receivables/Consumers/`; `IHandleMessages<CreateOrderReceivableIntegrationEvent>`; maps the event to `CreateReceivableCommand` via `FromEvent` and sends it through MediatR.
+  - **`CreatePurchaseOrderPayableIntegrationEventConsumer`** — `Payables/Consumers/`; `IHandleMessages<CreatePurchaseOrderPayableIntegrationEvent>`; maps the event to `CreatePayableCommand` via `FromEvent` and sends it through MediatR.
+- **Assembly marker**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — consumed by `ApplicationServiceInstaller` to register MediatR handlers and response factories via assembly scanning.
+
+### Infrastructure (`Invoria.Financial.Infrastructure`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Infrastructure`
+
+- **Persistence**
+  - **`FinancialDbContext`** (`EntityFramework/FinancialDbContext.cs`) — inherits `InvoriaDbContext<FinancialDbContext>`; `OnModelCreating` applies configurations from the executing assembly, mapping `Receivable`/`ReceivableSettlement` and `Payable`/`PayableSettlement`.
+  - **`ReceivableEntityTypeConfiguration`** / **`ReceivableSettlementEntityTypeConfiguration`** (`EntityFramework/Configuration/`) — table/property configuration based on `ReceivableTableConsts` / `ReceivableSettlementTableConsts`.
+  - **`PayableEntityTypeConfiguration`** / **`PayableSettlementEntityTypeConfiguration`** (`EntityFramework/Configuration/`) — mirrored from the receivable configurations; unique index on `Payables.SourceId` (one payable per purchase order), index on `PartyId`, cascade delete to `PayableSettlements`.
+  - **`FinancialDbContextFactory`** (`EntityFramework/FinancialDbContextFactory.cs`) — `IDesignTimeDbContextFactory<FinancialDbContext>` used by `dotnet ef` to scaffold migrations without the host.
+  - **Migrations** (`EntityFramework/Migrations/`) — `20260928052130_AddReceivable` and `20261028022634_AddPayable` (+ Designers) and `FinancialDbContextModelSnapshot` represent the current schema state.
+  - **`FinancialRepository<TEntity>`** (`EntityFramework/Repositories/FinancialRepository.cs`) — extends `EFCoreRepository<TEntity, FinancialDbContext>`, implements `IFinancialRepository<TEntity>`.
+- **Bootstrap**
+  - **`FinancialModuleBootStrapper`** (`FinancialModuleBootStrapper.cs`) — implements `IModuleBootstrapper`; applies pending EF migrations for `FinancialDbContext` and, when a Rebus `IBus` is available, subscribes to `CreateOrderReceivableIntegrationEvent` and `CreatePurchaseOrderPayableIntegrationEvent`.
+  - **`FinancialModuleInstaller`** (`FinancialModuleInstaller.cs`) — implements `IModuleInstaller`; discovers `IServiceInstaller` implementations in the Infrastructure assembly and registers the bootstrapper. Invoked by `ApiModuleInstaller` via `services.InstallModule<FinancialModuleInstaller>(configuration)`.
+- **Installers** (`Installers/`)
+  - **`EntityFrameworkServiceInstaller`** — registers `FinancialDbContext` via `AddInvoriaDbContext<FinancialDbContext>` (SQL Server, split-query) and the open-generic `IFinancialRepository<>` → `FinancialRepository<>`.
+  - **`ApplicationServiceInstaller`** — registers MediatR from the Application assembly and response factories via `RegisterFactoriesFromAssembly`.
+  - **`EndpointServiceInstaller`** — adds `Financial.Endpoints` to `EndpointsAssemblyRegistry` and registers FluentValidation validators from that assembly.
+  - **`RebusHandlersServiceInstaller`** — registers `IHandleMessages<CreateOrderReceivableIntegrationEvent>` → `CreateOrderReceivableIntegrationEventConsumer` and `IHandleMessages<CreatePurchaseOrderPayableIntegrationEvent>` → `CreatePurchaseOrderPayableIntegrationEventConsumer`.
+- **Host wiring**
+  - `ApiModuleInstaller.AddInvoriaRebus` (`src/Invoria.Api/ApiModuleInstaller.cs`) routes Financial events with `.MapAssemblyOf<Financial.Contracts.AssemblyReference>(inputQueueName)`.
+
+### Presentation (`Invoria.Financial.Endpoints`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Endpoints`
+
+- **Routing**
+  - **`ReceivableRoutingGroup`** (`Receivables/ReceivableRoutingGroup.cs`) — base route `receivables`, Swagger tag `Receivables`, and standard 400/401/403/404/500 `ProblemDetails` descriptions.
+  - **`PayableRoutingGroup`** (`Payables/PayableRoutingGroup.cs`) — base route `payables`, Swagger tag `Payables`, same `ProblemDetails` descriptions.
+- **Endpoints** (`Receivables/`)
+  - **`ListReceivablesEndpoint`** — **`GET /receivables`** with `Skip` / `Length` paging and optional `partyId`, `sourceId`, `isPaid` query parameters.
+  - **`GetReceivableByIdEndpoint`** — **`GET /receivables/{id}`**.
+  - **`GetReceivableByOrderIdEndpoint`** — **`GET /receivables/by-order/{orderId}`**; returns the latest receivable for an order, settlements included.
+  - **`SettleReceivableEndpoint`** — **`POST /receivables/{id}/settle`**; settles the body `Amount` against the receivable's outstanding balance via `SettleReceivableCommand` and returns the updated `ReceivableDto`.
+- **Endpoints** (`Payables/`) — mirrors the receivable endpoints; no create endpoint (creation is Rebus-driven only)
+  - **`ListPayablesEndpoint`** — **`GET /payables`** with `Skip` / `Length` paging and optional `partyId`, `sourceId`, `isPaid` query parameters.
+  - **`GetPayableByIdEndpoint`** — **`GET /payables/{id}`**.
+  - **`GetPayableByPurchaseOrderIdEndpoint`** — **`GET /payables/by-purchase-order/{purchaseOrderId}`**; returns the payable for a purchase order, settlements included.
+  - **`SettlePayableEndpoint`** — **`POST /payables/{id}/settle`**; settles the body `Amount` against the payable's outstanding balance via `SettlePayableCommand`.
+- **Requests and validation** (`Receivables/Requests/`, `Payables/Requests/`)
+  - Receivables: `ListReceivablesRequest`, `GetReceivableByIdRequest`, `GetReceivableByOrderIdRequest`, `SettleReceivableRequest`. Payables: `ListPayablesRequest`, `GetPayableByIdRequest`, `GetPayableByPurchaseOrderIdRequest`, `SettlePayableRequest`. Each endpoint resolves a FluentValidation validator, calls `ValidateRequest(req)`, sends the corresponding query/command via MediatR, and finishes with `SendResultAsync(result, ct)`. Settle validators require a non-empty `Id` (bounded by the module's table consts) and `Amount > 0`.
+- **Assembly marker**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — registered with `EndpointsAssemblyRegistry` by `EndpointServiceInstaller`; the assembly is picked up by FastEndpoints discovery in the host.
+
+### Contracts (`Invoria.Financial.Contracts`)
+
+- **Location**
+  - `src/Modules/Financial/Financial.Contracts`
+
+- **Layout** (bounded contexts `Receivables/`, `Payables/`; namespaces follow folders—see `.cursor/rules/module-contracts.mdc`)
+  - `Receivables/Dtos/` — `ReceivableDto` (with optional `Source` (`PublicOrderDto`) and `Party` (`CustomerDto`) enrichment), `ReceivableSettlementDto`.
+  - `Receivables/Enums/` — `FinancialObligationStatus` (single source of truth used by both the `Receivable` and `Payable` aggregates).
+  - `Receivables/Events/` — `CreateOrderReceivableIntegrationEvent` (`Invoria.Financial.Contracts.Receivables.Events`).
+  - `Payables/Dtos/` — `PayableDto` (raw `PartyId`/`SourceId`, no enrichment in v1), `PayableSettlementDto`.
+  - `Payables/Events/` — `CreatePurchaseOrderPayableIntegrationEvent` (`Invoria.Financial.Contracts.Payables.Events`).
+- **Integration events**
+  - **`CreateOrderReceivableIntegrationEvent`**
+    - File: `Receivables/Events/CreateOrderReceivableIntegrationEvent.cs`
+    - Payload: `OrderId`, `CustomerId`, `Amount`.
+    - Published by Ordering's **`CreateOrderReceivableSagaActivityHandler`** (see *Receivable creation flow* below); consumed by Financial via `CreateOrderReceivableIntegrationEventConsumer`.
+  - **`CreatePurchaseOrderPayableIntegrationEvent`**
+    - File: `Payables/Events/CreatePurchaseOrderPayableIntegrationEvent.cs`
+    - Payload: `PurchaseOrderId`, `SupplierId`, `Amount`.
+    - Published by Procurement's **`PurchaseOrderCompletedDomainEventHandler`** when `TotalAmount > 0` (see *Payable creation flow* below); consumed by Financial via `CreatePurchaseOrderPayableIntegrationEventConsumer`.
+- **Assembly marker**
+  - **`AssemblyReference`** (`AssemblyReference.cs`) — anchor for Rebus type-based routing (`MapAssemblyOf<Financial.Contracts.AssemblyReference>` in `ApiModuleInstaller.AddInvoriaRebus`).
+
+### Receivable creation flow
+
+1. On `OrderSaga` completion, Ordering fans out the **`CreateOrderReceivableSagaActivity`** message (`OrderId`, `CustomerId`, `Amount`) — `Invoria.Ordering.Application/Orders/Sagas/Activities/`.
+2. **`CreateOrderReceivableSagaActivityHandler`** publishes **`CreateOrderReceivableIntegrationEvent`**.
+3. Financial's **`CreateOrderReceivableIntegrationEventConsumer`** maps the event to **`CreateReceivableCommand`** (`FromEvent`) and sends it via MediatR.
+4. **`CreateReceivableCommandHandler`** persists the `Receivable` in the `Outstanding` state; the balance is then reduced through one or more **`SettleReceivableCommand`** calls (each validated against `OutstandingAmount`), until `Status` reaches `Paid`.
+
+### Payable creation flow
+
+1. `PurchaseOrder.Complete()` (Procurement.Domain) raises **`PurchaseOrderCompletedDomainEvent`** — the event carries `PurchaseOrderId`, `PurchaseNumber`, `SupplierId`, `CompletedAt`, `TotalAmount`, and line `Items`.
+2. **`PurchaseOrderCompletedDomainEventHandler`** (`Invoria.Procurement.Application/PurchaseOrders/Handlers/`) publishes the existing **`PurchaseOrderCompletedIntegrationEvent`** (consumed by Procurement metrics and Inventory batch creation) and, when `TotalAmount > 0`, also publishes **`CreatePurchaseOrderPayableIntegrationEvent`** (contract owned by `Invoria.Financial.Contracts.Payables.Events`; `Procurement.Application` references `Financial.Contracts` for this — the same cross-contract reference pattern `Ordering.Application` uses for the receivable event). Procurement has no saga here, so the domain event handler is the fan-out point.
+3. Financial's **`CreatePurchaseOrderPayableIntegrationEventConsumer`** maps the event to **`CreatePayableCommand`** (`FromEvent`) and sends it via MediatR.
+4. **`CreatePayableCommandHandler`** persists the `Payable` in the `Outstanding` state; the balance is then reduced through one or more **`SettlePayableCommand`** calls (each validated against `OutstandingAmount`), until `Status` reaches `Paid`.
+
+### Tests (`Invoria.Financial.Application.Tests`)
+
+- **Location**
+  - `tests/Modules/Financial/Financial.Application.Tests`
+
+- **Layout**
+  - **Root**: shared test harness — `FinancialTestFixture.cs` (installs `FinancialTestModuleInstaller`, runs the module bootstrapper, Respawn-resets ignoring `__EFMigrationsHistory` in both before-all and after-all) and `FinancialTestModuleInstaller.cs`.
+  - **`Receivables/Commands/`**: `CreateReceivableCommandHandlerTests` and `SettleReceivableCommandHandlerTests` (valid settlement, not-found, over-settlement, over-settlement after partial settlement, and re-settling a `Paid` receivable).
+  - **`Receivables/Queries/`**: `ListReceivablesQueryHandlerTests`, `GetReceivableByOrderIdQueryHandlerTests` (also exercise `SettleReceivableCommand` to arrange paid/partial states).
+  - **`Payables/Commands/`**: `CreatePayableCommandHandlerTests` and `SettlePayableCommandHandlerTests` — mirrored from the receivable command tests.
+  - **`Payables/Queries/`**: `ListPayablesQueryHandlerTests`, `GetPayableByPurchaseOrderIdQueryHandlerTests` — mirrored from the receivable query tests (list filters: `PartyId`, `SourceId`, `IsPaid`, combined; by-purchase-order incl. settlements and not-found).
+  - **`Fakes/`**: `EmptyListOrderService`, `EmptyListCustomerService` — empty-list collaborators for `ReceivableDto` enrichment during query tests.
+  - **`Assertions/`**: `ReceivableAssertionExtensions.cs`, `PayableAssertionExtensions.cs` — shared DTO assertion helpers.
+
+```mermaid
+flowchart TB
+  root[Financial.Application.Tests root]
+  root --> Recv[Receivables]
+  root --> Pay[Payables]
+  root --> Fakes[Fakes]
+  root --> Assertions[Assertions]
+  Recv --> RCmd[Commands]
+  Recv --> RQry[Queries]
+  Pay --> PCmd[Commands]
+  Pay --> PQry[Queries]
+```
+
+---
+
 ## Host Module (Invoria.Api)
 
 ### Responsibilities
 
 - Bootstrap the application and configure shared infrastructure.
-- Install functional modules (currently, Catalog, CustomerManagement, Ordering, Inventory, and Procurement).
+- Install functional modules (currently, Catalog, CustomerManagement, Financial, Ordering, Inventory, and Procurement).
 - Configure FastEndpoints discovery and Swagger.
 - Register global exception handling and problem details.
 
@@ -559,8 +769,8 @@ flowchart LR
 - **`ApiModuleInstaller`**
   - Location: `src/Invoria.Api/ApiModuleInstaller.cs`
   - Implements `IModuleInstaller` from building blocks.
-  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Inventory, Ordering, and Procurement.
-  - Configures **Rebus** once (`AddInvoriaRebus`): SQL Server transport, subscription storage in SQL Server, System.Text.Json serialization, and type-based routing (see `MapAssemblyOf<IntegrationEventsAssemblyMarker>` for the assembly used as the integration-events routing anchor).
+  - Installs modules via `services.InstallModule<...ModuleInstaller>(configuration)`, including Catalog, CustomerManagement, Financial, Inventory, Ordering, and Procurement.
+  - Configures **Rebus** once (`AddInvoriaRebus`): SQL Server transport, subscription storage in SQL Server, System.Text.Json serialization, and type-based routing — `MapAssemblyOf` for the `Ordering.Contracts`, `Inventory.Contracts`, and `Financial.Contracts` assemblies to the module input queue.
   - Adds shared application infrastructure via `AddApplicationInfrastructure()`.
   - Registers global exception handler `GlobalExceptionHandler` and `ProblemDetails`.
   - Configures Swagger using `SwaggerDocument`.
@@ -971,6 +1181,7 @@ flowchart LR
   - Modules register `Rebus.Handlers.IHandleMessages<T>` implementations with the DI container.
   - Inventory registers integration event handlers via `RebusHandlersServiceInstaller` in `Invoria.Inventory.Infrastructure`.
   - Ordering registers `OrderSaga` via `RebusHandlersServiceInstaller` in `Invoria.Ordering.Infrastructure`.
+  - Financial registers `CreateOrderReceivableIntegrationEventConsumer` via `RebusHandlersServiceInstaller` in `Invoria.Financial.Infrastructure`; `FinancialModuleBootStrapper` subscribes to `CreateOrderReceivableIntegrationEvent` at startup.
 
 - **Sagas**
   - Saga state is persisted in SQL Server tables `RebusSagas` (JSON payload) and `RebusSagaIndex` (correlation properties), configured in `AddInvoriaRebus` via `.Sagas(s => s.StoreInSqlServer(...))`.
@@ -997,7 +1208,7 @@ flowchart LR
   - Orchestrates module installation and shared infrastructure (including Rebus).
   - Depends on:
     - BuildingBlocks Core and Infrastructure for modularity and endpoint wiring.
-    - Module installers for Catalog, CustomerManagement, Inventory, Ordering, and Procurement (each module’s Infrastructure project).
+    - Module installers for Catalog, CustomerManagement, Financial, Inventory, Ordering, and Procurement (each module’s Infrastructure project).
 
 - **Catalog.Endpoints (Presentation)**
   - Only interacts with the **Application** layer and shared infrastructure:
@@ -1033,6 +1244,11 @@ flowchart LR
 
 - **Procurement (layered module)**
   - **Endpoints** depend on **Application** and **Contracts**; **Application** depends on **Domain** and **Contracts**; **Infrastructure** provides EF persistence (`ProcurementDbContext`, `ProcurementRepository<>`) and supporting services behind abstractions.
+
+- **Financial (layered module)**
+  - Same dependency shape as Procurement. **Infrastructure** provides `FinancialDbContext` (with `Receivable`/`ReceivableSettlement` and `Payable`/`PayableSettlement` configurations, the `AddReceivable` and `AddPayable` migrations, and a design-time `FinancialDbContextFactory`) and `FinancialRepository<>` behind `IFinancialRepository<>`; `FinancialModuleInstaller` is registered by the host and `FinancialModuleBootStrapper` applies pending migrations and subscribes to `CreateOrderReceivableIntegrationEvent` and `CreatePurchaseOrderPayableIntegrationEvent`.
+  - **Application** implements the two obligation lifecycles. Receivables: `CreateReceivableCommand` (driven by the Rebus consumer), `SettleReceivableCommand` (validates `Amount` against `OutstandingAmount` before `Receivable.Settle`), and the list/get queries. Payables: `CreatePayableCommand` (driven by the Rebus consumer), `SettlePayableCommand` (same validation ladder against `OutstandingAmount`), and the list/get-by-purchase-order queries. **Endpoints** expose `GET /receivables`, `/receivables/{id}`, `/receivables/by-order/{orderId}`, `POST /receivables/{id}/settle`, and the payable mirror `GET /payables`, `/payables/{id}`, `/payables/by-purchase-order/{purchaseOrderId}`, `POST /payables/{id}/settle`.
+  - **Trigger side**: Ordering fans out the receivable event from `OrderSaga` via a saga activity; Procurement fans out the payable event directly from `PurchaseOrderCompletedDomainEventHandler` (no saga), publishing `Financial.Contracts`' `CreatePurchaseOrderPayableIntegrationEvent` when `TotalAmount > 0`.
 
 This structure ensures a clear separation of concerns: endpoints handle HTTP and validation, the application layer orchestrates use cases, the domain encapsulates core business rules and entities, and infrastructure provides persistence, messaging registration, and other integration details behind abstractions. Integration events travel over Rebus using contract types in the owning module’s `{Module}.Contracts` project and handlers registered in consuming modules.
 

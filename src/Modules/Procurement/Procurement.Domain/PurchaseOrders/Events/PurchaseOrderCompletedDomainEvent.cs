@@ -9,12 +9,14 @@ public sealed class PurchaseOrderCompletedDomainEvent : DomainEvent
         string purchaseNumber,
         string supplierId,
         DateTimeOffset completedAt,
+        decimal totalAmount,
         IReadOnlyList<Item> items)
     {
         PurchaseOrderId = purchaseOrderId;
         PurchaseNumber = purchaseNumber;
         SupplierId = supplierId;
         CompletedAt = completedAt;
+        TotalAmount = totalAmount;
         Items = items;
     }
 
@@ -22,6 +24,7 @@ public sealed class PurchaseOrderCompletedDomainEvent : DomainEvent
     public string PurchaseNumber { get; }
     public string SupplierId { get; }
     public DateTimeOffset CompletedAt { get; }
+    public decimal TotalAmount { get; }
     public IReadOnlyList<Item> Items { get; }
 
     public sealed record Item(

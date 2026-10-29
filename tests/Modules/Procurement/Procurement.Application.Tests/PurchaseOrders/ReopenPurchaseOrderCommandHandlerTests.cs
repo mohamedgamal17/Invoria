@@ -116,7 +116,6 @@ public class ReopenPurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Reopen Supplier Draft",
             contactEmail: "reopen-draft@example.com",
             phone: "+1",

@@ -5,7 +5,6 @@ namespace Invoria.Procurement.Endpoints.Parties.Requests;
 
 public class SupplierRequest
 {
-    public string SupplierCode { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string? ContactEmail { get; set; }
     public string? Phone { get; set; }
@@ -16,10 +15,6 @@ public class SupplierRequestValidator<T> : AbstractValidator<T>
 {
     public SupplierRequestValidator()
     {
-        RuleFor(x => x.SupplierCode)
-            .NotEmpty()
-            .MaximumLength(SupplierTableConsts.SupplierCodeMaxLength);
-
         RuleFor(x => x.Name)
             .NotEmpty()
             .MinimumLength(3)

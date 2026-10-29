@@ -24,9 +24,7 @@ public class CreateSupplierCommandHandlerTests : ProcurementTestFixture
     public async Task Should_create_supplier()
     {
         // Arrange
-        var supplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8];
         var command = new CreateSupplierCommand(
-            supplierCode: supplierCode,
             name: "Acme Corp",
             contactEmail: "acme@example.com",
             phone: "+1");
@@ -40,15 +38,12 @@ public class CreateSupplierCommandHandlerTests : ProcurementTestFixture
         var supplier = await SupplierRepository.SingleOrDefault(x => x.Id == result.Value!.Id);
         supplier.Should().NotBeNull();
 
-        supplier!.SupplierCode.Should().Be(supplierCode);
-        supplier.Name.Should().Be("Acme Corp");
+        supplier!.Name.Should().Be("Acme Corp");
         supplier.ContactEmail.Should().Be("acme@example.com");
         supplier.Phone.Should().Be("+1");
 
-        result.Value!.SupplierCode.Should().Be(supplier.SupplierCode);
-        result.Value.Name.Should().Be(supplier.Name);
+        result.Value!.Name.Should().Be(supplier.Name);
         result.Value.ContactEmail.Should().Be(supplier.ContactEmail);
         result.Value.Phone.Should().Be(supplier.Phone);
     }
 }
-

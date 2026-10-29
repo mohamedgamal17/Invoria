@@ -70,7 +70,6 @@ public class SubmitPurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Submit Supplier",
             contactEmail: "submit-empty@example.com",
             phone: "+1",
@@ -93,7 +92,6 @@ public class SubmitPurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Submit Supplier",
             contactEmail: "submit@example.com",
             phone: "+1",

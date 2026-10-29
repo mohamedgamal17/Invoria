@@ -237,6 +237,80 @@ public class OrderResponseFactoryTests : OrderingTestFixture
         paged.Data.Single().ReturnItems.Should().BeEmpty();
     }
 
+    [Test]
+    public async Task PreparePublicOrderDto_should_map_every_public_field()
+    {
+        var customerId = Guid.NewGuid().ToString();
+        var productId = Guid.NewGuid().ToString();
+        var otherProductId = Guid.NewGuid().ToString();
+        var allocationId = Guid.NewGuid().ToString();
+        var returnId = Guid.NewGuid().ToString();
+        var invoiceId = Guid.NewGuid().ToString();
+
+        var order = new Order("PUBLIC-MAP", customerId, OrderPaymentType.Debt);
+        typeof(Order).GetProperty(nameof(Order.AllocationId))!.SetValue(order, allocationId);
+        typeof(Order).GetProperty(nameof(Order.ReturnId))!.SetValue(order, returnId);
+        typeof(Order).GetProperty(nameof(Order.InvoiceId))!.SetValue(order, invoiceId);
+        typeof(Order).GetProperty(nameof(Order.OrderAllocated))!.SetValue(order, true);
+        SetEntityId(order, "public-map-order");
+        order.UpdateItems(new List<OrderItem>
+        {
+            new(productId, 2, 10m),
+            new(otherProductId, 1, 5m)
+        });
+        SetEntityId(order.Items[0], "public-line-returned");
+        order.Accept();
+        order.Complete([new OrderReturnItem("public-line-returned", 1)]);
+        order.RecordPayment(5m, OrderPaymentMethod.Cash, DateTimeOffset.Parse("2026-06-02T10:00:00Z"));
+
+        var dto = await Factory.PreparePublicOrderDto(order);
+
+        dto.Id.Should().Be("public-map-order");
+        dto.OrderNumber.Should().Be("PUBLIC-MAP");
+        dto.CustomerId.Should().Be(customerId);
+        dto.Status.Should().Be(OrderStatus.Completed);
+        dto.PaymentType.Should().Be(OrderPaymentType.Debt);
+        dto.SubtotalAmount.Should().Be(25m);
+        dto.ReturnsAmount.Should().Be(10m);
+        dto.NetOrderAmount.Should().Be(15m);
+        dto.AmountOutstanding.Should().Be(10m);
+        dto.AllocationId.Should().Be(allocationId);
+        dto.ReturnId.Should().Be(returnId);
+        dto.InvoiceId.Should().Be(invoiceId);
+        dto.OrderAllocated.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task PreparePublicListDto_should_map_every_order()
+    {
+        var pid = Guid.NewGuid().ToString();
+        var customerId = Guid.NewGuid().ToString();
+
+        var order1 = new Order("PUB-1", customerId);
+        order1.UpdateItems(new List<OrderItem> { new(pid, 2, 10m) });
+
+        var order2 = new Order("PUB-2", customerId);
+        order2.UpdateItems(new List<OrderItem> { new(pid, 1, 5m) });
+
+        var orders = new List<Order> { order1, order2 };
+
+        var dtos = await Factory.PreparePublicListDto(orders);
+
+        dtos.Should().HaveCount(2);
+        dtos[0].OrderNumber.Should().Be("PUB-1");
+        dtos[0].CustomerId.Should().Be(customerId);
+        dtos[0].SubtotalAmount.Should().Be(20m);
+        dtos[0].ReturnsAmount.Should().Be(0m);
+        dtos[0].NetOrderAmount.Should().Be(20m);
+        dtos[0].AmountOutstanding.Should().Be(20m);
+        dtos[0].OrderAllocated.Should().BeFalse();
+
+        dtos[1].OrderNumber.Should().Be("PUB-2");
+        dtos[1].SubtotalAmount.Should().Be(5m);
+        dtos[1].NetOrderAmount.Should().Be(5m);
+        dtos[1].AmountOutstanding.Should().Be(5m);
+    }
+
     private static void SetEntityId(Entity entity, string id) =>
         typeof(Entity).GetProperty(nameof(Entity.Id))!.SetValue(entity, id);
 

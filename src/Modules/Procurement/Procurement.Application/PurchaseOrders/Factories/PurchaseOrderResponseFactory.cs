@@ -18,7 +18,6 @@ public sealed class PurchaseOrderResponseFactory : ResponseFactory<PurchaseOrder
                 : new PurchaseOrderSupplierSummaryDto
                 {
                     Id = view.Supplier.Id,
-                    SupplierCode = view.Supplier.SupplierCode,
                     Name = view.Supplier.Name
                 },
             State = view.State,

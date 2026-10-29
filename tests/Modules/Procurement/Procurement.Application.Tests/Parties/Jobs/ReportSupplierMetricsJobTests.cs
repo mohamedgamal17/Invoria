@@ -71,7 +71,6 @@ public class ReportSupplierMetricsJobTests : ProcurementBackgroundJobTestFixture
         {
             var supplier = Supplier.Create(
                 id: Guid.NewGuid().ToString("N"),
-                supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
                 name: "Supplier " + Guid.NewGuid().ToString("N"),
                 contactEmail: null,
                 phone: null,

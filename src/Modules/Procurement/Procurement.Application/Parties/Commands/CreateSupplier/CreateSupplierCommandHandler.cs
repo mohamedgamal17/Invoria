@@ -24,7 +24,6 @@ public sealed class CreateSupplierCommandHandler : IApplicatonRequestHandler<Cre
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: request.SupplierCode,
             name: request.Name,
             contactEmail: request.ContactEmail,
             phone: request.Phone,

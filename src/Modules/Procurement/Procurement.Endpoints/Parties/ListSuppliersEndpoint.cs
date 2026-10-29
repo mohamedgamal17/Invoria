@@ -45,8 +45,7 @@ public sealed class ListSuppliersEndpoint : EndpointBase<ListSuppliersRequest, P
         {
             Skip = req.Skip,
             Length = req.Length,
-            Name = req.Name,
-            Code = req.Code
+            Name = req.Name
         };
 
         var result = await _mediator.Send(query, ct);

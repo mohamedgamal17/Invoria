@@ -94,7 +94,6 @@ public class ReopenPurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Draft supplier for reopen purchase order",
             ContactEmail = "reopen-draft-supplier@example.com",
             Phone = "+1"

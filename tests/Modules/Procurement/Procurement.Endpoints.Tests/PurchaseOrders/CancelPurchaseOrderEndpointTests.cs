@@ -68,7 +68,6 @@ public class CancelPurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for cancel purchase order",
             ContactEmail = "cancel-supplier@example.com",
             Phone = "+1"

@@ -45,9 +45,9 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     [Test]
     public async Task Should_return_paged_suppliers()
     {
-        await CreateSupplierAsync("ACM-001", "Acme Tools");
-        await CreateSupplierAsync("ACM-002", "Acme Industrial");
-        var third = await CreateSupplierAsync("BET-001", "Beta Metals");
+        await CreateSupplierAsync("Acme Tools");
+        await CreateSupplierAsync("Acme Industrial");
+        var third = await CreateSupplierAsync("Beta Metals");
 
         var query = new ListSupplierQuery { Skip = 1, Length = 2 };
 
@@ -64,8 +64,8 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     [Test]
     public async Task Should_filter_by_name_contains_case_insensitive()
     {
-        var matching = await CreateSupplierAsync("ACM-101", "Acme Supply");
-        await CreateSupplierAsync("BET-101", "Beta Supply");
+        var matching = await CreateSupplierAsync("Acme Supply");
+        await CreateSupplierAsync("Beta Supply");
 
         var query = new ListSupplierQuery
         {
@@ -84,63 +84,16 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     }
 
     [Test]
-    public async Task Should_filter_by_code_contains_case_insensitive()
-    {
-        var matching = await CreateSupplierAsync("SUP-ALPHA-001", "Gamma");
-        await CreateSupplierAsync("SUP-BETA-002", "Delta");
-
-        var query = new ListSupplierQuery
-        {
-            Skip = 0,
-            Length = 10,
-            Code = "alpha"
-        };
-
-        var result = await Mediator.Send(query);
-
-        result.ShouldBeSuccess();
-        result.Value.Should().NotBeNull();
-        result.Value!.Info.TotalCount.Should().Be(1);
-        result.Value.Data.Should().ContainSingle();
-        result.Value.Data.Single().Id.Should().Be(matching.Id);
-    }
-
-    [Test]
-    public async Task Should_filter_by_name_and_code()
-    {
-        var matching = await CreateSupplierAsync("SUP-ACME-001", "Acme North");
-        await CreateSupplierAsync("SUP-ACME-002", "Acme South");
-        await CreateSupplierAsync("SUP-BETA-003", "Beta North");
-
-        var query = new ListSupplierQuery
-        {
-            Skip = 0,
-            Length = 10,
-            Name = "north",
-            Code = "acme"
-        };
-
-        var result = await Mediator.Send(query);
-
-        result.ShouldBeSuccess();
-        result.Value.Should().NotBeNull();
-        result.Value!.Info.TotalCount.Should().Be(1);
-        result.Value.Data.Should().ContainSingle();
-        result.Value.Data.Single().Id.Should().Be(matching.Id);
-    }
-
-    [Test]
     public async Task Should_ignore_whitespace_only_filters()
     {
-        var one = await CreateSupplierAsync("SUP-001", "Acme");
-        var two = await CreateSupplierAsync("SUP-002", "Beta");
+        var one = await CreateSupplierAsync("Acme");
+        var two = await CreateSupplierAsync("Beta");
 
         var query = new ListSupplierQuery
         {
             Skip = 0,
             Length = 10,
-            Name = "   ",
-            Code = "\t"
+            Name = "   "
         };
 
         var result = await Mediator.Send(query);
@@ -156,8 +109,8 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
     public async Task Should_return_suppliers_ordered_by_created_at_descending()
     {
         var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
-        var first = await CreateSupplierAsync("SUP-ORD-001", "Zulu", createdAt: baseTime);
-        var second = await CreateSupplierAsync("SUP-ORD-002", "Alpha", createdAt: baseTime.AddHours(2));
+        var first = await CreateSupplierAsync("Zulu", createdAt: baseTime);
+        var second = await CreateSupplierAsync("Alpha", createdAt: baseTime.AddHours(2));
 
         var query = new ListSupplierQuery
         {
@@ -174,11 +127,10 @@ public class ListSuppliersQueryHandlerTests : ProcurementTestFixture
         result.Value.Data.First(x => x.Id == second.Id).Should().NotBeNull();
     }
 
-    private async Task<Supplier> CreateSupplierAsync(string supplierCode, string name, string? id = null, DateTimeOffset? createdAt = null)
+    private async Task<Supplier> CreateSupplierAsync(string name, string? id = null, DateTimeOffset? createdAt = null)
     {
         var supplier = Supplier.Create(
             id: id ?? Guid.NewGuid().ToString("N"),
-            supplierCode: supplierCode,
             name: name,
             contactEmail: null,
             phone: null,

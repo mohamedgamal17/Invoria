@@ -25,17 +25,13 @@ public class UpdateSupplierCommandHandlerTests : ProcurementTestFixture
     public async Task Should_update_supplier()
     {
         // Arrange
-        var oldSupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8];
-        var newSupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8];
         var existing = await CreateSupplierAsync(
-            supplierCode: oldSupplierCode,
             name: "Old Name",
             contactEmail: null,
             phone: null);
 
         var command = new UpdateSupplierCommand(
             id: existing.Id,
-            supplierCode: newSupplierCode,
             name: "New Name",
             contactEmail: "new@example.com",
             phone: "+2");
@@ -48,13 +44,11 @@ public class UpdateSupplierCommandHandlerTests : ProcurementTestFixture
 
         var supplier = await SupplierRepository.SingleOrDefault(x => x.Id == existing.Id);
         supplier.Should().NotBeNull();
-        supplier!.SupplierCode.Should().Be(newSupplierCode);
-        supplier.Name.Should().Be("New Name");
+        supplier!.Name.Should().Be("New Name");
         supplier.ContactEmail.Should().Be("new@example.com");
         supplier.Phone.Should().Be("+2");
 
         result.Value!.Id.Should().Be(existing.Id);
-        result.Value.SupplierCode.Should().Be(newSupplierCode);
         result.Value.Name.Should().Be("New Name");
     }
 
@@ -64,7 +58,6 @@ public class UpdateSupplierCommandHandlerTests : ProcurementTestFixture
         // Arrange
         var command = new UpdateSupplierCommand(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-NEW",
             name: "New Name",
             contactEmail: null,
             phone: null);
@@ -79,14 +72,12 @@ public class UpdateSupplierCommandHandlerTests : ProcurementTestFixture
     }
 
     private async Task<Supplier> CreateSupplierAsync(
-        string supplierCode,
         string name,
         string? contactEmail,
         string? phone)
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: supplierCode,
             name: name,
             contactEmail: contactEmail,
             phone: phone,
@@ -95,4 +86,3 @@ public class UpdateSupplierCommandHandlerTests : ProcurementTestFixture
         return await SupplierRepository.Add(supplier);
     }
 }
-

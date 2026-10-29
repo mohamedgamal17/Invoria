@@ -63,7 +63,6 @@ public class RejectPurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for reject purchase order",
             ContactEmail = "reject-supplier@example.com",
             Phone = "+1"

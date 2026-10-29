@@ -103,7 +103,6 @@ public class CancelPurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Cancel Supplier Draft",
             contactEmail: "cancel-draft@example.com",
             phone: "+1",

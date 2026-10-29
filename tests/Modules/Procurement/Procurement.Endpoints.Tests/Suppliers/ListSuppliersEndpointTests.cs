@@ -16,7 +16,6 @@ public class ListSuppliersEndpointTests : ProcurementTestFixture
     {
         var createRequest = new
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Acme Searchable",
             ContactEmail = (string?)null,
             Phone = (string?)null
@@ -40,13 +39,12 @@ public class ListSuppliersEndpointTests : ProcurementTestFixture
     }
 
     [Test]
-    public async Task Should_filter_by_code_and_ignore_whitespace_name()
+    public async Task Should_filter_by_name_and_ignore_whitespace_only_name()
     {
-        var matchingCode = "SUP-FLTR-" + Guid.NewGuid().ToString("N")[..6];
+        var matchingName = "Fltreon " + Guid.NewGuid().ToString("N")[..6];
         var createMatching = await Client.PostAsJsonAsync("/suppliers", new
         {
-            SupplierCode = matchingCode,
-            Name = "Northwind",
+            Name = "Northwind " + matchingName,
             ContactEmail = (string?)null,
             Phone = (string?)null
         });
@@ -54,14 +52,13 @@ public class ListSuppliersEndpointTests : ProcurementTestFixture
 
         var createOther = await Client.PostAsJsonAsync("/suppliers", new
         {
-            SupplierCode = "SUP-OTHER-" + Guid.NewGuid().ToString("N")[..6],
             Name = "Other Supplier",
             ContactEmail = (string?)null,
             Phone = (string?)null
         });
         createOther.EnsureSuccessStatusCode();
 
-        var query = new { Skip = 0, Length = 100, Name = "   ", Code = "fltr" };
+        var query = new { Skip = 0, Length = 100, Name = "fltreon" };
         var uri = "/suppliers?" + QueryStringHelper.ToQueryString(query);
 
         var response = await Client.GetAsync(uri);
@@ -72,7 +69,7 @@ public class ListSuppliersEndpointTests : ProcurementTestFixture
         envelope.Should().NotBeNull();
         envelope!.IsSuccess.Should().BeTrue();
         envelope.Result.Should().NotBeNull();
-        envelope.Result!.Data.Should().ContainSingle(x => x.SupplierCode == matchingCode);
+        envelope.Result!.Data.Should().ContainSingle(x => x.Name == "Northwind " + matchingName);
     }
 
     [Test]

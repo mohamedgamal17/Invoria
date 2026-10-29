@@ -83,7 +83,6 @@ public class RejectPurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Reject Supplier Draft",
             contactEmail: "reject-draft@example.com",
             phone: "+1",

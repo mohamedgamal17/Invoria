@@ -26,7 +26,6 @@ public class UpdateSupplierEndpointTests : ProcurementTestFixture
         var request = new UpdateSupplierRequest
         {
             Id = supplier.Id,
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Updated Name",
             ContactEmail = "updated@example.com",
             Phone = "+2"
@@ -44,7 +43,6 @@ public class UpdateSupplierEndpointTests : ProcurementTestFixture
         var request = new UpdateSupplierRequest
         {
             Id = Guid.NewGuid().ToString("N"),
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Updated Name",
             ContactEmail = null,
             Phone = null
@@ -60,7 +58,6 @@ public class UpdateSupplierEndpointTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Acme Corp",
             contactEmail: null,
             phone: null,

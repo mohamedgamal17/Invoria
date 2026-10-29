@@ -144,7 +144,6 @@ public class UpdatePurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for update purchase order",
             ContactEmail = "supplier@example.com",
             Phone = "+1"

@@ -162,6 +162,7 @@ public class PurchaseOrder : AuditedAggregateRoot
             purchaseNumber: PurchaseNumber,
             supplierId: SupplierId,
             completedAt: DateTimeOffset.UtcNow,
+            totalAmount: TotalAmount,
             items: _items
                 .Select(i => new PurchaseOrderCompletedDomainEvent.Item(
                     PurchaseOrderItemId: i.Id,

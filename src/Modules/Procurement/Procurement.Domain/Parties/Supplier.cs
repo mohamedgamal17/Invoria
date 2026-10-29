@@ -4,7 +4,6 @@ namespace Invoria.Procurement.Domain.Parties;
 
 public sealed class Supplier : AuditedAggregateRoot
 {
-    public string SupplierCode { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public string? ContactEmail { get; private set; }
     public string? Phone { get; private set; }
@@ -15,7 +14,6 @@ public sealed class Supplier : AuditedAggregateRoot
 
     public static Supplier Create(
         string id,
-        string supplierCode,
         string name,
         string? contactEmail,
         string? phone,
@@ -26,11 +24,6 @@ public sealed class Supplier : AuditedAggregateRoot
             throw new ArgumentException("Id cannot be empty.", nameof(id));
         }
 
-        if (string.IsNullOrWhiteSpace(supplierCode))
-        {
-            throw new ArgumentException("Supplier code cannot be empty.", nameof(supplierCode));
-        }
-
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Name is required.", nameof(name));
@@ -39,7 +32,6 @@ public sealed class Supplier : AuditedAggregateRoot
         return new Supplier
         {
             Id = id,
-            SupplierCode = supplierCode,
             Name = name,
             ContactEmail = contactEmail,
             Phone = phone,
@@ -49,23 +41,16 @@ public sealed class Supplier : AuditedAggregateRoot
     }
 
     public void Update(
-        string supplierCode,
         string name,
         string? contactEmail,
         string? phone,
         string? lastModifiedBy)
     {
-        if (string.IsNullOrWhiteSpace(supplierCode))
-        {
-            throw new ArgumentException("Supplier code cannot be empty.", nameof(supplierCode));
-        }
-
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Name is required.", nameof(name));
         }
 
-        SupplierCode = supplierCode;
         Name = name;
         ContactEmail = contactEmail;
         Phone = phone;

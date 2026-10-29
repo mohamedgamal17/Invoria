@@ -40,7 +40,7 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
         result.Value!.State.Should().Be(PurchaseState.Approved);
         result.Value.Supplier.Should().NotBeNull();
         result.Value.Supplier!.Name.Should().Be("Approve Supplier");
-        result.Value.Supplier.SupplierCode.Should().StartWith("SUP-");
+        result.Value.Supplier.Name.Should().NotBeNullOrWhiteSpace();
 
         var purchaseOrder = await PurchaseOrderRepository.SingleOrDefault(x => x.Id == created.Id);
         purchaseOrder.Should().NotBeNull();
@@ -71,7 +71,6 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Approve Supplier",
             contactEmail: "approve@example.com",
             phone: "+1",
@@ -110,7 +109,6 @@ public class ApprovePurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Approve Supplier Draft",
             contactEmail: "approve-draft@example.com",
             phone: "+1",

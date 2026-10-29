@@ -96,6 +96,48 @@ namespace Invoria.Ordering.Application.Orders.Factories
             };
         }
 
+        public Task<PublicOrderDto> PreparePublicOrderDto(
+            Order order,
+            CancellationToken cancellationToken = default)
+        {
+            var publicOrderDto = MapToPublicDto(order);
+
+            return Task.FromResult(publicOrderDto);
+        }
+
+        public Task<List<PublicOrderDto>> PreparePublicListDto(
+            List<Order> orders,
+            CancellationToken cancellationToken = default)
+        {
+            var publicOrderDtos = orders
+                .Select(MapToPublicDto)
+                .ToList();
+
+            return Task.FromResult(publicOrderDtos);
+        }
+
+        private static PublicOrderDto MapToPublicDto(Order view)
+        {
+            var publicOrderDto = new PublicOrderDto
+            {
+                Id = view.Id,
+                OrderNumber = view.OrderNumber,
+                CustomerId = view.CustomerId,
+                Status = view.Status,
+                PaymentType = view.PaymentType,
+                SubtotalAmount = view.TotalOrderAmount,
+                ReturnsAmount = view.TotalReturnAmount,
+                NetOrderAmount = view.NetOfTotalOrderAmount,
+                AmountOutstanding = view.AmountOutstanding,
+                AllocationId = view.AllocationId,
+                ReturnId = view.ReturnId,
+                InvoiceId = view.InvoiceId,
+                OrderAllocated = view.OrderAllocated
+            };
+
+            return publicOrderDto;
+        }
+
         private OrderDto MapToSummaryDto(
             Order view,
             IReadOnlyDictionary<string, CustomerDto> customerById,

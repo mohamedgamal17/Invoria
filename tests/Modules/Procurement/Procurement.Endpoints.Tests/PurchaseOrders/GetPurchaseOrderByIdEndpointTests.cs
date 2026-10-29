@@ -42,7 +42,6 @@ public class GetPurchaseOrderByIdEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for get purchase order",
             ContactEmail = "get-po@example.com",
             Phone = "+1"

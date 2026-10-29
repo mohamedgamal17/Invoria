@@ -112,8 +112,6 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         await _bus.Publish(new RecordOrderCompletedMetricsSagaActivity(
             message.OccurredOn));
 
-        MarkAsComplete();
-
         if (message.ReturnLines.Count > 0 && !string.IsNullOrEmpty(message.AllocationId))
         {
             await _bus.Publish(new CreateOrderReturnSagaActivity(
@@ -126,5 +124,16 @@ public sealed class OrderSaga : Saga<OrderSagaState>,
         {
             await _bus.Publish(new CreateOrderInvoiceSagaActivity(message.OrderId));
         }
+
+        if (message.Amount > 0m)
+        {
+            var receivableActivity = new CreateOrderReceivableSagaActivity(
+                message.OrderId,
+                message.CustomerId,
+                message.Amount);
+            await _bus.Publish(receivableActivity);
+        }
+
+        MarkAsComplete();
     }
 }
