@@ -17,7 +17,7 @@ namespace Invoria.Procurement.Infrastructure.EntityFramework.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.30")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -80,11 +80,6 @@ namespace Invoria.Procurement.Infrastructure.EntityFramework.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
-                    b.Property<string>("SupplierCode")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt");
@@ -94,9 +89,6 @@ namespace Invoria.Procurement.Infrastructure.EntityFramework.Migrations
                     b.HasIndex("LastModifiedAt");
 
                     b.HasIndex("LastModifiedBy");
-
-                    b.HasIndex("SupplierCode")
-                        .IsUnique();
 
                     b.ToTable("Suppliers", (string)null);
                 });

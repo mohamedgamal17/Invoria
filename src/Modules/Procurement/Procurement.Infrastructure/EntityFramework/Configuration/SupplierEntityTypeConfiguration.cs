@@ -16,9 +16,6 @@ public sealed class SupplierEntityTypeConfiguration : IEntityTypeConfiguration<S
         builder.Property(x => x.Id)
             .HasMaxLength(SupplierTableConsts.IdMaxLength);
 
-        builder.Property(x => x.SupplierCode)
-            .HasMaxLength(SupplierTableConsts.SupplierCodeMaxLength);
-
         builder.Property(x => x.Name)
             .HasMaxLength(SupplierTableConsts.NameMaxLength);
 
@@ -29,8 +26,5 @@ public sealed class SupplierEntityTypeConfiguration : IEntityTypeConfiguration<S
             .HasMaxLength(SupplierTableConsts.PhoneMaxLength);
 
         builder.MapAudited();
-
-        builder.HasIndex(x => x.SupplierCode)
-            .IsUnique();
     }
 }
