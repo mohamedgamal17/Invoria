@@ -51,7 +51,8 @@ jobs:
           curl -fsSL https://packages.microsoft.com/keys/microsoft.asc -o /tmp/microsoft.asc
           sudo install -D -m 0644 /tmp/microsoft.asc /etc/apt/keyrings/microsoft.asc
           curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" \
-            | sed "s|^deb |deb [signed-by=/etc/apt/keyrings/microsoft.asc] |" \
+            | sed -e "s|signed-by=[^ \]]*|signed-by=/etc/apt/keyrings/microsoft.asc|g" \
+                  -e "/microsoft\.asc/!s|^deb |deb [signed-by=/etc/apt/keyrings/microsoft.asc] |" \
             | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
