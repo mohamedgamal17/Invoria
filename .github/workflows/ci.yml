@@ -48,10 +48,13 @@ jobs:
 
       - name: Install sqlcmd client
         run: |
-          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-          curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo mkdir -p /etc/apt/keyrings
+          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+          curl -fsSL https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
+          sudo sed -i 's/^deb\[ /deb [signed-by=/etc/apt/keyrings/microsoft.gpg ] /; s/^deb /deb [signed-by=/etc/apt/keyrings/microsoft.gpg] /' /etc/apt/sources.list.d/mssql-release.list
           sudo apt-get update
           sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
 
       - name: Wait for SQL Server readiness
         shell: bash
