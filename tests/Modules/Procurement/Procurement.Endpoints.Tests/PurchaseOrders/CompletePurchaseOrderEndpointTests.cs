@@ -76,7 +76,6 @@ public class CompletePurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Draft supplier for complete purchase order",
             ContactEmail = "complete-draft-supplier@example.com",
             Phone = "+1"

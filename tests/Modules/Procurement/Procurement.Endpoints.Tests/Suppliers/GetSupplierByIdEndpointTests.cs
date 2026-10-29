@@ -23,7 +23,6 @@ public class GetSupplierByIdEndpointTests : ProcurementTestFixture
     public async Task Should_return_supplier_when_found()
     {
         var supplier = await CreateSupplierAsync(
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Acme Corp",
             contactEmail: "acme@example.com",
             phone: "+1");
@@ -37,7 +36,6 @@ public class GetSupplierByIdEndpointTests : ProcurementTestFixture
         envelope!.IsSuccess.Should().BeTrue();
         envelope.Result.Should().NotBeNull();
         envelope.Result!.Id.Should().Be(supplier.Id);
-        envelope.Result.SupplierCode.Should().Be(supplier.SupplierCode);
         envelope.Result.Name.Should().Be(supplier.Name);
     }
 
@@ -51,14 +49,12 @@ public class GetSupplierByIdEndpointTests : ProcurementTestFixture
     }
 
     private async Task<Supplier> CreateSupplierAsync(
-        string supplierCode,
         string name,
         string? contactEmail,
         string? phone)
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: supplierCode,
             name: name,
             contactEmail: contactEmail,
             phone: phone,

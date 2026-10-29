@@ -14,7 +14,6 @@ public class CreateSupplierEndpointTests : ProcurementTestFixture
     {
         var request = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Acme Corp",
             ContactEmail = "acme@example.com",
             Phone = "+1"
@@ -31,7 +30,6 @@ public class CreateSupplierEndpointTests : ProcurementTestFixture
     {
         var request = new CreateSupplierRequest
         {
-            SupplierCode = "",
             Name = "a",
             ContactEmail = new string('a', 300),
             Phone = new string('1', 200)

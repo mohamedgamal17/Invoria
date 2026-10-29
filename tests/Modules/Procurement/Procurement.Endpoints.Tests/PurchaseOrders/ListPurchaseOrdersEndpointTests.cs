@@ -194,7 +194,6 @@ public class ListPurchaseOrdersEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for list purchase orders",
             ContactEmail = "list-po@example.com",
             Phone = "+1"

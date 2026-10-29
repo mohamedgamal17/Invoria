@@ -115,7 +115,6 @@ public class CompletePurchaseOrderCommandHandlerTests : ProcurementTestFixture
     {
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Complete Supplier",
             contactEmail: "complete@example.com",
             phone: "+1",

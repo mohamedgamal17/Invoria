@@ -51,7 +51,6 @@ public class ApprovePurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for approve purchase order",
             ContactEmail = "approve-supplier@example.com",
             Phone = "+1"
@@ -92,7 +91,6 @@ public class ApprovePurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Draft supplier for approve purchase order",
             ContactEmail = "approve-draft-supplier@example.com",
             Phone = "+1"

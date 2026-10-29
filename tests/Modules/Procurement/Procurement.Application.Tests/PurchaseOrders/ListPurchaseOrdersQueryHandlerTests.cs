@@ -284,7 +284,7 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         dto.Supplier.Should().NotBeNull();
         dto.Supplier!.Id.Should().Be(purchaseOrder.SupplierId);
         dto.Supplier.Name.Should().Be("List Supplier");
-        dto.Supplier.SupplierCode.Should().StartWith("SUP-");
+        dto.Supplier.Name.Should().NotBeNullOrWhiteSpace();
     }
 
     [Test]
@@ -328,7 +328,6 @@ public class ListPurchaseOrdersQueryHandlerTests : ProcurementTestFixture
         {
             supplierEntity = Supplier.Create(
                 id: Guid.NewGuid().ToString("N"),
-                supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
                 name: "List Supplier",
                 contactEmail: null,
                 phone: null,

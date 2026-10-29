@@ -78,7 +78,6 @@ public class SubmitPurchaseOrderEndpointTests : ProcurementTestFixture
     {
         var createSupplierRequest = new CreateSupplierRequest
         {
-            SupplierCode = "SUP-" + Guid.NewGuid().ToString("N")[..8],
             Name = "Supplier for submit purchase order",
             ContactEmail = "submit-supplier@example.com",
             Phone = "+1"
@@ -115,7 +114,6 @@ public class SubmitPurchaseOrderEndpointTests : ProcurementTestFixture
 
         var supplier = Supplier.Create(
             id: Guid.NewGuid().ToString("N"),
-            supplierCode: "SUP-" + Guid.NewGuid().ToString("N")[..8],
             name: "Supplier for empty order",
             contactEmail: "empty-order@example.com",
             phone: "+1",
