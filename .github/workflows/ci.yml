@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -54,36 +55,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          UBUNTU_VERSION="$(lsb_release -rs)"
-
-          curl -fsSL \
-            https://packages.microsoft.com/keys/microsoft.asc \
-            -o /tmp/microsoft.asc
-
-          sudo install -D -m 0644 /tmp/microsoft.asc \
-            /etc/apt/keyrings/microsoft.asc
-
-          # Remove any existing malformed repository configuration.
+          # Reuse Microsoft's existing repository configuration.
+          # Avoid creating a duplicate repository with a conflicting key.
           sudo rm -f /etc/apt/sources.list.d/mssql-release.list
-
-          curl -fsSL \
-            "https://packages.microsoft.com/config/ubuntu/${UBUNTU_VERSION}/prod.list" \
-            -o /tmp/microsoft-prod.list
-
-          # Configure the Microsoft repository with the correct keyring.
-          if grep -q 'signed-by=' /tmp/microsoft-prod.list; then
-            sed \
-              's|signed-by=[^]]*|signed-by=/etc/apt/keyrings/microsoft.asc|g' \
-              /tmp/microsoft-prod.list \
-              | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
-          else
-            sed '/^[[:space:]]*#/d; /^[[:space:]]*$/d' /tmp/microsoft-prod.list \
-              | sed 's|^deb |deb [signed-by=/etc/apt/keyrings/microsoft.asc] |' \
-              | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
-          fi
-
-          echo "Microsoft repository configuration:"
-          cat /etc/apt/sources.list.d/mssql-release.list
 
           sudo apt-get update
 
@@ -92,6 +66,8 @@ jobs:
             unixodbc-dev
 
           echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+          sqlcmd -? | head -n 5
 
       - name: Wait for SQL Server readiness
         shell: bash
