@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -25,12 +26,6 @@ jobs:
           MSSQL_SA_PASSWORD: ${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }}
         ports:
           - 1433:1433
-        options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -C -Q 'SELECT 1' || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 30
-          --health-start-period 30s
 
     env:
       DOTNET_NOLOGO: true
@@ -54,6 +49,7 @@ jobs:
         run: dotnet build Invoria.sln --configuration Release --no-restore
 
       - name: Install sqlcmd client
+        shell: bash
         run: |
           curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
             -o /tmp/microsoft.asc
@@ -77,13 +73,13 @@ jobs:
         shell: bash
         run: |
           for i in {1..60}; do
-            if sqlcmd \
+            if /opt/mssql-tools18/bin/sqlcmd \
               -S localhost,1433 \
               -U sa \
               -P "$CI_SQL_SA_PASSWORD" \
               -C \
-              -Q "SELECT 1" \
-              -b; then
+              -b \
+              -Q "SELECT 1"; then
               echo "SQL Server is ready."
               exit 0
             fi
@@ -92,7 +88,7 @@ jobs:
             sleep 2
           done
 
-          echo "::error::SQL Server did not become ready within 120 seconds."
+          echo "::error::SQL Server failed to become ready within 120 seconds."
           exit 1
 
       - name: Run all test projects
@@ -104,7 +100,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
 
           $resultsRoot = "TestResults"
-          New-Item -Path $resultsRoot -ItemType Directory -Force | Out-Null
+
+          New-Item -Path $resultsRoot -ItemType Directory -Force |
+            Out-Null
 
           $testProjects = @(
             "tests/Invoria.Application.Tests/Invoria.Application.Tests.csproj"
@@ -135,7 +133,7 @@ jobs:
             Write-Host "========================================"
 
             if (-not (Test-Path $project)) {
-              Write-Error "Test project not found: $project" -ErrorAction Continue
+              Write-Host "::error::Test project not found: $project"
               $failedProjects += $project
               continue
             }
