@@ -8,10 +8,15 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     name: Build and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+
     services:
       sqlserver:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -20,15 +25,13 @@ jobs:
           MSSQL_SA_PASSWORD: ${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }}
         ports:
           - 1433:1433
-        options: >-
-          --health-cmd "(/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q 'SELECT 1' || /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -C -Q 'SELECT 1') || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 30
 
     env:
       DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
       CI_SQL_SA_PASSWORD: ${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }}
+
       CI_DB_CONNECTION_STRING: Server=localhost,1433;Database=Invoria_CI;User Id=sa;Password=${{ secrets.CI_SQL_SA_PASSWORD != '' && secrets.CI_SQL_SA_PASSWORD || 'Invoria_CI_Strong_P@ssw0rd!' }};TrustServerCertificate=True;Encrypt=False;MultipleActiveResultSets=True
 
     steps:
@@ -47,28 +50,52 @@ jobs:
         run: dotnet build Invoria.sln --configuration Release --no-restore
 
       - name: Install sqlcmd client
+        shell: bash
         run: |
-          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc -o /tmp/microsoft.asc
-          sudo install -D -m 0644 /tmp/microsoft.asc /etc/apt/keyrings/microsoft.asc
-          curl -fsSL "https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list" \
-            | sed -e "s|signed-by=[^ \]]*|signed-by=/etc/apt/keyrings/microsoft.asc|g" \
-                  -e "/microsoft\.asc/!s|^deb |deb [signed-by=/etc/apt/keyrings/microsoft.asc] |" \
-            | sudo tee /etc/apt/sources.list.d/mssql-release.list > /dev/null
+          set -euo pipefail
+
+          # Reuse Microsoft's existing repository configuration.
+          # Avoid creating a duplicate repository with a conflicting key.
+          sudo rm -f /etc/apt/sources.list.d/mssql-release.list
+
           sudo apt-get update
-          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+          sudo ACCEPT_EULA=Y apt-get install -y \
+            mssql-tools18 \
+            unixodbc-dev
+
+          # Makes sqlcmd available to LATER steps only.
           echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+          # PATH changes via GITHUB_PATH don't apply to the current step,
+          # so verify using the absolute path.
+          test -x /opt/mssql-tools18/bin/sqlcmd
+          echo "sqlcmd installed at /opt/mssql-tools18/bin/sqlcmd"
 
       - name: Wait for SQL Server readiness
         shell: bash
         run: |
-          for i in {1..30}; do
-            /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$CI_SQL_SA_PASSWORD" -C -Q "SELECT 1" && break
-            if [ "$i" -eq 30 ]; then
-              echo "SQL Server did not become ready in time."
-              exit 1
+          set -euo pipefail
+
+          for i in {1..60}; do
+            if /opt/mssql-tools18/bin/sqlcmd \
+              -S localhost,1433 \
+              -U sa \
+              -P "$CI_SQL_SA_PASSWORD" \
+              -C \
+              -b \
+              -Q "SELECT 1"; then
+
+              echo "SQL Server is ready."
+              exit 0
             fi
+
+            echo "Waiting for SQL Server... ($i/60)"
             sleep 2
           done
+
+          echo "::error::SQL Server failed to become ready within 120 seconds."
+          exit 1
 
       - name: Run all test projects
         shell: pwsh
@@ -76,31 +103,81 @@ jobs:
           ConnectionStrings__Default: ${{ env.CI_DB_CONNECTION_STRING }}
           ConnectionStrings__Rebus: ${{ env.CI_DB_CONNECTION_STRING }}
         run: |
-          New-Item -Path "TestResults" -ItemType Directory -Force | Out-Null
+          $ErrorActionPreference = 'Stop'
+
+          $resultsRoot = "TestResults"
+
+          New-Item -Path $resultsRoot -ItemType Directory -Force |
+            Out-Null
 
           $testProjects = @(
             "tests/Invoria.Application.Tests/Invoria.Application.Tests.csproj"
             "tests/Invoria.Endpoints.Tests/Invoria.Endpoints.Tests.csproj"
+
             "tests/Modules/Catalog/Catalog.Application.Tests/Invoria.Catalog.Application.Tests.csproj"
             "tests/Modules/Catalog/Catalog.Endpoints.Tests/Invoria.Catalog.Endpoints.Tests.csproj"
+
             "tests/Modules/CustomerManagement/CustomerManagement.Application.Tests/Invoria.CustomerManagement.Application.Tests.csproj"
             "tests/Modules/CustomerManagement/CustomerManagement.Endpoints.Tests/Invoria.CustomerManagement.Endpoints.Tests.csproj"
+
             "tests/Modules/Inventory/Inventory.Application.Tests/Invoria.Inventory.Application.Tests.csproj"
             "tests/Modules/Inventory/Inventory.Endpoints.Tests/Invoria.Inventory.Endpoints.Tests.csproj"
+
             "tests/Modules/Ordering/Ordering.Application.Tests/Invoria.Ordering.Application.Tests.csproj"
             "tests/Modules/Ordering/Ordering.Endpoints.Tests/Invoria.Ordering.Endpoints.Tests.csproj"
+
             "tests/Modules/Procurement/Procurement.Application.Tests/Invoria.Procurement.Application.Tests.csproj"
             "tests/Modules/Procurement/Procurement.Endpoints.Tests/Invoria.Procurement.Endpoints.Tests.csproj"
           )
 
+          $failedProjects = @()
+
           foreach ($project in $testProjects) {
             $projectName = [System.IO.Path]::GetFileNameWithoutExtension($project)
+            $resultsDirectory = Join-Path $resultsRoot $projectName
+
+            New-Item -Path $resultsDirectory -ItemType Directory -Force |
+              Out-Null
+
+            Write-Host "========================================"
+            Write-Host "Testing: $project"
+            Write-Host "========================================"
+
+            if (-not (Test-Path $project)) {
+              Write-Host "::error::Test project not found: $project"
+              $failedProjects += $project
+              continue
+            }
+
             dotnet test $project `
               --configuration Release `
               --no-build `
+              --no-restore `
               --logger "trx;LogFileName=$projectName.trx" `
-              --results-directory "TestResults/$projectName"
+              --results-directory $resultsDirectory
+
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::error::Tests failed for $project"
+              $failedProjects += $project
+            }
           }
+
+          Write-Host ""
+          Write-Host "========================================"
+          Write-Host "Test Summary"
+          Write-Host "========================================"
+
+          if ($failedProjects.Count -gt 0) {
+            Write-Host "Failed test projects:"
+
+            foreach ($project in $failedProjects) {
+              Write-Host " - $project"
+            }
+
+            exit 1
+          }
+
+          Write-Host "All test projects passed."
 
       - name: Upload test results
         if: always()
@@ -108,4 +185,5 @@ jobs:
         with:
           name: test-results
           path: TestResults/**/*.trx
-          if-no-files-found: error
+          if-no-files-found: warn
+          retention-days: 14
