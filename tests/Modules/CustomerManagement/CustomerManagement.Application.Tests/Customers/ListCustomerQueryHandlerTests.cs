@@ -79,7 +79,7 @@ namespace Invoria.CustomerManagement.Application.Tests.Customers
         [Test]
         public async Task Should_return_customers_ordered_by_created_at_descending()
         {
-            var baseTime = DateTimeOffset.UtcNow.AddDays(-10);
+            var baseTime = DateTimeOffset.UtcNow.AddHours(6);
             var customerOne = CreateCustomerWithCreatedAt($"Order A {GetUniqueSuffix()}", baseTime);
             var customerTwo = CreateCustomerWithCreatedAt($"Order B {GetUniqueSuffix()}", baseTime.AddHours(1));
             var customerThree = CreateCustomerWithCreatedAt($"Order C {GetUniqueSuffix()}", baseTime.AddHours(2));

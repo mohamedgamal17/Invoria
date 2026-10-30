@@ -20,6 +20,8 @@ namespace Invoria.CustomerManagement.Application.Tests
         protected override async Task BeforeAllTestRunAsync()
         {
             await ServiceProvider.RunModulesBootstrapperAsync();
+
+            await ResetDatabaseAsync();
         }
 
         protected override async Task AfterAllTestTearDown()
